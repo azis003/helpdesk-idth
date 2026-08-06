@@ -191,6 +191,26 @@ class TicketPolicy
             && $ticket->status === TicketStatus::Dikerjakan;
     }
 
+    public function uploadAttachment(User $actor, Ticket $ticket): bool
+    {
+        return $this->isAssignedAgent($actor, $ticket)
+            && in_array($ticket->status, [TicketStatus::Diproses, TicketStatus::Dikerjakan], true);
+    }
+
+    public function startDatabaseChange(User $actor, Ticket $ticket): bool
+    {
+        return $this->isAssignedAgent($actor, $ticket)
+            && $this->serviceCode($ticket) === 'SVC-03'
+            && $ticket->status === TicketStatus::Dikerjakan;
+    }
+
+    public function verifyDatabaseChange(User $actor, Ticket $ticket): bool
+    {
+        return $this->isAssignedAgent($actor, $ticket)
+            && $this->serviceCode($ticket) === 'SVC-03'
+            && $ticket->status === TicketStatus::Dikerjakan;
+    }
+
     public function confirm(User $actor, Ticket $ticket): bool
     {
         return $actor->isActive()
@@ -217,6 +237,11 @@ class TicketPolicy
         return $actor->isActive()
             && $actor->hasAnyRole([Role::AgenTier1, Role::AgenTier2])
             && (int) $ticket->assigned_to_id === (int) $actor->getKey();
+    }
+
+    private function serviceCode(Ticket $ticket): ?string
+    {
+        return $ticket->serviceType?->code ?? $ticket->service_type_code_snapshot;
     }
 
     private function isCurrentApprover(User $actor): bool

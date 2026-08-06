@@ -26,6 +26,9 @@
     $canResumeThirdParty = $canResumeThirdParty ?? false;
     $canRequestApproval = $canRequestApproval ?? false;
     $canComplete = $canComplete ?? false;
+    $canUploadAttachments = $canUploadAttachments ?? false;
+    $canStartDatabaseChange = $canStartDatabaseChange ?? false;
+    $canVerifyDatabaseChange = $canVerifyDatabaseChange ?? false;
     $canConfirm = $canConfirm ?? false;
     $canNotSatisfied = $canNotSatisfied ?? false;
     $canReopen = $canReopen ?? false;
@@ -34,6 +37,9 @@
     $canDecideApproval = $canDecideApproval ?? false;
     $commentPublicPolicies = $commentPublicPolicies ?? collect();
     $commentInternalPolicies = $commentInternalPolicies ?? collect();
+    $ticketAttachmentPolicies = $ticketAttachmentPolicies ?? collect();
+    $specialControlReadiness = $specialControlReadiness ?? ['kind' => null, 'ready' => true];
+    $canSeeInternal = $canSeeInternal ?? false;
     $activeWait = $activeWait ?? null;
     $lastTimedOutWait = $lastTimedOutWait ?? null;
     $currentCategory = old('problem_category_id', $ticket->problem_category_id);
@@ -419,6 +425,94 @@
                 <div class="mt-4"><x-status-badge :status="$ticket->status" /></div>
             </section>
 
+            @if ($canSeeInternal && ($specialControlReadiness['kind'] ?? null) === 'database_change')
+                @php
+                    $changeControl = $specialControlReadiness['control'] ?? null;
+                    $controlLabels = [
+                        'change_script' => 'Change script',
+                        'rollback_script' => 'Rollback script',
+                        'backup_evidence' => 'Bukti backup',
+                    ];
+                @endphp
+                <section class="ui-panel border-l-4 border-l-[#e4a72c]" aria-labelledby="database-change-heading">
+                    <div class="ui-panel-header">
+                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#e4a72c] !shadow-[0_0_0_4px_#fff4d7]" aria-hidden="true"></span>Kontrol perubahan produksi</p>
+                        <h2 id="database-change-heading" class="mt-2 ui-section-title">Kontrol SVC-03</h2>
+                        <p class="ui-section-description">Tiga bukti berbeda wajib tersedia sebelum eksekusi. Verifikasi hasil wajib selesai sebelum tiket menunggu konfirmasi.</p>
+                    </div>
+                    <div class="space-y-4 p-5 sm:p-6">
+                        <ul class="space-y-2" aria-label="Persyaratan bukti SVC-03">
+                            @foreach (($specialControlReadiness['requirements'] ?? []) as $type => $requirement)
+                                <li class="flex items-start justify-between gap-3 rounded-lg border border-[#e1eaed] bg-[#f8fbfc] px-3 py-2.5 text-sm">
+                                    <span class="min-w-0">
+                                        <span class="block font-extrabold text-[#35505b]">{{ $controlLabels[$type] ?? $type }}</span>
+                                        @if ($requirement['attachment'])
+                                            <span class="mt-1 block truncate text-xs text-[#78909a]">{{ $requirement['attachment']->original_name }}</span>
+                                        @endif
+                                    </span>
+                                    <span class="shrink-0 text-xs font-extrabold {{ $requirement['valid'] ? 'text-[#087f5b]' : 'text-[#be123c]' }}">
+                                        {{ $requirement['valid'] ? 'Tersedia dan valid' : 'Belum tersedia/valid' }}
+                                    </span>
+                                </li>
+                            @endforeach
+                        </ul>
+
+                        @if ($changeControl?->executionStarted())
+                            <div class="rounded-lg border border-[#cdeef7] bg-[#f5fcfe] p-3 text-sm text-[#35505b]">
+                                <p class="font-extrabold text-[#147a79]">Eksekusi sudah dimulai</p>
+                                <p class="mt-1 text-xs leading-5 text-[#526f79]">Oleh {{ $changeControl->executionStartedBy?->name ?? 'Pengguna yang tercatat' }} pada {{ $changeControl->execution_started_at?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}.</p>
+                            </div>
+                        @elseif ($canStartDatabaseChange)
+                            <form method="POST" action="{{ route('tickets.database-change.execute', $ticket) }}" class="space-y-3" data-ticket-database-change-form>
+                                @csrf
+                                <p class="text-xs leading-5 text-[#78909a]">Pastikan ketiga bukti sudah benar. Aksi ini menyimpan pelaku dan waktu Mulai Eksekusi ke histori.</p>
+                                <button type="submit" class="ui-btn ui-btn-warning w-full" onclick="return window.confirm('Mulai Eksekusi SVC-03 setelah tiga bukti diverifikasi?');">Mulai Eksekusi</button>
+                                @error('database_change')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror
+                            </form>
+                        @elseif (! ($specialControlReadiness['evidence_ready'] ?? false))
+                            <p class="rounded-lg border border-[#f0d28c] bg-[#fffaf0] p-3 text-xs leading-5 text-[#8a5a00]">Lengkapi dan unggah tiga bukti berbeda untuk mengaktifkan Mulai Eksekusi.</p>
+                        @endif
+
+                        @if ($canVerifyDatabaseChange && $changeControl?->executionStarted() && ! $changeControl?->verified())
+                            <form method="POST" action="{{ route('tickets.database-change.verify', $ticket) }}" class="space-y-3 rounded-xl border border-[#dfe8ec] bg-[#fbfdfd] p-4" data-ticket-database-change-form>
+                                @csrf
+                                <div>
+                                    <label for="database-change-result" class="ui-field-label">Hasil verifikasi <span class="text-rose-600" aria-hidden="true">*</span></label>
+                                    <textarea id="database-change-result" name="verification_result" rows="3" required maxlength="20000" class="ui-textarea mt-2" placeholder="Jelaskan hasil pemeriksaan setelah perubahan dijalankan.">{{ old('verification_result') }}</textarea>
+                                    @error('verification_result')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+                                </div>
+                                <div>
+                                    <label for="database-change-notes" class="ui-field-label">Catatan verifikasi <span class="text-rose-600" aria-hidden="true">*</span></label>
+                                    <textarea id="database-change-notes" name="verification_notes" rows="3" required maxlength="20000" class="ui-textarea mt-2" placeholder="Catat bukti pemeriksaan, dampak, atau tindak lanjut.">{{ old('verification_notes') }}</textarea>
+                                    @error('verification_notes')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+                                </div>
+                                <button type="submit" class="ui-btn ui-btn-primary w-full">Simpan verifikasi hasil</button>
+                            </form>
+                        @elseif ($changeControl?->verified())
+                            <div class="rounded-lg border border-[#cdeef7] bg-[#f5fcfe] p-3 text-sm text-[#35505b]">
+                                <p class="font-extrabold text-[#147a79]">Verifikasi hasil selesai</p>
+                                <p class="mt-1 whitespace-pre-line text-xs leading-5">{{ $changeControl->verification_result }}</p>
+                                <p class="mt-2 text-xs leading-5 text-[#526f79]">Oleh {{ $changeControl->verifier?->name ?? 'Pengguna yang tercatat' }} pada {{ $changeControl->verified_at?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}.</p>
+                                <p class="mt-2 whitespace-pre-line rounded-lg bg-white px-3 py-2 text-xs leading-5 text-[#526f79]">Catatan: {{ $changeControl->verification_notes }}</p>
+                            </div>
+                        @endif
+                    </div>
+                </section>
+            @elseif ($canSeeInternal && ($specialControlReadiness['kind'] ?? null) === 'data_export')
+                <section class="ui-panel border-l-4 border-l-[#2bb8aa]" aria-labelledby="data-export-heading">
+                    <div class="ui-panel-header">
+                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#2bb8aa] !shadow-[0_0_0_4px_#d7f7f1]" aria-hidden="true"></span>Hasil tarik data</p>
+                        <h2 id="data-export-heading" class="mt-2 ui-section-title">Ketersediaan hasil SVC-02</h2>
+                        <p class="ui-section-description">Minimal satu lampiran bertipe Hasil tarik data dengan akses Pemohon wajib tersedia sebelum penyelesaian.</p>
+                    </div>
+                    <div class="p-5 sm:p-6">
+                        <p class="rounded-lg border {{ ($specialControlReadiness['ready'] ?? false) ? 'border-[#bfe8d8] bg-[#f2fcf7] text-[#087f5b]' : 'border-[#f0d28c] bg-[#fffaf0] text-[#8a5a00]' }} p-3 text-sm leading-6">
+                            {{ ($specialControlReadiness['ready'] ?? false) ? 'Hasil tersedia dan dapat diakses Pemohon.' : 'Hasil belum tersedia untuk Pemohon.' }}
+                        </p>
+                    </div>
+                </section>
+            @endif
+
             @if ($canComplete)
                 <section class="ui-panel border-l-4 border-l-[#2bb8aa]" aria-labelledby="complete-heading">
                     <div class="ui-panel-header">
@@ -711,6 +805,29 @@
                     <h2 id="attachments-heading" class="ui-section-title">Lampiran</h2>
                     <p class="ui-section-description">Berkas yang dapat Anda akses pada tiket ini.</p>
                 </div>
+                @if ($canUploadAttachments && $ticketAttachmentPolicies->isNotEmpty())
+                    <form method="POST" action="{{ route('tickets.attachments.store', $ticket) }}" enctype="multipart/form-data" class="space-y-4 border-b border-[#edf2f4] bg-[#f8fbfc] p-5 sm:p-6" data-ticket-attachment-form>
+                        @csrf
+                        <div>
+                            <p class="text-sm font-extrabold text-[#35505b]">Tambah lampiran kerja</p>
+                            <p class="mt-1 text-xs leading-5 text-[#78909a]">Pilih tipe lampiran yang sesuai. Storage berkas tetap privat dan setiap akses dicatat.</p>
+                        </div>
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            @foreach ($ticketAttachmentPolicies as $policy)
+                                @php
+                                    $accept = collect($policy->allowed_extensions ?? [])->map(fn ($extension) => '.'.ltrim($extension, '.'))->implode(',');
+                                @endphp
+                                <div>
+                                    <label for="ticket-attachment-policy-{{ $policy->id }}" class="ui-field-label">{{ $policy->label }}</label>
+                                    <p id="ticket-attachment-policy-{{ $policy->id }}-help" class="ui-field-help">Maksimal {{ $policy->max_file_count }} berkas, {{ $policy->max_file_size_kb }} KB per berkas{{ $policy->visibility === 'internal' ? ' · internal' : ' · dapat diakses Pemohon sesuai visibilitas' }}.</p>
+                                    <input id="ticket-attachment-policy-{{ $policy->id }}" name="attachments[{{ $policy->id }}][]" type="file" class="ui-file-input mt-2" multiple @if ($accept !== '') accept="{{ $accept }}" @endif aria-describedby="ticket-attachment-policy-{{ $policy->id }}-help">
+                                </div>
+                            @endforeach
+                        </div>
+                        @error('attachments')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror
+                        <button type="submit" class="ui-btn ui-btn-secondary w-full sm:w-auto" data-ticket-attachment-submit>Tambah lampiran</button>
+                    </form>
+                @endif
                 @if ($ticket->attachments->isEmpty())
                     <p class="p-5 text-sm leading-6 text-[#78909a] sm:p-6">Tidak ada lampiran pada tiket ini.</p>
                 @else

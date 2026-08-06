@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\AttachmentPolicy;
 use App\Models\ServiceFieldDefinition;
 use App\Models\ServiceType;
 use App\Models\ServiceTypeVariant;
@@ -237,6 +238,57 @@ class ServiceCatalogSeeder extends Seeder
                     );
                 }
             }
+        }
+
+        $specialAttachmentPolicies = [
+            [
+                'service' => 'SVC-02',
+                'type_key' => 'data_export_result',
+                'label' => 'Hasil tarik data',
+                'visibility' => 'both',
+            ],
+            [
+                'service' => 'SVC-03',
+                'type_key' => 'change_script',
+                'label' => 'Change script',
+                'visibility' => 'internal',
+            ],
+            [
+                'service' => 'SVC-03',
+                'type_key' => 'rollback_script',
+                'label' => 'Rollback script',
+                'visibility' => 'internal',
+            ],
+            [
+                'service' => 'SVC-03',
+                'type_key' => 'backup_evidence',
+                'label' => 'Bukti backup',
+                'visibility' => 'internal',
+            ],
+        ];
+
+        foreach ($specialAttachmentPolicies as $policyData) {
+            $service = ServiceType::query()->where('code', $policyData['service'])->first();
+
+            if ($service === null) {
+                continue;
+            }
+
+            AttachmentPolicy::query()->firstOrCreate(
+                [
+                    'service_type_id' => $service->getKey(),
+                    'type_key' => $policyData['type_key'],
+                ],
+                [
+                    'label' => $policyData['label'],
+                    'max_file_size_kb' => 10240,
+                    'max_file_count' => 1,
+                    'allowed_mimes' => [],
+                    'allowed_extensions' => [],
+                    'visibility' => $policyData['visibility'],
+                    'is_active' => true,
+                ],
+            );
         }
     }
 

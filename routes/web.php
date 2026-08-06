@@ -47,6 +47,9 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/tickets/{ticket}/request-approval', [TicketController::class, 'requestApproval'])->name('tickets.request-approval');
         Route::post('/tickets/{ticket}/complete', [TicketController::class, 'complete'])->name('tickets.complete');
         Route::post('/tickets/{ticket}/resolve', [TicketController::class, 'complete'])->name('tickets.resolve');
+        Route::post('/tickets/{ticket}/attachments', [TicketController::class, 'uploadAttachment'])->name('tickets.attachments.store');
+        Route::post('/tickets/{ticket}/database-change/execute', [TicketController::class, 'startDatabaseChange'])->name('tickets.database-change.execute');
+        Route::post('/tickets/{ticket}/database-change/verify', [TicketController::class, 'verifyDatabaseChange'])->name('tickets.database-change.verify');
         Route::post('/tickets/{ticket}/confirm', [TicketController::class, 'confirm'])->name('tickets.confirm');
         Route::post('/tickets/{ticket}/requester-confirmation', [TicketController::class, 'confirm'])->name('tickets.requester-confirm');
         Route::post('/tickets/{ticket}/not-satisfied', [TicketController::class, 'notSatisfied'])->name('tickets.not-satisfied');

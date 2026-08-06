@@ -151,6 +151,11 @@ class Ticket extends Model
         return $this->hasMany(Attachment::class)->latest('id');
     }
 
+    public function databaseChangeControl(): HasOne
+    {
+        return $this->hasOne(DatabaseChangeControl::class);
+    }
+
     public function comments(): HasMany
     {
         return $this->hasMany(TicketComment::class)

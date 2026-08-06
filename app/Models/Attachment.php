@@ -36,6 +36,11 @@ class Attachment extends Model
         ];
     }
 
+    public function isRequesterAccessible(): bool
+    {
+        return in_array($this->visibility, ['requester', 'both'], true);
+    }
+
     public function ticket(): BelongsTo
     {
         return $this->belongsTo(Ticket::class);

@@ -18,6 +18,12 @@ class AttachmentController extends Controller
     public function download(Request $request, Attachment $attachment): mixed
     {
         $actor = $request->user();
+
+        if ($attachment->trashed()) {
+            $this->auditLogger->denied($actor, 'attachment.download', $attachment, 'Lampiran sudah dihapus dari storage.');
+            abort(404, 'Lampiran tidak ditemukan.');
+        }
+
         $this->authorization->authorize($actor, 'view', $attachment, 'attachment.download');
 
         $disk = Storage::disk($attachment->storage_disk);

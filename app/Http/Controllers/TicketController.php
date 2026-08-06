@@ -11,8 +11,11 @@ use App\Http\Requests\NotSatisfiedTicketRequest;
 use App\Http\Requests\ReopenTicketRequest;
 use App\Http\Requests\RequestApprovalRequest;
 use App\Http\Requests\ReturnTicketRequest;
+use App\Http\Requests\StartDatabaseChangeExecutionRequest;
+use App\Http\Requests\StoreTicketAttachmentRequest;
 use App\Http\Requests\StoreTicketRequest;
 use App\Http\Requests\TriageTicketRequest;
+use App\Http\Requests\VerifyDatabaseChangeRequest;
 use App\Models\Announcement;
 use App\Models\ApprovalRequest;
 use App\Models\AttachmentPolicy;
@@ -21,6 +24,7 @@ use App\Models\ProblemCategory;
 use App\Models\ServiceType;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Services\DatabaseChangeControlService;
 use App\Services\DomainAuthorization;
 use App\Services\SkillSuggestionService;
 use App\Services\TicketApprovalService;
@@ -45,6 +49,7 @@ class TicketController extends Controller
         private readonly TicketApprovalService $approvals,
         private readonly TicketResolutionService $resolution,
         private readonly TicketSlaService $sla,
+        private readonly DatabaseChangeControlService $specialControls,
     ) {}
 
     public function index(Request $request): mixed
@@ -163,9 +168,9 @@ class TicketController extends Controller
             'problemCategory',
             'room.floor.building',
             'fieldValues',
-            'attachments',
+            'attachments.uploadedBy',
             'comments.author',
-            'comments.attachments',
+            'comments.attachments.uploadedBy',
             'waits.startedBy',
             'waits.fromAssignee',
             'waits.endedBy',
@@ -179,6 +184,9 @@ class TicketController extends Controller
             'approvalRequests.approver',
             'approvalRequests.requestedBy',
             'approvalRequests.previousAssignee',
+            'databaseChangeControl.executionStartedBy',
+            'databaseChangeControl.verifier',
+            'databaseChangeControl.histories.actor',
         ]);
 
         $approvalRequest = $ticket->approvalRequests
@@ -223,6 +231,9 @@ class TicketController extends Controller
         $canResumeThirdParty = $actor->can('resumeThirdPartyWait', $ticket);
         $canRequestApproval = $actor->can('requestApproval', $ticket);
         $canComplete = $actor->can('complete', $ticket);
+        $canUploadAttachments = $actor->can('uploadAttachment', $ticket);
+        $canStartDatabaseChange = $actor->can('startDatabaseChange', $ticket);
+        $canVerifyDatabaseChange = $actor->can('verifyDatabaseChange', $ticket);
         $canConfirm = $actor->can('confirm', $ticket);
         $canNotSatisfied = $actor->can('notSatisfied', $ticket);
         $canReopen = $actor->can('reopen', $ticket);
@@ -233,6 +244,10 @@ class TicketController extends Controller
         $commentInternalPolicies = $canSeeInternal && $ticket->serviceType
             ? $this->attachments->policiesFor($ticket->serviceType, true, 'internal')
             : collect();
+        $ticketAttachmentPolicies = $canUploadAttachments && $ticket->serviceType
+            ? $this->attachments->policiesFor($ticket->serviceType, true)
+            : collect();
+        $specialControlReadiness = $this->specialControls->readiness($ticket);
         $activeWait = $ticket->waits->first(fn ($wait): bool => $wait->ended_at === null);
         $lastTimedOutWait = $ticket->waits->filter(fn ($wait): bool => $wait->timed_out)->last();
         $triageCategories = $canTriage
@@ -248,6 +263,7 @@ class TicketController extends Controller
 
         return view('tickets.show', [
             'ticket' => $ticket,
+            'canSeeInternal' => $canSeeInternal,
             'canTriage' => $canTriage,
             'canAssignTierTwo' => $canAssignTierTwo,
             'canReturnToTierOne' => $canReturnToTierOne,
@@ -259,6 +275,9 @@ class TicketController extends Controller
             'canResumeThirdParty' => $canResumeThirdParty,
             'canRequestApproval' => $canRequestApproval,
             'canComplete' => $canComplete,
+            'canUploadAttachments' => $canUploadAttachments,
+            'canStartDatabaseChange' => $canStartDatabaseChange,
+            'canVerifyDatabaseChange' => $canVerifyDatabaseChange,
             'canConfirm' => $canConfirm,
             'canNotSatisfied' => $canNotSatisfied,
             'canReopen' => $canReopen,
@@ -267,13 +286,15 @@ class TicketController extends Controller
             'canDecideApproval' => $canDecideApproval,
             'commentPublicPolicies' => $commentPublicPolicies,
             'commentInternalPolicies' => $commentInternalPolicies,
+            'ticketAttachmentPolicies' => $ticketAttachmentPolicies,
+            'specialControlReadiness' => $specialControlReadiness,
             'activeWait' => $activeWait,
             'lastTimedOutWait' => $lastTimedOutWait,
             'triageCategories' => $triageCategories,
             'tierTwoUsers' => $tierTwoUsers,
             'suggestionsByCategory' => $canTriage ? $this->skillSuggestions->forCategories($triageCategories) : [],
             'priorityOptions' => Priority::labels(),
-            'timeline' => $this->buildTimeline($ticket),
+            'timeline' => $this->buildTimeline($ticket, $canSeeInternal),
         ]);
     }
 
@@ -301,6 +322,46 @@ class TicketController extends Controller
         return redirect()
             ->route('tickets.show', $ticket)
             ->with('success', 'Solusi berhasil disimpan. Tiket sekarang Menunggu Konfirmasi.');
+    }
+
+    public function uploadAttachment(StoreTicketAttachmentRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $this->attachments->uploadToTicket(
+            $request->user(),
+            $ticket,
+            $request->file('attachments', []),
+        );
+
+        return redirect()
+            ->route('tickets.show', $ticket)
+            ->with('success', 'Lampiran berhasil ditambahkan dan metadata aksesnya dicatat.');
+    }
+
+    public function startDatabaseChange(StartDatabaseChangeExecutionRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $this->specialControls->startExecution($request->user(), $ticket);
+
+        return redirect()
+            ->route('tickets.show', $ticket)
+            ->with('success', 'Mulai Eksekusi berhasil dicatat bersama pelaku dan waktu eksekusi.');
+    }
+
+    public function verifyDatabaseChange(VerifyDatabaseChangeRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $data = $request->validated();
+        $result = $data['verification_result'] ?? $data['result'] ?? null;
+        $notes = $data['verification_notes'] ?? $data['notes'] ?? null;
+
+        $this->specialControls->verify(
+            $request->user(),
+            $ticket,
+            is_string($result) ? $result : null,
+            is_string($notes) ? $notes : null,
+        );
+
+        return redirect()
+            ->route('tickets.show', $ticket)
+            ->with('success', 'Verifikasi hasil SVC-03 berhasil disimpan.');
     }
 
     public function confirm(Request $request, Ticket $ticket): RedirectResponse
@@ -397,7 +458,7 @@ class TicketController extends Controller
     }
 
     /** @return list<array<string, mixed>> */
-    private function buildTimeline(Ticket $ticket): array
+    private function buildTimeline(Ticket $ticket, bool $canSeeInternal = false): array
     {
         $timeline = collect();
 
@@ -455,6 +516,37 @@ class TicketController extends Controller
                 'reason' => $history->reason,
                 'kind' => 'category',
             ]);
+        }
+
+        foreach ($ticket->attachments as $attachment) {
+            $timeline->push([
+                'occurred_at' => $attachment->created_at,
+                'title' => 'Lampiran ditambahkan',
+                'description' => $attachment->type_label_snapshot.' · '.$attachment->original_name,
+                'actor' => $attachment->uploadedBy?->name,
+                'reason' => null,
+                'kind' => 'attachment',
+            ]);
+        }
+
+        if ($canSeeInternal && $ticket->databaseChangeControl !== null) {
+            foreach ($ticket->databaseChangeControl->histories as $history) {
+                $title = match ($history->action) {
+                    'execution_started' => 'Eksekusi SVC-03 dimulai',
+                    'execution_denied' => 'Mulai Eksekusi ditolak',
+                    'verification_completed' => 'Verifikasi SVC-03 disimpan',
+                    'verification_denied' => 'Verifikasi SVC-03 ditolak',
+                    default => 'Kontrol SVC-03 diperbarui',
+                };
+                $timeline->push([
+                    'occurred_at' => $history->occurred_at,
+                    'title' => $title,
+                    'description' => 'Aktivitas kontrol perubahan database dicatat tanpa membuka berkas privat.',
+                    'actor' => $history->actor?->name,
+                    'reason' => $history->reason,
+                    'kind' => 'control',
+                ]);
+            }
         }
 
         foreach ($ticket->approvalRequests as $approval) {

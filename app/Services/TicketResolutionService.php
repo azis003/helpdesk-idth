@@ -19,6 +19,7 @@ class TicketResolutionService
         private readonly TicketSlaService $sla,
         private readonly WorkingCalendarService $calendar,
         private readonly OperationalPolicyService $policies,
+        private readonly DatabaseChangeControlService $specialControls,
     ) {}
 
     public function complete(User $actor, Ticket $ticket, string $solution): Ticket
@@ -36,14 +37,23 @@ class TicketResolutionService
         $waitDays = (int) ($this->policies->settings()['confirmation_wait_working_days'] ?? 3);
         $calendar = $this->policies->currentCalendar();
         $confirmationDueAt = $this->calendar->deadlineAfterWorkingDays($now, $waitDays, $calendar);
+        $failure = null;
 
-        $result = $this->database->transaction(function () use ($actor, $ticket, $solution, $now, $confirmationDueAt, $waitDays, $calendar): Ticket {
+        $result = $this->database->transaction(function () use ($actor, $ticket, $solution, $now, $confirmationDueAt, $waitDays, $calendar, &$failure): ?Ticket {
             $lockedTicket = $this->lockTicket($ticket);
             $this->authorization->authorize($actor, 'complete', $lockedTicket, 'ticket.complete');
 
             if ($lockedTicket->status !== TicketStatus::Dikerjakan
                 || (int) $lockedTicket->assigned_to_id !== (int) $actor->getKey()) {
                 $this->deny($actor, $lockedTicket, 'Tiket hanya dapat diselesaikan oleh penanggung jawab pada status Dikerjakan.');
+            }
+
+            $specialControlFailure = $this->specialControls->completionFailure($lockedTicket);
+
+            if ($specialControlFailure !== null) {
+                $failure = $specialControlFailure;
+
+                return null;
             }
 
             $before = $this->snapshot($lockedTicket);
@@ -89,6 +99,13 @@ class TicketResolutionService
 
             return $lockedTicket->fresh(['requester', 'assignee']);
         });
+
+        if ($result === null) {
+            $reason = $failure ?: 'Tiket belum dapat dipindahkan ke Menunggu Konfirmasi.';
+            $this->auditLogger->denied($actor, 'ticket.resolution', $ticket, $reason);
+
+            throw ValidationException::withMessages(['ticket' => $reason]);
+        }
 
         $result->requester?->notify(new TicketEventNotification(
             'ticket_completed',

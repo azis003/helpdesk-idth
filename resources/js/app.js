@@ -361,3 +361,24 @@ approvalForms.forEach((approvalForm) => {
         button.textContent = 'Memproses...';
     });
 });
+
+const ticketAttachmentForms = document.querySelectorAll('[data-ticket-attachment-form], [data-ticket-database-change-form]');
+
+ticketAttachmentForms.forEach((form) => {
+    form.addEventListener('submit', (event) => {
+        if (form.dataset.ticketDatabaseChangeForm !== undefined && event.defaultPrevented) {
+            return;
+        }
+
+        const button = form.querySelector('button[type="submit"]');
+
+        if (!button) {
+            return;
+        }
+
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        button.dataset.originalLabel = button.textContent;
+        button.textContent = 'Menyimpan...';
+    });
+});
