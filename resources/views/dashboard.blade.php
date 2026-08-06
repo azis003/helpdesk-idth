@@ -20,11 +20,25 @@
         </div>
     </section>
 
+    @if ($announcements->isNotEmpty())
+        <section class="mt-7" aria-labelledby="announcements-heading">
+            <div class="flex items-end justify-between gap-4"><div><p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#e4a72c] !shadow-[0_0_0_4px_#fff4d7]" aria-hidden="true"></span>Informasi terbaru</p><h2 id="announcements-heading" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">Pengumuman layanan</h2></div><span class="text-xs font-bold text-[#86979e]">{{ $announcements->count() }} informasi aktif</span></div>
+            <div class="mt-4 grid gap-3 lg:grid-cols-2">
+                @foreach ($announcements as $announcement)
+                    <article class="ui-panel border-l-4 border-l-[#e4a72c] p-5 sm:p-6">
+                        <div class="flex items-start justify-between gap-3"><h3 class="text-sm font-extrabold text-[#263a43]">{{ $announcement->title }}</h3><time class="shrink-0 text-[0.68rem] font-bold text-[#86979e]" datetime="{{ $announcement->starts_at?->toIso8601String() }}">{{ $announcement->starts_at?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</time></div>
+                        <p class="mt-3 whitespace-pre-line text-sm leading-6 text-[#526f79]">{{ $announcement->body }}</p>
+                    </article>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
     @if ($isSuperAdmin)
         <section class="mt-7" aria-labelledby="shortcuts-heading">
             <div class="flex items-end justify-between gap-4">
                 <div><p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Akses cepat</p><h2 id="shortcuts-heading" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">Pusat administrasi</h2></div>
-                <span class="hidden text-xs font-bold text-[#86979e] sm:block">4 area tersedia</span>
+                <span class="hidden text-xs font-bold text-[#86979e] sm:block">5 area tersedia</span>
             </div>
             <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <a href="{{ route('admin.users.index') }}" class="ui-catalog-card group">
@@ -38,6 +52,10 @@
                 <a href="{{ route('admin.skills.index') }}" class="ui-catalog-card group">
                     <span class="ui-catalog-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.8 14.1 9l5.4.45-4.12 3.5 1.24 5.25L12 15.35l-4.62 2.85 1.24-5.25-4.12-3.5L9.9 9 12 3.8Z" /></svg></span>
                     <span class="mt-4 flex items-center justify-between gap-2"><span><span class="block text-sm font-extrabold text-[#263a43]">Data keahlian</span><span class="mt-1 block text-xs leading-5 text-[#84959c]">Keahlian dan kategori</span></span><span class="text-lg text-[#56bedf] transition-transform group-hover:translate-x-1" aria-hidden="true">→</span></span>
+                </a>
+                <a href="{{ route('admin.catalog.index') }}" class="ui-catalog-card group">
+                    <span class="ui-catalog-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 9h8M8 12h5M8 15h7" /></svg></span>
+                    <span class="mt-4 flex items-center justify-between gap-2"><span><span class="block text-sm font-extrabold text-[#263a43]">Katalog layanan</span><span class="mt-1 block text-xs leading-5 text-[#84959c]">Layanan dan formulir dinamis</span></span><span class="text-lg text-[#56bedf] transition-transform group-hover:translate-x-1" aria-hidden="true">→</span></span>
                 </a>
                 <a href="{{ route('admin.audit-logs.index') }}" class="ui-catalog-card group">
                     <span class="ui-catalog-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 3.5h9l3 3V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" /><path stroke-linecap="round" d="M14 3.5V7h4M8 11h8M8 14.5h8" /></svg></span>

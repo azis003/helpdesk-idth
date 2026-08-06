@@ -70,6 +70,11 @@ class User extends Authenticatable
         return $this->hasMany(Ticket::class, 'assigned_to_id');
     }
 
+    public function announcements(): HasMany
+    {
+        return $this->hasMany(Announcement::class, 'created_by');
+    }
+
     public function teamMemberships(): HasMany
     {
         return $this->hasMany(TeamMembership::class);

@@ -11,6 +11,8 @@
     @php
         $currentUser = auth()->user()->loadMissing('roles');
         $isSuperAdmin = $currentUser->hasRole(\App\Enums\Role::SuperAdmin);
+        $isTier1 = $currentUser->hasRole(\App\Enums\Role::AgenTier1);
+        $canManageAnnouncements = $isSuperAdmin || $isTier1;
     @endphp
 
     <div class="ui-shell lg:flex">
@@ -43,9 +45,23 @@
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.8 14.1 9l5.4.45-4.12 3.5 1.24 5.25L12 15.35l-4.62 2.85 1.24-5.25-4.12-3.5L9.9 9 12 3.8Z" /><path stroke-linecap="round" d="M4 20.2h16" /></svg></span>
                         <span class="ui-nav-label">Data keahlian</span>
                     </a>
+                    <a href="{{ route('admin.catalog.index') }}" class="ui-nav-link {{ request()->routeIs('admin.catalog.*') ? 'is-active' : '' }}" aria-label="Katalog layanan" title="Katalog layanan">
+                        <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 9h8M8 12h5M8 15h7" /></svg></span>
+                        <span class="ui-nav-label">Katalog layanan</span>
+                    </a>
                     <a href="{{ route('admin.audit-logs.index') }}" class="ui-nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'is-active' : '' }}" aria-label="Audit log" title="Audit log">
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 3.5h9l3 3V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" /><path stroke-linecap="round" d="M14 3.5V7h4M8 11h8M8 14.5h8M8 18h5" /></svg></span>
                         <span class="ui-nav-label">Audit log</span>
+                    </a>
+                </nav>
+            @endif
+
+            @if ($canManageAnnouncements)
+                <nav class="mt-5 flex flex-col gap-2" aria-label="Navigasi pengumuman">
+                    <p class="ui-sidebar-label">Komunikasi</p>
+                    <a href="{{ route('admin.announcements.index') }}" class="ui-nav-link {{ request()->routeIs('admin.announcements.*') ? 'is-active' : '' }}" aria-label="Pengumuman" title="Pengumuman">
+                        <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 11.5h3l8-4v9l-8-4h-3a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1Z" /><path stroke-linecap="round" d="M8 16.5 9.5 20h2L10 16.5M18.5 10a3 3 0 0 1 0 4" /></svg></span>
+                        <span class="ui-nav-label">Pengumuman</span>
                     </a>
                 </nav>
             @endif
@@ -94,7 +110,11 @@
                                 <a href="{{ route('admin.users.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.users.*') ? 'is-active' : '' }}">Pengguna</a>
                                 <a href="{{ route('admin.teams.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.teams.*') ? 'is-active' : '' }}">Tim kerja</a>
                                 <a href="{{ route('admin.skills.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.skills.*', 'admin.categories.*') ? 'is-active' : '' }}">Data keahlian</a>
+                                <a href="{{ route('admin.catalog.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.catalog.*') ? 'is-active' : '' }}">Katalog layanan</a>
                                 <a href="{{ route('admin.audit-logs.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'is-active' : '' }}">Audit log</a>
+                            @endif
+                            @if ($canManageAnnouncements)
+                                <a href="{{ route('admin.announcements.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.announcements.*') ? 'is-active' : '' }}">Pengumuman</a>
                             @endif
                             <form method="POST" action="{{ route('logout') }}" class="mt-1 border-t border-[#edf2f4] pt-1">
                                 @csrf

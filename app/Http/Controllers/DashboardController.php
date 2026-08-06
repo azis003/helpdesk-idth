@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Role;
+use App\Models\Announcement;
 use App\Models\Ticket;
 use Illuminate\Http\Request;
 
@@ -20,6 +21,12 @@ class DashboardController extends Controller
             'assignedTicketCount' => $hasOperationalRole && ! $requiresPasswordChange ? $user->assignedTickets()->count() : null,
             'isSuperAdmin' => $user->hasRole(Role::SuperAdmin),
             'newTicketCount' => $hasOperationalRole && ! $requiresPasswordChange ? Ticket::query()->where('status', 'baru')->count() : null,
+            'announcements' => Announcement::query()
+                ->activeAt(now())
+                ->orderByDesc('starts_at')
+                ->orderByDesc('id')
+                ->limit(5)
+                ->get(),
         ]);
     }
 }

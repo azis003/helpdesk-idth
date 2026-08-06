@@ -1,6 +1,10 @@
 <?php
 
+use App\Http\Controllers\Admin\AnnouncementController;
+use App\Http\Controllers\Admin\AttachmentPolicyController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\LocationController;
+use App\Http\Controllers\Admin\ServiceCatalogController;
 use App\Http\Controllers\Admin\SkillController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Admin\WorkTeamController;
@@ -72,6 +76,48 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::put('/categories/{problemCategory}/skills', [SkillController::class, 'updateCategorySkills'])->name('categories.skills.update');
 
             Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+
+            Route::get('/catalog', [ServiceCatalogController::class, 'index'])->name('catalog.index');
+            Route::put('/catalog/services/{serviceType}', [ServiceCatalogController::class, 'updateService'])->name('catalog.services.update');
+            Route::post('/catalog/services/{serviceType}/{status}', [ServiceCatalogController::class, 'setServiceStatus'])
+                ->whereIn('status', ['activate', 'deactivate'])
+                ->name('catalog.services.status');
+            Route::post('/catalog/services/{serviceType}/fields', [ServiceCatalogController::class, 'storeField'])->name('catalog.fields.store');
+            Route::post('/catalog/fields/{serviceFieldDefinition}/versions', [ServiceCatalogController::class, 'storeFieldVersion'])->name('catalog.fields.versions.store');
+            Route::post('/catalog/fields/{serviceFieldDefinition}/{status}', [ServiceCatalogController::class, 'setFieldStatus'])
+                ->whereIn('status', ['activate', 'deactivate'])
+                ->name('catalog.fields.status');
+
+            Route::post('/catalog/buildings', [LocationController::class, 'storeBuilding'])->name('catalog.buildings.store');
+            Route::put('/catalog/buildings/{building}', [LocationController::class, 'updateBuilding'])->name('catalog.buildings.update');
+            Route::post('/catalog/buildings/{building}/{status}', [LocationController::class, 'setBuildingStatus'])
+                ->whereIn('status', ['activate', 'deactivate'])
+                ->name('catalog.buildings.status');
+            Route::post('/catalog/buildings/{building}/floors', [LocationController::class, 'storeFloor'])->name('catalog.floors.store');
+            Route::put('/catalog/floors/{floor}', [LocationController::class, 'updateFloor'])->name('catalog.floors.update');
+            Route::post('/catalog/floors/{floor}/{status}', [LocationController::class, 'setFloorStatus'])
+                ->whereIn('status', ['activate', 'deactivate'])
+                ->name('catalog.floors.status');
+            Route::post('/catalog/floors/{floor}/rooms', [LocationController::class, 'storeRoom'])->name('catalog.rooms.store');
+            Route::put('/catalog/rooms/{room}', [LocationController::class, 'updateRoom'])->name('catalog.rooms.update');
+            Route::post('/catalog/rooms/{room}/{status}', [LocationController::class, 'setRoomStatus'])
+                ->whereIn('status', ['activate', 'deactivate'])
+                ->name('catalog.rooms.status');
+
+            Route::post('/catalog/attachment-policies', [AttachmentPolicyController::class, 'store'])->name('catalog.attachment-policies.store');
+            Route::put('/catalog/attachment-policies/{attachmentPolicy}', [AttachmentPolicyController::class, 'update'])->name('catalog.attachment-policies.update');
+            Route::post('/catalog/attachment-policies/{attachmentPolicy}/{status}', [AttachmentPolicyController::class, 'setStatus'])
+                ->whereIn('status', ['activate', 'deactivate'])
+                ->name('catalog.attachment-policies.status');
+        });
+
+        Route::prefix('admin')->name('admin.')->middleware('role:super_admin,agen_tier_1')->group(function () {
+            Route::get('/announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
+            Route::post('/announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
+            Route::put('/announcements/{announcement}', [AnnouncementController::class, 'update'])->name('announcements.update');
+            Route::post('/announcements/{announcement}/{status}', [AnnouncementController::class, 'setStatus'])
+                ->whereIn('status', ['activate', 'deactivate'])
+                ->name('announcements.status');
         });
     });
 });
