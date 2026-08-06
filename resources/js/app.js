@@ -85,3 +85,79 @@ if (mandatoryPasswordModal) {
         }
     });
 }
+
+const ticketForms = document.querySelectorAll('[data-ticket-form]');
+
+ticketForms.forEach((ticketForm) => {
+    const serviceSelect = ticketForm.querySelector('[data-ticket-service-select]');
+    const servicePanels = [...ticketForm.querySelectorAll('[data-ticket-service-panel]')];
+    const serviceEmptyState = ticketForm.querySelector('[data-ticket-service-empty]');
+    const attachmentGroups = [...ticketForm.querySelectorAll('[data-ticket-attachment]')];
+    const attachmentEmptyState = ticketForm.querySelector('[data-ticket-attachment-empty]');
+    const locationSelect = ticketForm.querySelector('[data-ticket-location-select]');
+    const locationRequiredLabels = [...ticketForm.querySelectorAll('[data-ticket-location-required]')];
+    const locationHelp = ticketForm.querySelector('[data-ticket-location-help]');
+    const submitButton = ticketForm.querySelector('[data-ticket-submit]');
+    const submitLabel = ticketForm.querySelector('[data-ticket-submit-label]');
+    const submitLoading = ticketForm.querySelector('[data-ticket-submit-loading]');
+
+    if (!serviceSelect) {
+        return;
+    }
+
+    const updateTicketForm = () => {
+        const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
+        const serviceId = serviceSelect.value;
+        const serviceCode = selectedOption?.dataset.serviceCode || '';
+        const hasService = serviceId !== '';
+
+        servicePanels.forEach((panel) => {
+            const active = panel.dataset.serviceId === serviceId;
+            panel.classList.toggle('hidden', !active);
+            panel.disabled = !active;
+        });
+
+        serviceEmptyState?.classList.toggle('hidden', hasService);
+
+        attachmentGroups.forEach((group) => {
+            const active = hasService && (group.dataset.serviceId === '' || group.dataset.serviceId === serviceId);
+            group.classList.toggle('hidden', !active);
+            group.querySelectorAll('[data-ticket-attachment-input]').forEach((input) => {
+                input.disabled = !active;
+            });
+        });
+
+        attachmentEmptyState?.classList.toggle('hidden', hasService || attachmentGroups.length === 0);
+
+        const locationRequired = serviceCode === 'SVC-01' || serviceCode === 'SVC-05';
+
+        if (locationSelect) {
+            locationSelect.required = locationRequired;
+        }
+
+        locationRequiredLabels.forEach((label) => {
+            label.classList.toggle('hidden', !locationRequired);
+        });
+
+        if (locationHelp) {
+            locationHelp.textContent = locationRequired
+                ? `Lokasi wajib diisi untuk ${serviceCode}.`
+                : 'Layanan yang dipilih dapat menyimpan lokasi kosong.';
+        }
+    };
+
+    serviceSelect.addEventListener('change', updateTicketForm);
+
+    ticketForm.addEventListener('submit', () => {
+        if (!submitButton) {
+            return;
+        }
+
+        submitButton.disabled = true;
+        submitButton.setAttribute('aria-busy', 'true');
+        submitLabel?.classList.add('hidden');
+        submitLoading?.classList.remove('hidden');
+    });
+
+    updateTicketForm();
+});

@@ -34,6 +34,58 @@
         </section>
     @endif
 
+    @if ($canAccessTickets)
+        <section class="mt-7" aria-labelledby="ticket-workspace-heading">
+            <div class="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                    <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Ruang tiket</p>
+                    <h2 id="ticket-workspace-heading" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">Kelola permintaan Anda</h2>
+                    <p class="mt-2 max-w-2xl text-sm leading-6 text-[#6a8089]">Buat permintaan baru atau pantau status tiket yang sudah tercatat.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <a href="{{ route('tickets.index') }}" class="ui-btn ui-btn-ghost">Tiket saya</a>
+                    @if ($canCreateTickets)
+                        <a href="{{ route('tickets.create') }}" class="ui-btn ui-btn-primary">Buat tiket</a>
+                    @endif
+                </div>
+            </div>
+
+            <div class="mt-4 grid gap-3 sm:grid-cols-3">
+                <article class="ui-stat-card items-start">
+                    <span class="ui-stat-icon" aria-hidden="true"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 9h8M8 12h5M8 15h7" /></svg></span>
+                    <div><p class="ui-stat-label">Tiket pada daftar Anda</p><p class="ui-stat-value">{{ $myTicketCount }}</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Tiket yang dibuat atau diajukan.</p></div>
+                </article>
+                @if ($canCreateTickets)
+                    <a href="{{ route('tickets.create') }}" class="ui-stat-card items-start transition hover:border-[#8bd7ee]">
+                        <span class="ui-stat-icon !bg-[#e8faf4] !text-[#087f5b]" aria-hidden="true"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M12 5v14M5 12h14" /></svg></span>
+                        <div><p class="ui-stat-label">Aksi utama</p><p class="mt-1 text-sm font-extrabold text-[#087f5b]">Buat tiket baru</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Mulai dari katalog layanan.</p></div>
+                    </a>
+                @endif
+            </div>
+
+            <div class="mt-5 grid gap-3 lg:grid-cols-2">
+                @forelse ($myTickets as $ticket)
+                    <a href="{{ route('tickets.show', $ticket) }}" class="ui-panel block p-5 transition hover:border-[#8bd7ee] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#2bb8aa]">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <p class="text-xs font-extrabold text-[#1d5d72]">{{ $ticket->ticket_number ?? 'Tiket #'.$ticket->id }}</p>
+                                <h3 class="mt-2 text-sm font-extrabold text-[#35505b]">{{ $ticket->subject }}</h3>
+                                <p class="mt-1 text-xs text-[#78909a]">{{ $ticket->service_type_code_snapshot ?? $ticket->serviceType?->code ?? 'Layanan belum tersedia' }}</p>
+                            </div>
+                            <x-status-badge :status="$ticket->status" />
+                        </div>
+                        <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
+                            <x-priority-badge :priority="$ticket->priority" />
+                            <span class="text-xs text-[#78909a]">{{ ($ticket->submitted_at ?? $ticket->created_at)?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</span>
+                        </div>
+                    </a>
+                @empty
+                    <x-empty-state class="lg:col-span-2" title="Belum ada tiket pada daftar Anda." description="Tiket baru akan tampil setelah Anda mengirim permintaan." :action="$canCreateTickets ? route('tickets.create') : null" action-label="Buat tiket" />
+                @endforelse
+            </div>
+        </section>
+    @endif
+
     @if ($isSuperAdmin)
         <section class="mt-7" aria-labelledby="shortcuts-heading">
             <div class="flex items-end justify-between gap-4">

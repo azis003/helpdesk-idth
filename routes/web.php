@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\ServiceCatalogController;
 use App\Http\Controllers\Admin\SkillController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Admin\WorkTeamController;
+use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PasswordController;
@@ -35,6 +36,12 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::put('/password/change', [PasswordController::class, 'update'])->name('password.update');
 
     Route::middleware('password.changed')->group(function () {
+        Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
+        Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
+        Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
+        Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
+        Route::post('/tickets/{ticket}/cancel', [TicketController::class, 'cancel'])->name('tickets.cancel');
+        Route::get('/attachments/{attachment}/download', [AttachmentController::class, 'download'])->name('attachments.download');
         Route::post('/tickets/{ticket}/claim', [TicketController::class, 'claim'])->name('tickets.claim');
         Route::post('/tickets/{ticket}/handle', [TicketController::class, 'handle'])->name('tickets.handle');
 

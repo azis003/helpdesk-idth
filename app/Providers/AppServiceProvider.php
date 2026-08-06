@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Announcement;
+use App\Models\Attachment;
 use App\Models\AttachmentPolicy;
 use App\Models\Building;
 use App\Models\Floor;
@@ -16,6 +17,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Models\WorkTeam;
 use App\Policies\AnnouncementPolicy;
+use App\Policies\AttachmentAccessPolicy;
 use App\Policies\AttachmentPolicyPolicy;
 use App\Policies\BuildingPolicy;
 use App\Policies\FloorPolicy;
@@ -50,6 +52,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(Announcement::class, AnnouncementPolicy::class);
+        Gate::policy(Attachment::class, AttachmentAccessPolicy::class);
         Gate::policy(AttachmentPolicy::class, AttachmentPolicyPolicy::class);
         Gate::policy(Building::class, BuildingPolicy::class);
         Gate::policy(Floor::class, FloorPolicy::class);

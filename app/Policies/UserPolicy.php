@@ -17,6 +17,13 @@ class UserPolicy
         return $this->canManage($actor);
     }
 
+    public function createForOther(User $actor, User $target): bool
+    {
+        return $actor->isActive()
+            && $actor->hasRole(Role::AgenTier1)
+            && $target->isActive();
+    }
+
     public function update(User $actor, User $target): bool
     {
         return $this->canManage($actor);

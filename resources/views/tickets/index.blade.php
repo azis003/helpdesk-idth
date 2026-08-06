@@ -1,0 +1,79 @@
+@extends('layouts.app')
+
+@section('title', 'Tiket saya — SIHATI')
+@section('header_kicker', 'Tiket')
+@section('header_title', 'Tiket saya')
+
+@section('content')
+    <div class="ui-page-header">
+        <div>
+            <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Pelacakan permintaan</p>
+            <h1 class="ui-page-title">Tiket saya</h1>
+            <p class="ui-page-description">Pantau nomor, status, prioritas, dan ringkasan permintaan yang menjadi tanggung jawab Anda.</p>
+        </div>
+        <a href="{{ route('tickets.create') }}" class="ui-btn ui-btn-primary">Buat tiket <span aria-hidden="true">→</span></a>
+    </div>
+
+    @if ($tickets->isEmpty())
+        <x-empty-state class="mt-8" title="Belum ada tiket pada daftar ini." description="Tiket yang Anda buat atau ajukan akan muncul di sini setelah berhasil dikirim." :action="route('tickets.create')" action-label="Buat tiket pertama" />
+    @else
+        <section class="ui-panel mt-8 overflow-hidden" aria-labelledby="tickets-list-heading">
+            <div class="ui-panel-header flex flex-wrap items-end justify-between gap-3">
+                <div>
+                    <h2 id="tickets-list-heading" class="ui-section-title">Daftar tiket</h2>
+                    <p class="ui-section-description">{{ $tickets->total() }} tiket ditemukan.</p>
+                </div>
+            </div>
+
+            <div class="hidden overflow-x-auto md:block">
+                <table class="ui-table" aria-describedby="tickets-list-heading">
+                    <thead>
+                        <tr>
+                            <th scope="col">Nomor dan layanan</th>
+                            <th scope="col">Pemohon</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Prioritas</th>
+                            <th scope="col">Dibuat</th>
+                            <th scope="col"><span class="sr-only">Aksi</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($tickets as $ticket)
+                            <tr>
+                                <td>
+                                    <a href="{{ route('tickets.show', $ticket) }}" class="font-extrabold text-[#1d5d72] hover:underline">{{ $ticket->ticket_number ?? 'Tiket #'.$ticket->id }}</a>
+                                    <p class="mt-1 max-w-sm text-sm font-bold text-[#35505b]">{{ $ticket->subject }}</p>
+                                    <p class="mt-1 text-xs text-[#78909a]">{{ $ticket->service_type_code_snapshot ?? $ticket->serviceType?->code ?? 'Layanan belum tersedia' }} · {{ $ticket->service_type_name_snapshot ?? $ticket->serviceType?->name }}</p>
+                                </td>
+                                <td class="text-sm text-[#526f79]">{{ $ticket->requester_name_snapshot ?? $ticket->requester?->name ?? 'Belum tercatat' }}</td>
+                                <td><x-status-badge :status="$ticket->status" /></td>
+                                <td><x-priority-badge :priority="$ticket->priority" /></td>
+                                <td class="whitespace-nowrap text-xs text-[#78909a]">{{ ($ticket->submitted_at ?? $ticket->created_at)?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</td>
+                                <td class="text-right"><a href="{{ route('tickets.show', $ticket) }}" class="ui-action-link">Buka detail</a></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="space-y-3 p-4 md:hidden">
+                @foreach ($tickets as $ticket)
+                    <a href="{{ route('tickets.show', $ticket) }}" class="block rounded-xl border border-[#e1eaed] bg-[#fbfdfd] p-4 transition hover:border-[#8bd7ee] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#2bb8aa]">
+                        <div class="flex flex-wrap items-start justify-between gap-2">
+                            <span class="text-xs font-extrabold text-[#1d5d72]">{{ $ticket->ticket_number ?? 'Tiket #'.$ticket->id }}</span>
+                            <x-status-badge :status="$ticket->status" />
+                        </div>
+                        <h3 class="mt-3 text-sm font-extrabold leading-5 text-[#35505b]">{{ $ticket->subject }}</h3>
+                        <p class="mt-1 text-xs text-[#78909a]">{{ $ticket->service_type_code_snapshot ?? $ticket->serviceType?->code ?? 'Layanan belum tersedia' }}</p>
+                        <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
+                            <x-priority-badge :priority="$ticket->priority" />
+                            <span class="text-xs text-[#78909a]">{{ ($ticket->submitted_at ?? $ticket->created_at)?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</span>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+        </section>
+
+        <div class="mt-5">{{ $tickets->links() }}</div>
+    @endif
+@endsection

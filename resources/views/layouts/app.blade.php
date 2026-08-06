@@ -12,6 +12,8 @@
         $currentUser = auth()->user()->loadMissing('roles');
         $isSuperAdmin = $currentUser->hasRole(\App\Enums\Role::SuperAdmin);
         $isTier1 = $currentUser->hasRole(\App\Enums\Role::AgenTier1);
+        $canAccessTickets = $currentUser->hasAnyRole([\App\Enums\Role::Pemohon, \App\Enums\Role::AgenTier1, \App\Enums\Role::AgenTier2]);
+        $canCreateTickets = $currentUser->hasAnyRole([\App\Enums\Role::Pemohon, \App\Enums\Role::AgenTier1]);
         $canManageAnnouncements = $isSuperAdmin || $isTier1;
     @endphp
 
@@ -28,6 +30,18 @@
                     <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m3 12 9-8 9 8M5 10v10h5v-6h4v6h5V10" /></svg></span>
                     <span class="ui-nav-label">Dasbor</span>
                 </a>
+                @if ($canAccessTickets)
+                    <a href="{{ route('tickets.index') }}" class="ui-nav-link {{ request()->routeIs('tickets.index', 'tickets.show', 'tickets.cancel') ? 'is-active' : '' }}" aria-label="Tiket saya" title="Tiket saya">
+                        <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 9h8M8 12h5M8 15h7" /></svg></span>
+                        <span class="ui-nav-label">Tiket saya</span>
+                    </a>
+                @endif
+                @if ($canCreateTickets)
+                    <a href="{{ route('tickets.create') }}" class="ui-nav-link {{ request()->routeIs('tickets.create', 'tickets.store') ? 'is-active' : '' }}" aria-label="Buat tiket" title="Buat tiket">
+                        <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M12 5v14M5 12h14" /></svg></span>
+                        <span class="ui-nav-label">Buat tiket</span>
+                    </a>
+                @endif
             </nav>
 
             @if ($isSuperAdmin)
@@ -110,6 +124,12 @@
                         </summary>
                         <nav class="absolute right-0 top-11 z-40 w-56 rounded-xl border border-[#dce7eb] bg-white p-2 shadow-xl" aria-label="Navigasi mobile">
                             <a href="{{ route('dashboard') }}" class="ui-mobile-nav-link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dasbor</a>
+                            @if ($canAccessTickets)
+                                <a href="{{ route('tickets.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.index', 'tickets.show', 'tickets.cancel') ? 'is-active' : '' }}">Tiket saya</a>
+                            @endif
+                            @if ($canCreateTickets)
+                                <a href="{{ route('tickets.create') }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.create', 'tickets.store') ? 'is-active' : '' }}">Buat tiket</a>
+                            @endif
                             @if ($isSuperAdmin)
                                 <a href="{{ route('admin.users.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.users.*') ? 'is-active' : '' }}">Pengguna</a>
                                 <a href="{{ route('admin.teams.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.teams.*') ? 'is-active' : '' }}">Tim kerja</a>

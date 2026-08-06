@@ -70,6 +70,16 @@ class User extends Authenticatable
         return $this->hasMany(Ticket::class, 'assigned_to_id');
     }
 
+    public function requestedTickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class, 'requester_id');
+    }
+
+    public function createdTickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class, 'created_by_id');
+    }
+
     public function announcements(): HasMany
     {
         return $this->hasMany(Announcement::class, 'created_by');
