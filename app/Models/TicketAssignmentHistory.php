@@ -18,6 +18,7 @@ class TicketAssignmentHistory extends Model
         'ticket_id',
         'from_user_id',
         'to_user_id',
+        'to_user_name_snapshot',
         'from_tier',
         'to_tier',
         'action',

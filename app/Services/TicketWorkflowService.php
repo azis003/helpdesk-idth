@@ -287,6 +287,7 @@ class TicketWorkflowService
                 'assigned_tier' => $newTier,
                 'last_triaged_by_id' => $actor->getKey(),
                 'problem_category_id' => $category?->getKey() ?? $lockedTicket->problem_category_id,
+                'problem_category_name_snapshot' => $category?->name ?? $lockedTicket->problem_category_name_snapshot,
                 'priority' => $priority,
                 'rejection_reason' => $rejectionReason,
             ])->save();
@@ -627,6 +628,9 @@ class TicketWorkflowService
         $ticket->assignmentHistories()->create([
             'from_user_id' => $fromUserId,
             'to_user_id' => $toUserId,
+            'to_user_name_snapshot' => $toUserId !== null
+                ? User::query()->whereKey($toUserId)->value('name')
+                : null,
             'from_tier' => $fromTier,
             'to_tier' => $toTier,
             'action' => $action->value,

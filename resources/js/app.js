@@ -382,3 +382,41 @@ ticketAttachmentForms.forEach((form) => {
         button.textContent = 'Menyimpan...';
     });
 });
+
+const reportFilterForms = document.querySelectorAll('[data-report-filter-form]');
+
+reportFilterForms.forEach((form) => {
+    form.addEventListener('submit', () => {
+        const button = form.querySelector('[data-report-filter-submit]');
+        const label = form.querySelector('[data-report-filter-label]');
+        const loading = form.querySelector('[data-report-filter-loading]');
+
+        if (!button) {
+            return;
+        }
+
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        label?.classList.add('hidden');
+        loading?.classList.remove('hidden');
+    });
+});
+
+const reportExportForms = document.querySelectorAll('[data-report-export-form]');
+
+reportExportForms.forEach((form) => {
+    form.addEventListener('submit', () => {
+        const button = form.querySelector('[data-report-export-submit]');
+        const label = form.querySelector('[data-report-export-label]');
+        const loading = form.querySelector('[data-report-export-loading]');
+
+        if (!button) {
+            return;
+        }
+
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        label?.classList.add('hidden');
+        loading?.classList.remove('hidden');
+    });
+});

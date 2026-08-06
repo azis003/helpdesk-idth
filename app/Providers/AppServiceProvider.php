@@ -9,6 +9,7 @@ use App\Models\AttachmentPolicy;
 use App\Models\Building;
 use App\Models\Floor;
 use App\Models\ProblemCategory;
+use App\Models\ReportExport;
 use App\Models\Room;
 use App\Models\ServiceFieldDefinition;
 use App\Models\ServiceType;
@@ -24,6 +25,7 @@ use App\Policies\AttachmentPolicyPolicy;
 use App\Policies\BuildingPolicy;
 use App\Policies\FloorPolicy;
 use App\Policies\ProblemCategoryPolicy;
+use App\Policies\ReportExportPolicy;
 use App\Policies\RoomPolicy;
 use App\Policies\ServiceFieldDefinitionPolicy;
 use App\Policies\ServiceTypePolicy;
@@ -68,5 +70,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(WorkTeam::class, WorkTeamPolicy::class);
         Gate::policy(Skill::class, SkillPolicy::class);
         Gate::policy(ProblemCategory::class, ProblemCategoryPolicy::class);
+        Gate::policy(ReportExport::class, ReportExportPolicy::class);
     }
 }
