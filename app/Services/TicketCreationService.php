@@ -91,6 +91,15 @@ class TicketCreationService
                 'submitted_at' => $now,
             ]);
 
+            $ticket->statusHistories()->create([
+                'from_status' => null,
+                'to_status' => TicketStatus::Baru->value,
+                'action' => 'ticket.created',
+                'actor_id' => $actor->getKey(),
+                'metadata' => ['source' => 'ticket_creation'],
+                'occurred_at' => $now,
+            ]);
+
             foreach ($fields as $field) {
                 $definition = $field['definition'];
                 $ticket->fieldValues()->create([

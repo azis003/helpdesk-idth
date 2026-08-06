@@ -11,11 +11,18 @@
             <h1 class="ui-page-title">Tiket saya</h1>
             <p class="ui-page-description">Pantau nomor, status, prioritas, dan ringkasan permintaan yang menjadi tanggung jawab Anda.</p>
         </div>
-        <a href="{{ route('tickets.create') }}" class="ui-btn ui-btn-primary">Buat tiket <span aria-hidden="true">→</span></a>
+        <div class="flex flex-wrap gap-2">
+            @if ($canViewQueue)
+                <a href="{{ route('tickets.queue') }}" class="ui-btn ui-btn-secondary">Antrean Tier 1</a>
+            @endif
+            @can('create', \App\Models\Ticket::class)
+                <a href="{{ route('tickets.create') }}" class="ui-btn ui-btn-primary">Buat tiket <span aria-hidden="true">→</span></a>
+            @endcan
+        </div>
     </div>
 
     @if ($tickets->isEmpty())
-        <x-empty-state class="mt-8" title="Belum ada tiket pada daftar ini." description="Tiket yang Anda buat atau ajukan akan muncul di sini setelah berhasil dikirim." :action="route('tickets.create')" action-label="Buat tiket pertama" />
+        <x-empty-state class="mt-8" title="Belum ada tiket pada daftar ini." description="Tiket yang Anda buat, ajukan, atau tangani akan muncul di sini setelah tercatat." :action="auth()->user()->can('create', \App\Models\Ticket::class) ? route('tickets.create') : null" action-label="Buat tiket pertama" />
     @else
         <section class="ui-panel mt-8 overflow-hidden" aria-labelledby="tickets-list-heading">
             <div class="ui-panel-header flex flex-wrap items-end justify-between gap-3">

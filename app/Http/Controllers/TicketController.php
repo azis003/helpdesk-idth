@@ -2,20 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Priority;
 use App\Enums\Role;
-use App\Enums\TicketStatus;
+use App\Http\Requests\AssignTicketRequest;
+use App\Http\Requests\ReturnTicketRequest;
 use App\Http\Requests\StoreTicketRequest;
+use App\Http\Requests\TriageTicketRequest;
 use App\Models\Announcement;
 use App\Models\AttachmentPolicy;
 use App\Models\Building;
+use App\Models\ProblemCategory;
 use App\Models\ServiceType;
 use App\Models\Ticket;
 use App\Models\User;
-use App\Services\AuditLogger;
 use App\Services\DomainAuthorization;
+use App\Services\SkillSuggestionService;
 use App\Services\TicketCancellationService;
 use App\Services\TicketCreationService;
-use Illuminate\Database\DatabaseManager;
+use App\Services\TicketWorkflowService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -23,10 +27,10 @@ class TicketController extends Controller
 {
     public function __construct(
         private readonly DomainAuthorization $authorization,
-        private readonly AuditLogger $auditLogger,
-        private readonly DatabaseManager $database,
         private readonly TicketCreationService $creation,
         private readonly TicketCancellationService $cancellation,
+        private readonly TicketWorkflowService $workflow,
+        private readonly SkillSuggestionService $skillSuggestions,
     ) {}
 
     public function index(Request $request): mixed
@@ -42,7 +46,8 @@ class TicketController extends Controller
         if ($actor->hasRole(Role::AgenTier1)) {
             $query->where(function ($query) use ($actor): void {
                 $query->where('requester_id', $actor->getKey())
-                    ->orWhere('created_by_id', $actor->getKey());
+                    ->orWhere('created_by_id', $actor->getKey())
+                    ->orWhere('assigned_to_id', $actor->getKey());
             });
         } elseif ($actor->hasRole(Role::AgenTier2)) {
             $query->where('assigned_to_id', $actor->getKey());
@@ -52,6 +57,24 @@ class TicketController extends Controller
 
         return view('tickets.index', [
             'tickets' => $query->paginate(15)->withQueryString(),
+            'canViewQueue' => $actor->hasRole(Role::AgenTier1),
+        ]);
+    }
+
+    public function queue(Request $request): mixed
+    {
+        $actor = $request->user();
+        $this->authorization->authorize($actor, 'viewQueue', Ticket::class, 'ticket.queue.view');
+
+        $tickets = Ticket::query()
+            ->newQueue()
+            ->with(['serviceType', 'requester', 'problemCategory'])
+            ->orderForTierOneQueue()
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('tickets.queue', [
+            'tickets' => $tickets,
         ]);
     }
 
@@ -120,11 +143,19 @@ class TicketController extends Controller
             'requester',
             'creator',
             'assignee',
+            'lastTriagedBy',
             'serviceType',
             'serviceTypeVariant',
+            'problemCategory',
             'room.floor.building',
             'fieldValues',
             'attachments',
+            'statusHistories.actor',
+            'assignmentHistories.fromUser',
+            'assignmentHistories.toUser',
+            'assignmentHistories.actor',
+            'priorityHistories.actor',
+            'categoryHistories.actor',
         ]);
 
         if (! $actor->hasAnyRole([Role::SuperAdmin, Role::AgenTier1, Role::AgenTier2])) {
@@ -134,8 +165,30 @@ class TicketController extends Controller
             );
         }
 
+        $canTriage = $actor->can('triage', $ticket);
+        $canAssignTierTwo = $actor->can('assignTierTwo', $ticket);
+        $canReturnToTierOne = $actor->can('returnToTierOne', $ticket);
+        $triageCategories = $canTriage
+            ? ProblemCategory::query()
+                ->active()
+                ->with(['skills' => fn ($query) => $query->active()->orderBy('name')])
+                ->orderBy('name')
+                ->get()
+            : collect();
+        $tierTwoUsers = ($canTriage || $canAssignTierTwo)
+            ? $this->skillSuggestions->eligibleTierTwoUsers()
+            : collect();
+
         return view('tickets.show', [
             'ticket' => $ticket,
+            'canTriage' => $canTriage,
+            'canAssignTierTwo' => $canAssignTierTwo,
+            'canReturnToTierOne' => $canReturnToTierOne,
+            'triageCategories' => $triageCategories,
+            'tierTwoUsers' => $tierTwoUsers,
+            'suggestionsByCategory' => $canTriage ? $this->skillSuggestions->forCategories($triageCategories) : [],
+            'priorityOptions' => Priority::labels(),
+            'timeline' => $this->buildTimeline($ticket),
         ]);
     }
 
@@ -150,30 +203,7 @@ class TicketController extends Controller
 
     public function claim(Request $request, Ticket $ticket): RedirectResponse
     {
-        $actor = $request->user();
-        $this->authorization->authorize($actor, 'claim', $ticket, 'ticket.claim');
-
-        $claimed = $this->database->transaction(function () use ($actor, $ticket): bool {
-            $lockedTicket = Ticket::query()->whereKey($ticket->getKey())->lockForUpdate()->first();
-
-            if ($lockedTicket === null
-                || $lockedTicket->status !== TicketStatus::Baru
-                || $lockedTicket->assigned_to_id !== null) {
-                $this->auditLogger->denied($actor, 'ticket.claim', $ticket, 'Tiket sudah tidak tersedia untuk diklaim.');
-
-                return false;
-            }
-
-            $lockedTicket->forceFill([
-                'status' => TicketStatus::Diproses,
-                'assigned_to_id' => $actor->getKey(),
-                'assigned_tier' => 'agen_tier_1',
-            ])->save();
-
-            $this->auditLogger->succeeded($actor, 'ticket.claim', $lockedTicket);
-
-            return true;
-        });
+        $claimed = $this->workflow->claim($request->user(), $ticket);
 
         if (! $claimed) {
             return back()->withErrors(['ticket' => 'Tiket sudah diambil oleh agen lain atau tidak tersedia.']);
@@ -184,12 +214,98 @@ class TicketController extends Controller
 
     public function handle(Request $request, Ticket $ticket): RedirectResponse
     {
-        $actor = $request->user();
-        $this->authorization->authorize($actor, 'handle', $ticket, 'ticket.handle');
+        $handled = $this->workflow->startHandling($request->user(), $ticket);
 
-        $ticket->forceFill(['status' => TicketStatus::Dikerjakan])->save();
-        $this->auditLogger->succeeded($actor, 'ticket.handle', $ticket);
+        if (! $handled) {
+            return back()->withErrors(['ticket' => 'Tiket tidak lagi tersedia untuk mulai dikerjakan.']);
+        }
 
         return back()->with('success', 'Tiket ditandai sedang dikerjakan.');
+    }
+
+    public function triage(TriageTicketRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $this->workflow->triage($request->user(), $ticket, $request->validated());
+
+        return redirect()
+            ->route('tickets.show', $ticket)
+            ->with('success', 'Triase tiket berhasil disimpan.');
+    }
+
+    public function assignTierTwo(AssignTicketRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $this->workflow->assignTierTwo($request->user(), $ticket, $request->validated());
+
+        return redirect()
+            ->route('tickets.show', $ticket)
+            ->with('success', 'Tiket berhasil ditugaskan kepada Agen Tier 2.');
+    }
+
+    public function returnToTierOne(ReturnTicketRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $this->workflow->returnToTierOne($request->user(), $ticket, $request->validated()['reason']);
+
+        return redirect()
+            ->route('tickets.show', $ticket)
+            ->with('success', 'Tiket dikembalikan kepada Agen Tier 1 terakhir yang melakukan triase.');
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function buildTimeline(Ticket $ticket): array
+    {
+        $timeline = collect();
+
+        foreach ($ticket->statusHistories as $history) {
+            $from = $history->from_status?->label() ?? 'Tiket dibuat';
+            $to = $history->to_status?->label() ?? 'Status tidak diketahui';
+            $timeline->push([
+                'occurred_at' => $history->occurred_at,
+                'title' => 'Status diperbarui',
+                'description' => $from.' → '.$to,
+                'actor' => $history->actor?->name,
+                'reason' => $history->reason,
+                'kind' => 'status',
+            ]);
+        }
+
+        foreach ($ticket->assignmentHistories as $history) {
+            $from = $history->fromUser?->name ?? 'Belum ditugaskan';
+            $to = $history->toUser?->name ?? 'Tidak ada penanggung jawab';
+            $timeline->push([
+                'occurred_at' => $history->occurred_at,
+                'title' => $history->action?->label() ?? 'Penugasan diperbarui',
+                'description' => $from.' → '.$to,
+                'actor' => $history->actor?->name,
+                'reason' => $history->reason,
+                'kind' => 'assignment',
+            ]);
+        }
+
+        foreach ($ticket->priorityHistories as $history) {
+            $timeline->push([
+                'occurred_at' => $history->occurred_at,
+                'title' => 'Prioritas diperbarui',
+                'description' => ($history->from_priority?->label() ?? 'Belum ditentukan').' → '.$history->to_priority?->label(),
+                'actor' => $history->actor?->name,
+                'reason' => $history->reason,
+                'kind' => 'priority',
+            ]);
+        }
+
+        foreach ($ticket->categoryHistories as $history) {
+            $timeline->push([
+                'occurred_at' => $history->occurred_at,
+                'title' => 'Kategori diperbarui',
+                'description' => ($history->from_category_name ?? 'Belum dikategorikan').' → '.($history->to_category_name ?? 'Belum dikategorikan'),
+                'actor' => $history->actor?->name,
+                'reason' => $history->reason,
+                'kind' => 'category',
+            ]);
+        }
+
+        return $timeline
+            ->sortBy(fn (array $entry): int => $entry['occurred_at']?->getTimestamp() ?? 0)
+            ->values()
+            ->all();
     }
 }

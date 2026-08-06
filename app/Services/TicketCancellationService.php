@@ -38,7 +38,15 @@ class TicketCancellationService
             }
 
             $before = ['status' => $lockedTicket->status->value];
+            $occurredAt = now();
             $lockedTicket->forceFill(['status' => TicketStatus::Dibatalkan])->save();
+            $lockedTicket->statusHistories()->create([
+                'from_status' => TicketStatus::Baru->value,
+                'to_status' => TicketStatus::Dibatalkan->value,
+                'action' => 'ticket.cancelled',
+                'actor_id' => $actor->getKey(),
+                'occurred_at' => $occurredAt,
+            ]);
 
             $this->auditLogger->succeeded(
                 $actor,

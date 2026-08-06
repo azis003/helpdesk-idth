@@ -1,0 +1,248 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Enums\Priority;
+use App\Enums\Role;
+use App\Enums\TicketAssignmentAction;
+use App\Enums\TicketStatus;
+use App\Models\ProblemCategory;
+use App\Models\Skill;
+use App\Models\Ticket;
+use App\Models\TicketAssignmentHistory;
+use Tests\TestCase;
+
+class TicketTriageTest extends TestCase
+{
+    public function test_tier_one_queue_is_shared_and_sorted_by_priority_then_age(): void
+    {
+        $agent = $this->createUser([Role::AgenTier1]);
+
+        $oldLow = Ticket::factory()->create([
+            'subject' => 'Tiket rendah paling lama',
+            'priority' => Priority::Rendah,
+            'submitted_at' => now()->subDays(4),
+        ]);
+        $high = Ticket::factory()->create([
+            'subject' => 'Tiket tinggi',
+            'priority' => Priority::Tinggi,
+            'submitted_at' => now()->subDays(3),
+        ]);
+        $critical = Ticket::factory()->create([
+            'subject' => 'Tiket kritis',
+            'priority' => Priority::Kritis,
+            'submitted_at' => now()->subDay(),
+        ]);
+        $medium = Ticket::factory()->create([
+            'subject' => 'Tiket sedang',
+            'priority' => Priority::Sedang,
+            'submitted_at' => now()->subDays(2),
+        ]);
+
+        $this->actingAs($agent)
+            ->get(route('tickets.queue'))
+            ->assertOk()
+            ->assertSeeInOrder([
+                $critical->subject,
+                $high->subject,
+                $medium->subject,
+                $oldLow->subject,
+            ]);
+    }
+
+    public function test_second_claim_gets_clear_failure_after_first_agent_wins(): void
+    {
+        $winner = $this->createUser([Role::AgenTier1], ['username' => 'agent.winner']);
+        $loser = $this->createUser([Role::AgenTier1], ['username' => 'agent.loser']);
+        $ticket = Ticket::factory()->create(['status' => TicketStatus::Baru]);
+
+        $this->actingAs($winner)
+            ->post(route('tickets.claim', $ticket))
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($loser)
+            ->post(route('tickets.claim', $ticket))
+            ->assertRedirect()
+            ->assertSessionHasErrors('ticket');
+
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'status' => TicketStatus::Diproses->value,
+            'assigned_to_id' => $winner->id,
+            'assigned_tier' => Role::AgenTier1->value,
+        ]);
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $loser->id,
+            'auditable_id' => $ticket->id,
+            'action' => 'ticket.claim',
+            'outcome' => 'denied',
+        ]);
+    }
+
+    public function test_tier_one_can_triage_self_and_records_category_priority_and_assignment_history(): void
+    {
+        $agent = $this->createUser([Role::AgenTier1]);
+        $category = ProblemCategory::factory()->create(['name' => 'Aplikasi Internal']);
+        $ticket = Ticket::factory()->create([
+            'status' => TicketStatus::Diproses,
+            'assigned_to_id' => $agent->id,
+            'assigned_tier' => Role::AgenTier1->value,
+            'priority' => Priority::Sedang,
+        ]);
+
+        $this->actingAs($agent)
+            ->post(route('tickets.triage', $ticket), [
+                'outcome' => 'self',
+                'problem_category_id' => $category->id,
+                'priority' => Priority::Tinggi->value,
+                'category_reason' => 'Permintaan termasuk dukungan aplikasi internal.',
+                'priority_reason' => 'Dampak pekerjaan pemohon tinggi.',
+            ])
+            ->assertRedirect(route('tickets.show', $ticket))
+            ->assertSessionHasNoErrors();
+
+        $ticket->refresh();
+        $this->assertSame(TicketStatus::Dikerjakan, $ticket->status);
+        $this->assertSame(Priority::Tinggi, $ticket->priority);
+        $this->assertSame($category->id, $ticket->problem_category_id);
+        $this->assertSame($agent->id, $ticket->last_triaged_by_id);
+        $this->assertDatabaseHas('ticket_category_histories', [
+            'ticket_id' => $ticket->id,
+            'from_category_id' => null,
+            'to_category_id' => $category->id,
+            'reason' => 'Permintaan termasuk dukungan aplikasi internal.',
+        ]);
+        $this->assertDatabaseHas('ticket_priority_histories', [
+            'ticket_id' => $ticket->id,
+            'from_priority' => Priority::Sedang->value,
+            'to_priority' => Priority::Tinggi->value,
+            'reason' => 'Dampak pekerjaan pemohon tinggi.',
+        ]);
+        $this->assertDatabaseHas('ticket_assignment_histories', [
+            'ticket_id' => $ticket->id,
+            'action' => TicketAssignmentAction::TriagedSelf->value,
+            'to_user_id' => $agent->id,
+            'to_tier' => Role::AgenTier1->value,
+        ]);
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $agent->id,
+            'auditable_id' => $ticket->id,
+            'action' => 'ticket.triaged',
+            'outcome' => 'succeeded',
+        ]);
+
+        $this->actingAs($agent)
+            ->get(route('tickets.show', $ticket))
+            ->assertOk()
+            ->assertSee('Triase tiket')
+            ->assertSee($category->name)
+            ->assertSee('Histori tiket');
+    }
+
+    public function test_tier_one_can_assign_tier_two_using_manual_choice_while_saving_skill_suggestions(): void
+    {
+        $agent = $this->createUser([Role::AgenTier1]);
+        $suggested = $this->createUser([Role::AgenTier2], ['name' => 'Teknisi Disarankan']);
+        $manual = $this->createUser([Role::AgenTier2], ['name' => 'Teknisi Pilihan Manual']);
+        $skill = Skill::factory()->create(['name' => 'Dukungan jaringan']);
+        $category = ProblemCategory::factory()->create(['name' => 'Jaringan kantor']);
+        $category->skills()->attach($skill->id);
+        $suggested->skills()->attach($skill->id);
+        $ticket = Ticket::factory()->create([
+            'status' => TicketStatus::Diproses,
+            'assigned_to_id' => $agent->id,
+            'assigned_tier' => Role::AgenTier1->value,
+            'problem_category_id' => $category->id,
+            'priority' => Priority::Sedang,
+        ]);
+
+        $this->actingAs($agent)
+            ->post(route('tickets.triage', $ticket), [
+                'outcome' => 'tier_2',
+                'problem_category_id' => $category->id,
+                'priority' => Priority::Sedang->value,
+                'assigned_to_id' => $manual->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket))
+            ->assertSessionHasNoErrors();
+
+        $ticket->refresh();
+        $this->assertSame(TicketStatus::Dikerjakan, $ticket->status);
+        $this->assertSame($manual->id, $ticket->assigned_to_id);
+        $this->assertSame(Role::AgenTier2->value, $ticket->assigned_tier);
+
+        $assignment = TicketAssignmentHistory::query()
+            ->where('ticket_id', $ticket->id)
+            ->where('action', TicketAssignmentAction::TriagedTier2->value)
+            ->firstOrFail();
+        $this->assertSame($manual->id, $assignment->to_user_id);
+        $this->assertTrue(collect($assignment->suggestions)->contains('user_id', $suggested->id));
+    }
+
+    public function test_tier_two_returns_ticket_to_last_triaging_tier_one(): void
+    {
+        $agent = $this->createUser([Role::AgenTier1]);
+        $tierTwo = $this->createUser([Role::AgenTier2]);
+        $ticket = Ticket::factory()->create([
+            'status' => TicketStatus::Dikerjakan,
+            'assigned_to_id' => $tierTwo->id,
+            'assigned_tier' => Role::AgenTier2->value,
+            'last_triaged_by_id' => $agent->id,
+        ]);
+
+        $this->actingAs($tierTwo)
+            ->post(route('tickets.return-to-tier-1', $ticket), [
+                'reason' => 'Informasi teknis perlu dilengkapi oleh Agen Tier 1.',
+            ])
+            ->assertRedirect(route('tickets.show', $ticket))
+            ->assertSessionHasNoErrors();
+
+        $ticket->refresh();
+        $this->assertSame(TicketStatus::Diproses, $ticket->status);
+        $this->assertSame($agent->id, $ticket->assigned_to_id);
+        $this->assertSame(Role::AgenTier1->value, $ticket->assigned_tier);
+        $this->assertDatabaseHas('ticket_assignment_histories', [
+            'ticket_id' => $ticket->id,
+            'action' => TicketAssignmentAction::ReturnedTier1->value,
+            'from_user_id' => $tierTwo->id,
+            'to_user_id' => $agent->id,
+        ]);
+    }
+
+    public function test_rejection_reason_is_visible_to_requester(): void
+    {
+        $requester = $this->createUser([Role::Pemohon]);
+        $agent = $this->createUser([Role::AgenTier1]);
+        $ticket = Ticket::factory()->create([
+            'requester_id' => $requester->id,
+            'created_by_id' => $requester->id,
+            'status' => TicketStatus::Diproses,
+            'assigned_to_id' => $agent->id,
+            'assigned_tier' => Role::AgenTier1->value,
+            'priority' => Priority::Sedang,
+        ]);
+
+        $reason = 'Permintaan berada di luar katalog layanan SIHATI.';
+        $this->actingAs($agent)
+            ->post(route('tickets.triage', $ticket), [
+                'outcome' => 'reject',
+                'priority' => Priority::Sedang->value,
+                'rejection_reason' => $reason,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'status' => TicketStatus::Ditolak->value,
+            'rejection_reason' => $reason,
+        ]);
+
+        $this->actingAs($requester)
+            ->get(route('tickets.show', $ticket))
+            ->assertOk()
+            ->assertSee('Alasan penolakan')
+            ->assertSee($reason);
+    }
+}

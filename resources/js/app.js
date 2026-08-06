@@ -161,3 +161,169 @@ ticketForms.forEach((ticketForm) => {
 
     updateTicketForm();
 });
+
+const queueClaimForms = document.querySelectorAll('[data-queue-claim]');
+
+queueClaimForms.forEach((claimForm) => {
+    claimForm.addEventListener('submit', () => {
+        const button = claimForm.querySelector('[data-queue-claim-button]');
+        const label = claimForm.querySelector('[data-queue-claim-label]');
+        const loading = claimForm.querySelector('[data-queue-claim-loading]');
+
+        if (!button) {
+            return;
+        }
+
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        label?.classList.add('hidden');
+        loading?.classList.remove('hidden');
+    });
+});
+
+const triageForms = document.querySelectorAll('[data-ticket-triage-form]');
+
+triageForms.forEach((triageForm) => {
+    const categorySelect = triageForm.querySelector('[data-ticket-triage-category]');
+    const outcomeInputs = [...triageForm.querySelectorAll('[data-ticket-triage-outcome]')];
+    const panels = [...triageForm.querySelectorAll('[data-ticket-triage-panel]')];
+    const assigneeSelect = triageForm.querySelector('[data-ticket-assignee-select]');
+    const rejectionReason = triageForm.querySelector('[name="rejection_reason"]');
+    const suggestionList = triageForm.querySelector('[data-ticket-suggestion-list]');
+    const suggestionEmpty = triageForm.querySelector('[data-ticket-suggestion-empty]');
+    const suggestionMapElement = triageForm.parentElement?.querySelector('[data-ticket-suggestions-map]');
+    const submitButton = triageForm.querySelector('[data-ticket-triage-submit]');
+    const submitLabel = triageForm.querySelector('[data-ticket-triage-submit-label]');
+    const submitLoading = triageForm.querySelector('[data-ticket-triage-submit-loading]');
+    let suggestionMap = {};
+
+    try {
+        suggestionMap = JSON.parse(suggestionMapElement?.textContent || '{}');
+    } catch {
+        suggestionMap = {};
+    }
+
+    const selectedOutcome = () => outcomeInputs.find((input) => input.checked)?.value || 'self';
+
+    const renderSuggestions = () => {
+        if (!categorySelect || !suggestionList) {
+            return;
+        }
+
+        const suggestions = Array.isArray(suggestionMap[categorySelect.value])
+            ? suggestionMap[categorySelect.value]
+            : [];
+
+        suggestionList.replaceChildren();
+
+        suggestions.forEach((suggestion) => {
+            const item = document.createElement('li');
+            item.className = 'rounded-lg border border-[#dcebef] bg-white px-3 py-2';
+
+            const name = document.createElement('p');
+            name.className = 'text-xs font-extrabold text-[#35505b]';
+            name.textContent = suggestion.user_name || 'Teknisi tersedia';
+
+            const score = document.createElement('span');
+            score.className = 'ml-1 rounded-full bg-[#e8faf4] px-1.5 py-0.5 text-[0.62rem] text-[#087f5b]';
+            score.textContent = `${suggestion.match_count || 0} skill`;
+            name.append(score);
+
+            const skills = document.createElement('p');
+            skills.className = 'mt-1 text-[0.68rem] text-[#78909a]';
+            skills.textContent = Array.isArray(suggestion.matching_skill_names)
+                ? suggestion.matching_skill_names.join(', ')
+                : 'Skill sesuai kategori';
+
+            item.append(name, skills);
+            suggestionList.append(item);
+        });
+
+        if (suggestionEmpty) {
+            suggestionEmpty.classList.toggle('hidden', suggestions.length > 0);
+            suggestionEmpty.textContent = categorySelect.value
+                ? 'Belum ada teknisi Tier 2 dengan skill yang dipetakan ke kategori ini.'
+                : 'Pilih kategori untuk melihat saran teknisi.';
+        }
+    };
+
+    const updateTriagePanels = () => {
+        const outcome = selectedOutcome();
+
+        panels.forEach((panel) => {
+            const active = panel.dataset.ticketTriagePanel === outcome;
+            panel.hidden = !active;
+            panel.setAttribute('aria-hidden', String(!active));
+            panel.querySelectorAll('input, select, textarea').forEach((input) => {
+                input.disabled = !active;
+            });
+        });
+
+        if (categorySelect) {
+            categorySelect.required = outcome !== 'reject';
+        }
+
+        if (assigneeSelect) {
+            assigneeSelect.required = outcome === 'tier_2';
+        }
+
+        if (rejectionReason) {
+            rejectionReason.required = outcome === 'reject';
+        }
+
+        renderSuggestions();
+    };
+
+    outcomeInputs.forEach((input) => input.addEventListener('change', updateTriagePanels));
+    categorySelect?.addEventListener('change', renderSuggestions);
+
+    triageForm.addEventListener('submit', (event) => {
+        if (selectedOutcome() === 'reject' && !window.confirm('Tolak tiket ini? Alasan penolakan akan terlihat oleh Pemohon dan tiket menjadi final.')) {
+            event.preventDefault();
+            return;
+        }
+
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.setAttribute('aria-busy', 'true');
+            submitLabel?.classList.add('hidden');
+            submitLoading?.classList.remove('hidden');
+        }
+    });
+
+    updateTriagePanels();
+});
+
+const assignmentForms = document.querySelectorAll('[data-ticket-assignment-form]');
+
+assignmentForms.forEach((assignmentForm) => {
+    assignmentForm.addEventListener('submit', () => {
+        const button = assignmentForm.querySelector('[data-ticket-assignment-submit]');
+        const label = assignmentForm.querySelector('[data-ticket-assignment-submit-label]');
+        const loading = assignmentForm.querySelector('[data-ticket-assignment-submit-loading]');
+
+        if (!button) {
+            return;
+        }
+
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        label?.classList.add('hidden');
+        loading?.classList.remove('hidden');
+    });
+});
+
+const returnForms = document.querySelectorAll('[data-ticket-return-form]');
+
+returnForms.forEach((returnForm) => {
+    returnForm.addEventListener('submit', () => {
+        const button = returnForm.querySelector('[data-ticket-return-submit]');
+
+        if (!button) {
+            return;
+        }
+
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+    });
+});

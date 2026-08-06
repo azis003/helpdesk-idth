@@ -54,10 +54,40 @@ class TicketPolicy
 
     public function claim(User $actor, Ticket $ticket): bool
     {
+        return $actor->isActive() && $actor->hasRole(Role::AgenTier1);
+    }
+
+    public function viewQueue(User $actor): bool
+    {
+        return $actor->isActive() && $actor->hasRole(Role::AgenTier1);
+    }
+
+    public function triage(User $actor, Ticket $ticket): bool
+    {
         return $actor->isActive()
             && $actor->hasRole(Role::AgenTier1)
-            && $ticket->status === TicketStatus::Baru
-            && $ticket->assigned_to_id === null;
+            && $ticket->assigned_tier === Role::AgenTier1->value
+            && (int) $ticket->assigned_to_id === (int) $actor->getKey()
+            && in_array($ticket->status, [TicketStatus::Diproses, TicketStatus::Dikerjakan], true);
+    }
+
+    public function assignTierTwo(User $actor, Ticket $ticket): bool
+    {
+        return $actor->isActive()
+            && $actor->hasRole(Role::AgenTier1)
+            && $ticket->status === TicketStatus::Dikerjakan
+            && $ticket->assigned_tier === Role::AgenTier1->value
+            && (int) $ticket->assigned_to_id === (int) $actor->getKey();
+    }
+
+    public function returnToTierOne(User $actor, Ticket $ticket): bool
+    {
+        return $actor->isActive()
+            && $actor->hasRole(Role::AgenTier2)
+            && $ticket->status === TicketStatus::Dikerjakan
+            && $ticket->assigned_tier === Role::AgenTier2->value
+            && (int) $ticket->assigned_to_id === (int) $actor->getKey()
+            && $ticket->last_triaged_by_id !== null;
     }
 
     public function handle(User $actor, Ticket $ticket): bool

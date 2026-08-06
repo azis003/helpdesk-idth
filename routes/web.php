@@ -37,6 +37,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::middleware('password.changed')->group(function () {
         Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
+        Route::get('/tickets/queue', [TicketController::class, 'queue'])->name('tickets.queue');
         Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
         Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
         Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
@@ -44,6 +45,9 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/attachments/{attachment}/download', [AttachmentController::class, 'download'])->name('attachments.download');
         Route::post('/tickets/{ticket}/claim', [TicketController::class, 'claim'])->name('tickets.claim');
         Route::post('/tickets/{ticket}/handle', [TicketController::class, 'handle'])->name('tickets.handle');
+        Route::post('/tickets/{ticket}/triage', [TicketController::class, 'triage'])->name('tickets.triage');
+        Route::post('/tickets/{ticket}/assign-tier-2', [TicketController::class, 'assignTierTwo'])->name('tickets.assign-tier-2');
+        Route::post('/tickets/{ticket}/return-to-tier-1', [TicketController::class, 'returnToTierOne'])->name('tickets.return-to-tier-1');
 
         Route::prefix('admin')->name('admin.')->middleware('role:super_admin')->group(function () {
             Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');

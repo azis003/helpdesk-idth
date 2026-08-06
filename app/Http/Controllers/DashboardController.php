@@ -21,7 +21,8 @@ class DashboardController extends Controller
             if ($user->hasRole(Role::AgenTier1)) {
                 $query->where(function (Builder $query) use ($user): void {
                     $query->where('requester_id', $user->getKey())
-                        ->orWhere('created_by_id', $user->getKey());
+                        ->orWhere('created_by_id', $user->getKey())
+                        ->orWhere('assigned_to_id', $user->getKey());
                 });
 
                 return;
@@ -42,7 +43,9 @@ class DashboardController extends Controller
             'requiresPasswordChange' => $requiresPasswordChange,
             'assignedTicketCount' => $hasOperationalRole && ! $requiresPasswordChange ? $user->assignedTickets()->count() : null,
             'isSuperAdmin' => $user->hasRole(Role::SuperAdmin),
-            'newTicketCount' => $hasOperationalRole && ! $requiresPasswordChange ? Ticket::query()->where('status', 'baru')->count() : null,
+            'newTicketCount' => $user->hasRole(Role::AgenTier1) && ! $requiresPasswordChange
+                ? Ticket::query()->newQueue()->count()
+                : null,
             'canAccessTickets' => $canAccessTickets && ! $requiresPasswordChange,
             'canCreateTickets' => $canCreateTickets && ! $requiresPasswordChange,
             'myTicketCount' => $canAccessTickets && ! $requiresPasswordChange ? (clone $myTicketsQuery)->count() : null,

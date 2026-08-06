@@ -36,6 +36,12 @@
                         <span class="ui-nav-label">Tiket saya</span>
                     </a>
                 @endif
+                @if ($isTier1)
+                    <a href="{{ route('tickets.queue') }}" class="ui-nav-link {{ request()->routeIs('tickets.queue') ? 'is-active' : '' }}" aria-label="Antrean Tier 1" title="Antrean Tier 1">
+                        <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 6.5h14M5 12h14M5 17.5h9" /><path stroke-linecap="round" d="M18 17.5h.01" /></svg></span>
+                        <span class="ui-nav-label">Antrean Tier 1</span>
+                    </a>
+                @endif
                 @if ($canCreateTickets)
                     <a href="{{ route('tickets.create') }}" class="ui-nav-link {{ request()->routeIs('tickets.create', 'tickets.store') ? 'is-active' : '' }}" aria-label="Buat tiket" title="Buat tiket">
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M12 5v14M5 12h14" /></svg></span>
@@ -126,6 +132,9 @@
                             <a href="{{ route('dashboard') }}" class="ui-mobile-nav-link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dasbor</a>
                             @if ($canAccessTickets)
                                 <a href="{{ route('tickets.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.index', 'tickets.show', 'tickets.cancel') ? 'is-active' : '' }}">Tiket saya</a>
+                            @endif
+                            @if ($isTier1)
+                                <a href="{{ route('tickets.queue') }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.queue') ? 'is-active' : '' }}">Antrean Tier 1</a>
                             @endif
                             @if ($canCreateTickets)
                                 <a href="{{ route('tickets.create') }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.create', 'tickets.store') ? 'is-active' : '' }}">Buat tiket</a>
