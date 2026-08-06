@@ -1,5 +1,44 @@
 import './bootstrap';
 
+const sidebar = document.querySelector('[data-sidebar]');
+const sidebarToggle = document.querySelector('[data-sidebar-toggle]');
+
+if (sidebar && sidebarToggle) {
+    const storageKey = 'sihati.sidebar.collapsed';
+    const toggleLabel = sidebarToggle.querySelector('[data-sidebar-toggle-label]');
+    let isCollapsed = false;
+
+    try {
+        isCollapsed = window.localStorage.getItem(storageKey) === 'true';
+    } catch {
+        isCollapsed = false;
+    }
+
+    const renderSidebar = () => {
+        sidebar.classList.toggle('is-collapsed', isCollapsed);
+        sidebarToggle.setAttribute('aria-expanded', String(!isCollapsed));
+        sidebarToggle.setAttribute('aria-label', isCollapsed ? 'Tampilkan menu' : 'Sembunyikan menu');
+        sidebarToggle.setAttribute('title', isCollapsed ? 'Tampilkan menu' : 'Sembunyikan menu');
+
+        if (toggleLabel) {
+            toggleLabel.textContent = isCollapsed ? 'Tampilkan menu' : 'Sembunyikan menu';
+        }
+    };
+
+    sidebarToggle.addEventListener('click', () => {
+        isCollapsed = !isCollapsed;
+        renderSidebar();
+
+        try {
+            window.localStorage.setItem(storageKey, String(isCollapsed));
+        } catch {
+            // Prefer the visual interaction even when browser storage is unavailable.
+        }
+    });
+
+    renderSidebar();
+}
+
 const mandatoryPasswordModal = document.querySelector('[data-mandatory-password-modal]');
 
 if (mandatoryPasswordModal) {

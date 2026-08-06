@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -67,6 +68,33 @@ class User extends Authenticatable
     public function assignedTickets(): HasMany
     {
         return $this->hasMany(Ticket::class, 'assigned_to_id');
+    }
+
+    public function teamMemberships(): HasMany
+    {
+        return $this->hasMany(TeamMembership::class);
+    }
+
+    public function currentTeamMembership(): HasOne
+    {
+        return $this->hasOne(TeamMembership::class)->where('is_active', true);
+    }
+
+    public function teamChairAssignments(): HasMany
+    {
+        return $this->hasMany(TeamChairAssignment::class);
+    }
+
+    public function skills(): BelongsToMany
+    {
+        return $this->belongsToMany(Skill::class, 'user_skills')
+            ->withPivot(['assigned_by', 'assigned_at'])
+            ->withTimestamps();
+    }
+
+    public function roleAssignmentHistories(): HasMany
+    {
+        return $this->hasMany(RoleAssignmentHistory::class);
     }
 
     public function hasRole(RoleEnum|string $role): bool

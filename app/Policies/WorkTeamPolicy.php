@@ -1,0 +1,45 @@
+<?php
+
+namespace App\Policies;
+
+use App\Enums\Role;
+use App\Models\User;
+use App\Models\WorkTeam;
+
+class WorkTeamPolicy
+{
+    public function viewAny(User $actor): bool
+    {
+        return $this->canManage($actor);
+    }
+
+    public function create(User $actor): bool
+    {
+        return $this->canManage($actor);
+    }
+
+    public function update(User $actor, WorkTeam $team): bool
+    {
+        return $this->canManage($actor);
+    }
+
+    public function delete(User $actor, WorkTeam $team): bool
+    {
+        return $this->canManage($actor);
+    }
+
+    public function assignMember(User $actor, WorkTeam $team): bool
+    {
+        return $this->canManage($actor);
+    }
+
+    public function assignChair(User $actor, WorkTeam $team): bool
+    {
+        return $this->canManage($actor);
+    }
+
+    private function canManage(User $actor): bool
+    {
+        return $actor->isActive() && $actor->hasRole(Role::SuperAdmin);
+    }
+}

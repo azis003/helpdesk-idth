@@ -2,10 +2,16 @@
 
 namespace App\Providers;
 
+use App\Models\ProblemCategory;
+use App\Models\Skill;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Models\WorkTeam;
+use App\Policies\ProblemCategoryPolicy;
+use App\Policies\SkillPolicy;
 use App\Policies\TicketPolicy;
 use App\Policies\UserPolicy;
+use App\Policies\WorkTeamPolicy;
 use App\Services\AuditLogger;
 use App\Services\DomainAuthorization;
 use Illuminate\Support\Facades\Gate;
@@ -29,5 +35,8 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::policy(Ticket::class, TicketPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(WorkTeam::class, WorkTeamPolicy::class);
+        Gate::policy(Skill::class, SkillPolicy::class);
+        Gate::policy(ProblemCategory::class, ProblemCategoryPolicy::class);
     }
 }
