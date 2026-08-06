@@ -14,9 +14,9 @@ class AttachmentAccessPolicy
             return false;
         }
 
-        $ticket = $attachment->relationLoaded('ticket')
-            ? $attachment->ticket
-            : $attachment->load('ticket')->ticket;
+        $attachment->loadMissing(['ticket', 'ticketComment']);
+        $ticket = $attachment->ticket;
+        $comment = $attachment->ticketComment;
 
         if ($ticket === null) {
             return false;
@@ -25,7 +25,7 @@ class AttachmentAccessPolicy
         $isOwner = (int) $ticket->requester_id === (int) $actor->getKey()
             || (int) $ticket->created_by_id === (int) $actor->getKey();
 
-        if ($attachment->visibility === 'internal') {
+        if ($comment?->visibility?->value === 'internal' || $attachment->visibility === 'internal') {
             return $actor->hasAnyRole([Role::SuperAdmin, Role::AgenTier1, Role::AgenTier2])
                 && (! $actor->hasRole(Role::AgenTier2) || (int) $ticket->assigned_to_id === (int) $actor->getKey());
         }

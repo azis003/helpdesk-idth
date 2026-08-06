@@ -538,6 +538,37 @@
         transition: border-color 160ms ease, box-shadow 160ms ease;
     }
 
+    .ui-file-input {
+        display: block;
+        width: 100%;
+        border: 1px solid #cbd9df;
+        border-radius: 0.7rem;
+        background: #ffffff;
+        color: #526f79;
+        font-size: 0.78rem;
+        line-height: 1.35;
+        padding: 0.42rem;
+        transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .ui-file-input:focus-visible {
+        border-color: #2bb8aa;
+        box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.16);
+        outline: none;
+    }
+
+    .ui-file-input::file-selector-button {
+        margin-right: 0.65rem;
+        border: 0;
+        border-radius: 0.45rem;
+        background: #e8f7fb;
+        color: #1d5d72;
+        cursor: pointer;
+        font-size: 0.72rem;
+        font-weight: 750;
+        padding: 0.45rem 0.7rem;
+    }
+
     .ui-input::placeholder,
     .ui-textarea::placeholder {
         color: #9aaeb6;

@@ -15,6 +15,8 @@
         $canAccessTickets = $currentUser->hasAnyRole([\App\Enums\Role::Pemohon, \App\Enums\Role::AgenTier1, \App\Enums\Role::AgenTier2]);
         $canCreateTickets = $currentUser->hasAnyRole([\App\Enums\Role::Pemohon, \App\Enums\Role::AgenTier1]);
         $canManageAnnouncements = $isSuperAdmin || $isTier1;
+        $unreadNotificationCount = $currentUser->unreadNotifications()->count();
+        $latestNotifications = $currentUser->notifications()->latest()->limit(5)->get();
     @endphp
 
     <div class="ui-shell lg:flex">
@@ -110,6 +112,40 @@
                 </div>
 
                 <div class="flex items-center gap-3">
+                    <details class="relative" data-notification-menu>
+                        <summary class="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-xl border border-[#dfe8ec] bg-white text-[#52747b] shadow-sm transition hover:border-[#8bd7ee] hover:text-[#147a79] focus:outline-none focus:ring-2 focus:ring-[#75d5f3] focus:ring-offset-2" aria-label="Notifikasi">
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.8 9.5a5.2 5.2 0 0 1 10.4 0c0 5 2 5.8 2 7H4.8c0-1.2 2-2 2-7ZM9.7 19a2.5 2.5 0 0 0 4.6 0" /></svg>
+                            @if ($unreadNotificationCount > 0)
+                                <span class="absolute right-1 top-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-[#e4a72c] px-1 text-[0.58rem] font-extrabold text-white ring-2 ring-[#f6fafb]" aria-label="{{ $unreadNotificationCount }} notifikasi belum dibaca">{{ $unreadNotificationCount > 9 ? '9+' : $unreadNotificationCount }}</span>
+                            @endif
+                        </summary>
+                        <div class="absolute right-0 top-12 z-40 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[#dce7eb] bg-white shadow-[0_18px_45px_rgba(38,58,67,0.16)]">
+                            <div class="flex items-center justify-between gap-3 border-b border-[#edf2f4] px-4 py-3">
+                                <div>
+                                    <p class="text-sm font-extrabold text-[#263a43]">Notifikasi</p>
+                                    <p class="mt-0.5 text-[0.68rem] text-[#78909a]">{{ $unreadNotificationCount }} belum dibaca</p>
+                                </div>
+                                <a href="{{ route('notifications.index') }}" class="text-xs font-extrabold text-[#147a79] hover:text-[#0f5f5e]">Lihat semua</a>
+                            </div>
+                            @forelse ($latestNotifications as $notification)
+                                <form method="POST" action="{{ route('notifications.read', $notification->id) }}" class="border-b border-[#f1f4f5] last:border-b-0">
+                                    @csrf
+                                    <button type="submit" class="block w-full px-4 py-3 text-left transition hover:bg-[#f6fbfc] {{ $notification->read_at ? '' : 'bg-[#f1fbfe]' }}">
+                                        <span class="flex items-start gap-2.5">
+                                            <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full {{ $notification->read_at ? 'bg-[#dfe8ec]' : 'bg-[#2bb8aa]' }}" aria-hidden="true"></span>
+                                            <span class="min-w-0">
+                                                <span class="block truncate text-xs font-extrabold text-[#35505b]">{{ $notification->data['title'] ?? 'Notifikasi tiket' }}</span>
+                                                <span class="mt-1 block line-clamp-2 text-xs leading-5 text-[#78909a]">{{ $notification->data['message'] ?? 'Ada pembaruan pada tiket.' }}</span>
+                                                <span class="mt-1 block text-[0.64rem] text-[#9aabb0]">{{ $notification->created_at?->timezone(config('app.timezone'))->format('d M Y, H:i') }}</span>
+                                            </span>
+                                        </span>
+                                    </button>
+                                </form>
+                            @empty
+                                <p class="px-4 py-7 text-center text-xs leading-5 text-[#78909a]">Belum ada notifikasi.</p>
+                            @endforelse
+                        </div>
+                    </details>
                     <div class="hidden text-right sm:block">
                         <p class="text-xs font-bold text-[#344850]">{{ $currentUser->name }}</p>
                         <p class="mt-0.5 text-[0.68rem] text-[#89989e]">{{ $currentUser->username }}</p>
@@ -130,6 +166,11 @@
                         </summary>
                         <nav class="absolute right-0 top-11 z-40 w-56 rounded-xl border border-[#dce7eb] bg-white p-2 shadow-xl" aria-label="Navigasi mobile">
                             <a href="{{ route('dashboard') }}" class="ui-mobile-nav-link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dasbor</a>
+                            <a href="{{ route('notifications.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('notifications.*') ? 'is-active' : '' }}">Notifikasi
+                                @if ($unreadNotificationCount > 0)
+                                    <span class="ml-1 rounded-full bg-[#e4a72c] px-1.5 py-0.5 text-[0.62rem] text-white">{{ $unreadNotificationCount }}</span>
+                                @endif
+                            </a>
                             @if ($canAccessTickets)
                                 <a href="{{ route('tickets.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.index', 'tickets.show', 'tickets.cancel') ? 'is-active' : '' }}">Tiket saya</a>
                             @endif

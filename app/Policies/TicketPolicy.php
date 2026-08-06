@@ -104,4 +104,69 @@ class TicketPolicy
             && (int) $ticket->requester_id === (int) $actor->getKey()
             && $ticket->status === TicketStatus::Baru;
     }
+
+    public function commentPublic(User $actor, Ticket $ticket): bool
+    {
+        if (! $actor->isActive()) {
+            return false;
+        }
+
+        if ($actor->hasRole(Role::Pemohon)
+            && ! $actor->hasAnyRole([Role::AgenTier1, Role::AgenTier2])) {
+            return (int) $ticket->requester_id === (int) $actor->getKey()
+                && $ticket->status === TicketStatus::MenungguPemohon;
+        }
+
+        return $this->isAssignedAgent($actor, $ticket)
+            && in_array($ticket->status, [
+                TicketStatus::Diproses,
+                TicketStatus::Dikerjakan,
+                TicketStatus::MenungguPemohon,
+                TicketStatus::MenungguPihakKetiga,
+            ], true);
+    }
+
+    public function commentInternal(User $actor, Ticket $ticket): bool
+    {
+        return $this->isAssignedAgent($actor, $ticket)
+            && in_array($ticket->status, [
+                TicketStatus::Diproses,
+                TicketStatus::Dikerjakan,
+                TicketStatus::MenungguPemohon,
+                TicketStatus::MenungguPihakKetiga,
+            ], true);
+    }
+
+    public function requestInformation(User $actor, Ticket $ticket): bool
+    {
+        return $this->isAssignedAgent($actor, $ticket)
+            && in_array($ticket->status, [TicketStatus::Diproses, TicketStatus::Dikerjakan], true);
+    }
+
+    public function replyRequester(User $actor, Ticket $ticket): bool
+    {
+        return $actor->isActive()
+            && $actor->hasRole(Role::Pemohon)
+            && (int) $ticket->requester_id === (int) $actor->getKey()
+            && $ticket->status === TicketStatus::MenungguPemohon;
+    }
+
+    public function startThirdPartyWait(User $actor, Ticket $ticket): bool
+    {
+        return $this->isAssignedAgent($actor, $ticket)
+            && in_array($ticket->status, [TicketStatus::Diproses, TicketStatus::Dikerjakan], true);
+    }
+
+    public function resumeThirdPartyWait(User $actor, Ticket $ticket): bool
+    {
+        return $this->isAssignedAgent($actor, $ticket)
+            && $ticket->status === TicketStatus::MenungguPihakKetiga;
+    }
+
+    private function isAssignedAgent(User $actor, Ticket $ticket): bool
+    {
+        return $actor->isActive()
+            && $actor->hasAnyRole([Role::AgenTier1, Role::AgenTier2])
+            && (int) $ticket->assigned_to_id === (int) $actor->getKey();
+    }
 }

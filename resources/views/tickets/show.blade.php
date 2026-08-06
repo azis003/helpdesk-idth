@@ -18,6 +18,16 @@
     $suggestionsByCategory = $suggestionsByCategory ?? [];
     $priorityOptions = $priorityOptions ?? \App\Enums\Priority::labels();
     $timeline = $timeline ?? [];
+    $canCommentPublic = $canCommentPublic ?? false;
+    $canCommentInternal = $canCommentInternal ?? false;
+    $canRequestInformation = $canRequestInformation ?? false;
+    $canRequesterReply = $canRequesterReply ?? false;
+    $canStartThirdParty = $canStartThirdParty ?? false;
+    $canResumeThirdParty = $canResumeThirdParty ?? false;
+    $commentPublicPolicies = $commentPublicPolicies ?? collect();
+    $commentInternalPolicies = $commentInternalPolicies ?? collect();
+    $activeWait = $activeWait ?? null;
+    $lastTimedOutWait = $lastTimedOutWait ?? null;
     $currentCategory = old('problem_category_id', $ticket->problem_category_id);
     $currentPriority = old('priority', $ticket->priority?->value);
     $currentOutcome = old('outcome', 'self');
@@ -25,6 +35,8 @@
         \App\Enums\TicketStatus::Baru => ['Tiket menunggu diproses', 'Tiket baru masuk ke antrean Tier 1 dan belum memiliki penanggung jawab.'],
         \App\Enums\TicketStatus::Diproses => ['Tiket sedang ditriase', 'Agen Tier 1 sedang memeriksa kategori, prioritas, dan jalur penanganan tiket.'],
         \App\Enums\TicketStatus::Dikerjakan => ['Tiket sedang dikerjakan', 'Penanggung jawab aktif melanjutkan pekerjaan sesuai jalur penanganan yang dipilih.'],
+        \App\Enums\TicketStatus::MenungguPemohon => ['Menunggu balasan Pemohon', $activeWait?->due_at ? 'Pemohon perlu melengkapi informasi sebelum '. $activeWait->due_at->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i').'.' : 'Agen sedang menunggu informasi tambahan dari Pemohon.'],
+        \App\Enums\TicketStatus::MenungguPihakKetiga => ['Menunggu pihak ketiga', $activeWait?->third_party_name ? 'Menunggu tindak lanjut dari '.$activeWait->third_party_name.'.' : 'Agen sedang menunggu tindak lanjut dari pihak ketiga.'],
         \App\Enums\TicketStatus::Ditolak => ['Tiket ditolak', $ticket->rejection_reason ?: 'Permintaan ini tidak dilanjutkan oleh Agen Tier 1.'],
         \App\Enums\TicketStatus::Dibatalkan => ['Tiket telah dibatalkan', 'Tiket ini tidak akan masuk ke proses penanganan lebih lanjut.'],
         default => ['Status tiket diperbarui', 'Tim TI akan melanjutkan tiket sesuai status dan kewenangan penanganannya.'],
@@ -98,6 +110,179 @@
                         </div>
                     </dl>
                 </div>
+            </section>
+
+            <section class="ui-panel overflow-hidden" aria-labelledby="conversation-heading">
+                <div class="ui-panel-header flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#75d5f3] !shadow-[0_0_0_4px_#d9f6ff]" aria-hidden="true"></span>Ruang komunikasi</p>
+                        <h2 id="conversation-heading" class="mt-2 ui-section-title">Percakapan tiket</h2>
+                        <p class="ui-section-description">Balasan ke Pemohon dan Catatan Internal dipisahkan dengan jelas. Catatan internal tidak pernah terlihat oleh Pemohon.</p>
+                    </div>
+                    @if ($ticket->comments->isNotEmpty())
+                        <span class="rounded-full bg-[#f1fbfe] px-3 py-1 text-xs font-extrabold text-[#147a79]">{{ $ticket->comments->count() }} pesan</span>
+                    @endif
+                </div>
+
+                @if ($lastTimedOutWait)
+                    <div class="mx-5 mt-5 rounded-xl border border-[#f0d28c] bg-[#fff9e9] p-4 sm:mx-6" role="status">
+                        <div class="flex gap-3">
+                            <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#ffe8a3] text-[#9a6700]" aria-hidden="true">
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5" /><path stroke-linecap="round" d="M12 7.5v5l3 1.8" /></svg>
+                            </span>
+                            <div>
+                                <p class="text-sm font-extrabold text-[#7c5800]">Batas tunggu Pemohon terlewati</p>
+                                <p class="mt-1 text-xs leading-5 text-[#946f16]">Tiket otomatis dikembalikan ke status Dikerjakan pada {{ $lastTimedOutWait->ended_at?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}. Penanda timeout disimpan di histori tiket.</p>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                <div class="space-y-4 p-5 sm:p-6">
+                    @forelse ($ticket->comments as $comment)
+                        @php
+                            $isInternalComment = $comment->visibility?->value === 'internal';
+                        @endphp
+                        <article class="ui-comment-card rounded-2xl border p-4 {{ $isInternalComment ? 'border-[#f0d28c] bg-[#fffaf0]' : 'border-[#cdeef7] bg-[#f5fcfe]' }}" aria-label="{{ $comment->visibility?->label() }} dari {{ $comment->author?->name ?? 'Sistem' }}">
+                            <header class="flex flex-wrap items-start justify-between gap-3">
+                                <div class="flex min-w-0 items-center gap-3">
+                                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-extrabold {{ $isInternalComment ? 'bg-[#ffe8a3] text-[#8b6100]' : 'bg-[#d7f5fc] text-[#147a79]' }}">{{ strtoupper(substr($comment->author?->name ?? 'S', 0, 1)) }}</span>
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-extrabold text-[#35505b]">{{ $comment->author?->name ?? 'Sistem' }}</p>
+                                        <p class="mt-0.5 text-xs text-[#78909a]">{{ $comment->visibility?->label() }}</p>
+                                    </div>
+                                </div>
+                                <time class="text-xs text-[#78909a]" datetime="{{ $comment->created_at?->toIso8601String() }}">{{ $comment->created_at?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</time>
+                            </header>
+                            <p class="mt-4 whitespace-pre-line text-sm leading-7 text-[#526f79]">{{ $comment->body }}</p>
+                            @if ($comment->attachments->isNotEmpty())
+                                <div class="mt-4 border-t {{ $isInternalComment ? 'border-[#f4dfae]' : 'border-[#dceff4]' }} pt-3">
+                                    <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Lampiran pesan</p>
+                                    <ul class="mt-2 flex flex-wrap gap-2">
+                                        @foreach ($comment->attachments as $attachment)
+                                            <li><a href="{{ route('attachments.download', $attachment) }}" class="inline-flex max-w-full items-center gap-2 rounded-lg border border-[#dfe8ec] bg-white px-3 py-2 text-xs font-bold text-[#35505b] hover:border-[#75d5f3] hover:text-[#147a79]"><svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v11m0 0 4-4m-4 4-4-4M5 19.5h14" /></svg><span class="truncate">{{ $attachment->original_name }}</span></a></li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+                        </article>
+                    @empty
+                        <div class="rounded-2xl border border-dashed border-[#cfe0e5] bg-[#fbfdfd] p-6 text-center">
+                            <p class="text-sm font-extrabold text-[#526f79]">Belum ada percakapan</p>
+                            <p class="mt-1 text-xs leading-5 text-[#78909a]">Pesan pertama akan menjadi bagian dari histori komunikasi tiket.</p>
+                        </div>
+                    @endforelse
+                </div>
+
+                @if ($canRequesterReply)
+                    <div class="border-t border-[#edf2f4] bg-[#f8fbfc] p-5 sm:p-6">
+                        <div class="mb-4">
+                            <p class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#147a79]">Balasan Pemohon</p>
+                            <p class="mt-1 text-sm leading-6 text-[#526f79]">Lengkapi pertanyaan agen agar tiket kembali diproses oleh penanggung jawab sebelumnya.</p>
+                        </div>
+                        <form method="POST" action="{{ route('tickets.requester-reply', $ticket) }}" enctype="multipart/form-data" class="space-y-4" data-ticket-communication-form>
+                            @csrf
+                            <div>
+                                <label for="requester-reply-body" class="ui-field-label">Informasi tambahan <span class="text-rose-600" aria-hidden="true">*</span></label>
+                                <textarea id="requester-reply-body" name="body" rows="5" required class="ui-textarea mt-2" placeholder="Tuliskan jawaban atau informasi yang diminta agen.">{{ old('body') }}</textarea>
+                            </div>
+                            @if ($commentPublicPolicies->isNotEmpty())
+                                <fieldset class="space-y-3">
+                                    <legend class="ui-field-label">Lampiran pendukung</legend>
+                                    @foreach ($commentPublicPolicies as $policy)
+                                        @php
+                                            $accept = collect($policy->allowed_mimes ?? [])->merge(collect($policy->allowed_extensions ?? [])->map(fn ($extension) => '.'.ltrim($extension, '.')))->implode(',');
+                                        @endphp
+                                        <div>
+                                            <label for="requester-reply-attachment-{{ $policy->id }}" class="ui-field-label">{{ $policy->label }}</label>
+                                            <input id="requester-reply-attachment-{{ $policy->id }}" type="file" name="attachments[{{ $policy->id }}][]" multiple class="ui-file-input mt-2" @if ($accept !== '') accept="{{ $accept }}" @endif>
+                                            <p class="ui-field-help">Maksimal {{ $policy->max_file_count }} berkas, {{ $policy->max_file_size_kb }} KB per berkas.</p>
+                                        </div>
+                                    @endforeach
+                                </fieldset>
+                            @endif
+                            <button type="submit" class="ui-btn ui-btn-primary" data-ticket-communication-submit>Kirim informasi dan lanjutkan tiket</button>
+                        </form>
+                    </div>
+                @elseif ($canCommentPublic || $canRequestInformation || $canCommentInternal)
+                    <div class="grid gap-4 border-t border-[#edf2f4] bg-[#f8fbfc] p-5 sm:p-6 lg:grid-cols-2">
+                        @if ($canCommentPublic)
+                            <form method="POST" action="{{ route('tickets.comments.public', $ticket) }}" enctype="multipart/form-data" class="rounded-2xl border border-[#cdeef7] bg-white p-4" data-ticket-communication-form>
+                                @csrf
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p class="text-sm font-extrabold text-[#35505b]">Balasan ke Pemohon</p>
+                                        <p class="mt-1 text-xs leading-5 text-[#78909a]">Pesan ini terlihat oleh Pemohon dan tercatat permanen.</p>
+                                    </div>
+                                    <span class="rounded-full bg-[#e8f9fd] px-2 py-1 text-[0.62rem] font-extrabold text-[#147a79]">Publik</span>
+                                </div>
+                                <label for="public-comment-body" class="sr-only">Isi balasan ke Pemohon</label>
+                                <textarea id="public-comment-body" name="body" rows="5" required class="ui-textarea mt-4" placeholder="Tulis balasan yang dapat dibaca Pemohon.">{{ old('body') }}</textarea>
+                                @if ($commentPublicPolicies->isNotEmpty())
+                                    <fieldset class="mt-4 space-y-3">
+                                        <legend class="ui-field-label">Lampiran</legend>
+                                        @foreach ($commentPublicPolicies as $policy)
+                                            @php
+                                                $accept = collect($policy->allowed_mimes ?? [])->merge(collect($policy->allowed_extensions ?? [])->map(fn ($extension) => '.'.ltrim($extension, '.')))->implode(',');
+                                            @endphp
+                                            <div>
+                                                <label for="public-comment-attachment-{{ $policy->id }}" class="ui-field-label">{{ $policy->label }}</label>
+                                                <input id="public-comment-attachment-{{ $policy->id }}" type="file" name="attachments[{{ $policy->id }}][]" multiple class="ui-file-input mt-2" @if ($accept !== '') accept="{{ $accept }}" @endif>
+                                            </div>
+                                        @endforeach
+                                    </fieldset>
+                                @endif
+                                <button type="submit" class="ui-btn ui-btn-primary mt-4 w-full" data-ticket-communication-submit>Kirim balasan</button>
+                            </form>
+                        @endif
+
+                        @if ($canCommentInternal)
+                            <form method="POST" action="{{ route('tickets.comments.internal', $ticket) }}" enctype="multipart/form-data" class="rounded-2xl border border-[#f0d28c] bg-[#fffdf7] p-4" data-ticket-communication-form>
+                                @csrf
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p class="text-sm font-extrabold text-[#35505b]">Catatan Internal</p>
+                                        <p class="mt-1 text-xs leading-5 text-[#78909a]">Hanya dapat dibaca oleh tim TI yang berwenang.</p>
+                                    </div>
+                                    <span class="rounded-full bg-[#fff4d7] px-2 py-1 text-[0.62rem] font-extrabold text-[#9a6700]">Internal</span>
+                                </div>
+                                <label for="internal-comment-body" class="sr-only">Isi catatan internal</label>
+                                <textarea id="internal-comment-body" name="body" rows="5" required class="ui-textarea mt-4 !border-[#ecd89f]" placeholder="Tulis konteks untuk tim TI.">{{ old('body') }}</textarea>
+                                @if ($commentInternalPolicies->isNotEmpty())
+                                    <fieldset class="mt-4 space-y-3">
+                                        <legend class="ui-field-label">Lampiran internal</legend>
+                                        @foreach ($commentInternalPolicies as $policy)
+                                            @php
+                                                $accept = collect($policy->allowed_mimes ?? [])->merge(collect($policy->allowed_extensions ?? [])->map(fn ($extension) => '.'.ltrim($extension, '.')))->implode(',');
+                                            @endphp
+                                            <div>
+                                                <label for="internal-comment-attachment-{{ $policy->id }}" class="ui-field-label">{{ $policy->label }}</label>
+                                                <input id="internal-comment-attachment-{{ $policy->id }}" type="file" name="attachments[{{ $policy->id }}][]" multiple class="ui-file-input mt-2" @if ($accept !== '') accept="{{ $accept }}" @endif>
+                                            </div>
+                                        @endforeach
+                                    </fieldset>
+                                @endif
+                                <button type="submit" class="ui-btn ui-btn-warning mt-4 w-full" data-ticket-communication-submit>Simpan catatan internal</button>
+                            </form>
+                        @endif
+
+                        @if ($canRequestInformation)
+                            <form method="POST" action="{{ route('tickets.request-information', $ticket) }}" enctype="multipart/form-data" class="rounded-2xl border border-[#b9e4ed] bg-[#f5fcfe] p-4 lg:col-span-2" data-ticket-communication-form>
+                                @csrf
+                                <div class="flex flex-wrap items-start justify-between gap-3">
+                                    <div>
+                                        <p class="text-sm font-extrabold text-[#35505b]">Minta informasi tambahan</p>
+                                        <p class="mt-1 text-xs leading-5 text-[#78909a]">Pertanyaan dikirim sebagai balasan publik, status menjadi Menunggu Pemohon, dan SLA aktif dijeda.</p>
+                                    </div>
+                                    <span class="rounded-full bg-[#e8f9fd] px-2 py-1 text-[0.62rem] font-extrabold text-[#147a79]">Tunggu 3 hari kerja</span>
+                                </div>
+                                <label for="request-information-body" class="ui-field-label mt-4">Pertanyaan untuk Pemohon <span class="text-rose-600" aria-hidden="true">*</span></label>
+                                <textarea id="request-information-body" name="body" rows="4" required class="ui-textarea mt-2" placeholder="Jelaskan informasi atau bukti yang perlu dilengkapi Pemohon.">{{ old('body') }}</textarea>
+                                <button type="submit" class="ui-btn ui-btn-secondary mt-4" data-ticket-communication-submit>Minta informasi &amp; tunggu Pemohon</button>
+                            </form>
+                        @endif
+                    </div>
+                @endif
             </section>
 
             <section class="ui-panel" aria-labelledby="requester-heading">
@@ -187,6 +372,49 @@
                 <p class="mt-2 text-sm leading-6 text-[#52747b]">{{ $nextStepDescription }}</p>
                 <div class="mt-4"><x-status-badge :status="$ticket->status" /></div>
             </section>
+
+            @if ($canStartThirdParty || $canResumeThirdParty)
+                <section class="ui-panel border-l-4 border-l-[#2bb8aa]" aria-labelledby="third-party-heading">
+                    <div class="ui-panel-header">
+                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#2bb8aa] !shadow-[0_0_0_4px_#d7f7f1]" aria-hidden="true"></span>Ketergantungan eksternal</p>
+                        <h2 id="third-party-heading" class="mt-2 ui-section-title">{{ $canResumeThirdParty ? 'Menunggu pihak ketiga' : 'Tunggu pihak ketiga' }}</h2>
+                        <p class="ui-section-description">Simpan nama pihak yang ditunggu dan tanggal follow-up tanpa menghapus jejak status sebelumnya.</p>
+                    </div>
+                    @if ($canResumeThirdParty && $activeWait)
+                        <div class="space-y-3 px-5 pb-1 sm:px-6">
+                            <dl class="grid gap-3 rounded-xl bg-[#f4fbfa] p-4 text-sm">
+                                <div><dt class="text-xs font-extrabold uppercase tracking-[0.08em] text-[#78909a]">Pihak ketiga</dt><dd class="mt-1 font-extrabold text-[#35505b]">{{ $activeWait->third_party_name }}</dd></div>
+                                <div><dt class="text-xs font-extrabold uppercase tracking-[0.08em] text-[#78909a]">Mulai menunggu</dt><dd class="mt-1 font-bold text-[#526f79]">{{ $activeWait->started_at?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}@if ($activeWait->follow_up_date) · Follow-up {{ $activeWait->follow_up_date->translatedFormat('d M Y') }}@endif</dd></div>
+                            </dl>
+                            <form method="POST" action="{{ route('tickets.resume-third-party', $ticket) }}" class="space-y-3" data-ticket-communication-form>
+                                @csrf
+                                <div>
+                                    <label for="third-party-resume-reason" class="ui-field-label">Catatan penyelesaian</label>
+                                    <textarea id="third-party-resume-reason" name="reason" rows="3" class="ui-textarea mt-2" placeholder="Opsional: tulis hasil follow-up pihak ketiga.">{{ old('reason') }}</textarea>
+                                </div>
+                                <button type="submit" class="ui-btn ui-btn-primary w-full" data-ticket-communication-submit>Lanjutkan pengerjaan</button>
+                            </form>
+                        </div>
+                    @elseif ($canStartThirdParty)
+                        <form method="POST" action="{{ route('tickets.wait-third-party', $ticket) }}" class="space-y-4 p-5 sm:p-6" data-ticket-communication-form>
+                            @csrf
+                            <div>
+                                <label for="third-party-name" class="ui-field-label">Nama pihak ketiga <span class="text-rose-600" aria-hidden="true">*</span></label>
+                                <input id="third-party-name" name="third_party_name" value="{{ old('third_party_name') }}" required maxlength="150" class="ui-input mt-2" placeholder="Contoh: Vendor jaringan">
+                            </div>
+                            <div>
+                                <label for="third-party-follow-up" class="ui-field-label">Tanggal follow-up</label>
+                                <input id="third-party-follow-up" type="date" name="follow_up_date" value="{{ old('follow_up_date') }}" class="ui-input mt-2">
+                            </div>
+                            <div>
+                                <label for="third-party-note" class="ui-field-label">Catatan</label>
+                                <textarea id="third-party-note" name="note" rows="3" maxlength="1000" class="ui-textarea mt-2" placeholder="Opsional: detail permintaan atau nomor referensi.">{{ old('note') }}</textarea>
+                            </div>
+                            <button type="submit" class="ui-btn ui-btn-secondary w-full" data-ticket-communication-submit>Tandai menunggu pihak ketiga</button>
+                        </form>
+                    @endif
+                </section>
+            @endif
 
             @if ($canTriage)
                 <section class="ui-panel overflow-hidden" aria-labelledby="triage-heading">

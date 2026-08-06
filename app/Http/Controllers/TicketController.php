@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\Priority;
 use App\Enums\Role;
+use App\Enums\TicketCommentVisibility;
 use App\Http\Requests\AssignTicketRequest;
 use App\Http\Requests\ReturnTicketRequest;
 use App\Http\Requests\StoreTicketRequest;
@@ -17,6 +18,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Services\DomainAuthorization;
 use App\Services\SkillSuggestionService;
+use App\Services\TicketAttachmentService;
 use App\Services\TicketCancellationService;
 use App\Services\TicketCreationService;
 use App\Services\TicketWorkflowService;
@@ -31,6 +33,7 @@ class TicketController extends Controller
         private readonly TicketCancellationService $cancellation,
         private readonly TicketWorkflowService $workflow,
         private readonly SkillSuggestionService $skillSuggestions,
+        private readonly TicketAttachmentService $attachments,
     ) {}
 
     public function index(Request $request): mixed
@@ -150,6 +153,12 @@ class TicketController extends Controller
             'room.floor.building',
             'fieldValues',
             'attachments',
+            'comments.author',
+            'comments.attachments',
+            'waits.startedBy',
+            'waits.fromAssignee',
+            'waits.endedBy',
+            'slaSegments',
             'statusHistories.actor',
             'assignmentHistories.fromUser',
             'assignmentHistories.toUser',
@@ -158,16 +167,47 @@ class TicketController extends Controller
             'categoryHistories.actor',
         ]);
 
-        if (! $actor->hasAnyRole([Role::SuperAdmin, Role::AgenTier1, Role::AgenTier2])) {
+        $canSeeInternal = $actor->hasAnyRole([Role::SuperAdmin, Role::AgenTier1, Role::AgenTier2]);
+
+        if (! $canSeeInternal) {
             $ticket->setRelation(
                 'attachments',
                 $ticket->attachments->whereIn('visibility', ['requester', 'both'])->values(),
             );
+            $ticket->setRelation(
+                'comments',
+                $ticket->comments
+                    ->where('visibility', TicketCommentVisibility::Public)
+                    ->values(),
+            );
         }
+
+        $ticket->comments->each(function ($comment) use ($canSeeInternal): void {
+            $comment->setRelation(
+                'attachments',
+                $comment->attachments
+                    ->filter(fn ($attachment): bool => $canSeeInternal || $attachment->visibility !== 'internal')
+                    ->values(),
+            );
+        });
 
         $canTriage = $actor->can('triage', $ticket);
         $canAssignTierTwo = $actor->can('assignTierTwo', $ticket);
         $canReturnToTierOne = $actor->can('returnToTierOne', $ticket);
+        $canCommentPublic = $actor->can('commentPublic', $ticket);
+        $canCommentInternal = $canSeeInternal && $actor->can('commentInternal', $ticket);
+        $canRequestInformation = $actor->can('requestInformation', $ticket);
+        $canRequesterReply = $actor->can('replyRequester', $ticket);
+        $canStartThirdParty = $actor->can('startThirdPartyWait', $ticket);
+        $canResumeThirdParty = $actor->can('resumeThirdPartyWait', $ticket);
+        $commentPublicPolicies = $ticket->serviceType
+            ? $this->attachments->policiesFor($ticket->serviceType, true, 'public')
+            : collect();
+        $commentInternalPolicies = $canSeeInternal && $ticket->serviceType
+            ? $this->attachments->policiesFor($ticket->serviceType, true, 'internal')
+            : collect();
+        $activeWait = $ticket->waits->first(fn ($wait): bool => $wait->ended_at === null);
+        $lastTimedOutWait = $ticket->waits->filter(fn ($wait): bool => $wait->timed_out)->last();
         $triageCategories = $canTriage
             ? ProblemCategory::query()
                 ->active()
@@ -184,6 +224,16 @@ class TicketController extends Controller
             'canTriage' => $canTriage,
             'canAssignTierTwo' => $canAssignTierTwo,
             'canReturnToTierOne' => $canReturnToTierOne,
+            'canCommentPublic' => $canCommentPublic,
+            'canCommentInternal' => $canCommentInternal,
+            'canRequestInformation' => $canRequestInformation,
+            'canRequesterReply' => $canRequesterReply,
+            'canStartThirdParty' => $canStartThirdParty,
+            'canResumeThirdParty' => $canResumeThirdParty,
+            'commentPublicPolicies' => $commentPublicPolicies,
+            'commentInternalPolicies' => $commentInternalPolicies,
+            'activeWait' => $activeWait,
+            'lastTimedOutWait' => $lastTimedOutWait,
             'triageCategories' => $triageCategories,
             'tierTwoUsers' => $tierTwoUsers,
             'suggestionsByCategory' => $canTriage ? $this->skillSuggestions->forCategories($triageCategories) : [],

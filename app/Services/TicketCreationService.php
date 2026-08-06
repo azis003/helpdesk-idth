@@ -23,6 +23,7 @@ class TicketCreationService
         private readonly TicketNumberAllocator $numberAllocator,
         private readonly DynamicFieldValidator $fieldValidator,
         private readonly TicketAttachmentService $attachmentService,
+        private readonly TicketSlaService $sla,
     ) {}
 
     /**
@@ -100,6 +101,8 @@ class TicketCreationService
                 'occurred_at' => $now,
             ]);
 
+            $this->sla->start($ticket, $now);
+
             foreach ($fields as $field) {
                 $definition = $field['definition'];
                 $ticket->fieldValues()->create([
@@ -152,7 +155,7 @@ class TicketCreationService
     {
         $serviceType = ServiceType::query()
             ->active()
-            ->with(['activeFieldDefinitions.options', 'activeVariants'])
+            ->with(['activeFieldDefinitions.options', 'activeVariants', 'activeSlaPolicy'])
             ->find((int) $serviceTypeId);
 
         if ($serviceType === null) {

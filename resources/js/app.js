@@ -327,3 +327,20 @@ returnForms.forEach((returnForm) => {
         button.setAttribute('aria-busy', 'true');
     });
 });
+
+const communicationForms = document.querySelectorAll('[data-ticket-communication-form]');
+
+communicationForms.forEach((communicationForm) => {
+    communicationForm.addEventListener('submit', () => {
+        const button = communicationForm.querySelector('[data-ticket-communication-submit]');
+
+        if (!button) {
+            return;
+        }
+
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        button.dataset.originalLabel = button.textContent;
+        button.textContent = 'Menyimpan…';
+    });
+});

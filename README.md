@@ -36,6 +36,16 @@ Buat akun lain melalui provisioning yang disetujui lingkungan deployment atau fa
 
 Untuk development dengan Vite, jalankan `npm run dev` pada terminal terpisah.
 
+## Scheduler tiket
+
+Pembersihan waktu tunggu Pemohon dijadwalkan setiap lima menit melalui `routes/console.php`. Pada deployment Linux, jalankan scheduler Laravel setiap menit:
+
+```cron
+* * * * * cd /path/ke/helpdesk-idth && php artisan schedule:run >> /dev/null 2>&1
+```
+
+Perintah scheduler menggunakan row lock dan aman dijalankan berulang. Pastikan `CACHE_STORE` production mendukung lock terdistribusi bila aplikasi berjalan pada lebih dari satu instance.
+
 ## Fondasi yang tersedia
 
 - Login dengan username, rate limiting, session regeneration, logout, CSRF, dan audit login.
@@ -47,6 +57,7 @@ Untuk development dengan Vite, jalankan `npm run dev` pada terminal terpisah.
 - Policy dan pemeriksaan domain untuk reset password, klaim tiket, dan penanganan tiket.
 - Super Admin tanpa role operasional tidak dapat klaim atau menangani tiket.
 - Audit log append-only dari aplikasi untuk aksi berhasil dan percobaan yang ditolak.
+- Percakapan tiket dengan balasan publik, catatan internal, lampiran ber-visibilitas, status Menunggu Pemohon/Pihak Ketiga, notifikasi in-app, dan segmentasi pause/resume SLA.
 - Layout login, ganti password, dasbor, administrasi pengguna, dan audit log yang responsif serta berbahasa Indonesia.
 
 ## Verifikasi

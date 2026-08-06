@@ -6,6 +6,7 @@ use App\Models\Attachment;
 use App\Models\AttachmentPolicy;
 use App\Models\ServiceType;
 use App\Models\Ticket;
+use App\Models\TicketComment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
@@ -16,7 +17,7 @@ use Throwable;
 
 class TicketAttachmentService
 {
-    public function policiesFor(ServiceType $serviceType, bool $includeInternal = false): Collection
+    public function policiesFor(ServiceType $serviceType, bool $includeInternal = false, ?string $visibility = null): Collection
     {
         return AttachmentPolicy::query()
             ->active()
@@ -24,7 +25,11 @@ class TicketAttachmentService
                 $query->whereNull('service_type_id')
                     ->orWhere('service_type_id', $serviceType->getKey());
             })
-            ->when(! $includeInternal, fn ($query) => $query->whereIn('visibility', ['requester', 'both']))
+            ->when(
+                $visibility === 'public' || ! $includeInternal,
+                fn ($query) => $query->whereIn('visibility', ['requester', 'both']),
+            )
+            ->when($visibility === 'internal', fn ($query) => $query->where('visibility', 'internal'))
             ->with('serviceType')
             ->orderByRaw('service_type_id IS NOT NULL')
             ->orderBy('type_key')
@@ -112,6 +117,24 @@ class TicketAttachmentService
      */
     public function store(Ticket $ticket, User $actor, array $files): array
     {
+        return $this->storeItems($ticket, $actor, $files);
+    }
+
+    /**
+     * @param  list<array{policy:AttachmentPolicy,file:UploadedFile,mime:string,extension:string,size:int}>  $files
+     * @return list<Attachment>
+     */
+    public function storeForComment(TicketComment $comment, User $actor, array $files): array
+    {
+        return $this->storeItems($comment->ticket, $actor, $files, $comment);
+    }
+
+    /**
+     * @param  list<array{policy:AttachmentPolicy,file:UploadedFile,mime:string,extension:string,size:int}>  $files
+     * @return list<Attachment>
+     */
+    private function storeItems(Ticket $ticket, User $actor, array $files, ?TicketComment $comment = null): array
+    {
         $disk = 'local';
         $storedPaths = [];
         $attachments = [];
@@ -122,7 +145,13 @@ class TicketAttachmentService
                 $file = $item['file'];
                 $extension = $item['extension'];
                 $fileName = (string) Str::uuid().($extension !== '' ? ".{$extension}" : '');
-                $path = $file->storeAs("tickets/{$ticket->getKey()}", $fileName, $disk);
+                $directory = "tickets/{$ticket->getKey()}";
+
+                if ($comment !== null) {
+                    $directory .= "/comments/{$comment->getKey()}";
+                }
+
+                $path = $file->storeAs($directory, $fileName, $disk);
 
                 if ($path === false) {
                     throw new \RuntimeException('Penyimpanan lampiran gagal.');
@@ -131,6 +160,7 @@ class TicketAttachmentService
                 $storedPaths[] = $path;
                 $attachments[] = Attachment::query()->create([
                     'ticket_id' => $ticket->getKey(),
+                    'ticket_comment_id' => $comment?->getKey(),
                     'attachment_policy_id' => $policy->getKey(),
                     'uploaded_by_id' => $actor->getKey(),
                     'type_key' => $policy->type_key,

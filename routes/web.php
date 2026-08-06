@@ -12,7 +12,9 @@ use App\Http\Controllers\Admin\WorkTeamController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PasswordController;
+use App\Http\Controllers\TicketCommunicationController;
 use App\Http\Controllers\TicketController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,8 +43,17 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
         Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
         Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
+        Route::post('/tickets/{ticket}/comments/public', [TicketCommunicationController::class, 'publicReply'])->name('tickets.comments.public');
+        Route::post('/tickets/{ticket}/comments/internal', [TicketCommunicationController::class, 'internalNote'])->name('tickets.comments.internal');
+        Route::post('/tickets/{ticket}/request-information', [TicketCommunicationController::class, 'requestInformation'])->name('tickets.request-information');
+        Route::post('/tickets/{ticket}/requester-reply', [TicketCommunicationController::class, 'requesterReply'])->name('tickets.requester-reply');
+        Route::post('/tickets/{ticket}/wait-third-party', [TicketCommunicationController::class, 'startThirdParty'])->name('tickets.wait-third-party');
+        Route::post('/tickets/{ticket}/resume-third-party', [TicketCommunicationController::class, 'resumeThirdParty'])->name('tickets.resume-third-party');
         Route::post('/tickets/{ticket}/cancel', [TicketController::class, 'cancel'])->name('tickets.cancel');
         Route::get('/attachments/{attachment}/download', [AttachmentController::class, 'download'])->name('attachments.download');
+        Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
         Route::post('/tickets/{ticket}/claim', [TicketController::class, 'claim'])->name('tickets.claim');
         Route::post('/tickets/{ticket}/handle', [TicketController::class, 'handle'])->name('tickets.handle');
         Route::post('/tickets/{ticket}/triage', [TicketController::class, 'triage'])->name('tickets.triage');
