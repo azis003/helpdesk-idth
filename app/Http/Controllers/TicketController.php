@@ -6,10 +6,12 @@ use App\Enums\Priority;
 use App\Enums\Role;
 use App\Enums\TicketCommentVisibility;
 use App\Http\Requests\AssignTicketRequest;
+use App\Http\Requests\RequestApprovalRequest;
 use App\Http\Requests\ReturnTicketRequest;
 use App\Http\Requests\StoreTicketRequest;
 use App\Http\Requests\TriageTicketRequest;
 use App\Models\Announcement;
+use App\Models\ApprovalRequest;
 use App\Models\AttachmentPolicy;
 use App\Models\Building;
 use App\Models\ProblemCategory;
@@ -18,6 +20,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Services\DomainAuthorization;
 use App\Services\SkillSuggestionService;
+use App\Services\TicketApprovalService;
 use App\Services\TicketAttachmentService;
 use App\Services\TicketCancellationService;
 use App\Services\TicketCreationService;
@@ -34,6 +37,7 @@ class TicketController extends Controller
         private readonly TicketWorkflowService $workflow,
         private readonly SkillSuggestionService $skillSuggestions,
         private readonly TicketAttachmentService $attachments,
+        private readonly TicketApprovalService $approvals,
     ) {}
 
     public function index(Request $request): mixed
@@ -165,9 +169,19 @@ class TicketController extends Controller
             'assignmentHistories.actor',
             'priorityHistories.actor',
             'categoryHistories.actor',
+            'approvalRequests.approver',
+            'approvalRequests.requestedBy',
+            'approvalRequests.previousAssignee',
         ]);
 
-        $canSeeInternal = $actor->hasAnyRole([Role::SuperAdmin, Role::AgenTier1, Role::AgenTier2]);
+        $approvalRequest = $ticket->approvalRequests
+            ->sortByDesc(fn (ApprovalRequest $approval): string => $approval->requested_at?->toIso8601String() ?? '')
+            ->first();
+        $canDecideApproval = $approvalRequest !== null
+            && $approvalRequest->isPending()
+            && $actor->can('decide', $approvalRequest);
+        $canSeeInternal = $actor->hasAnyRole([Role::SuperAdmin, Role::AgenTier1, Role::AgenTier2])
+            || $canDecideApproval;
 
         if (! $canSeeInternal) {
             $ticket->setRelation(
@@ -200,6 +214,7 @@ class TicketController extends Controller
         $canRequesterReply = $actor->can('replyRequester', $ticket);
         $canStartThirdParty = $actor->can('startThirdPartyWait', $ticket);
         $canResumeThirdParty = $actor->can('resumeThirdPartyWait', $ticket);
+        $canRequestApproval = $actor->can('requestApproval', $ticket);
         $commentPublicPolicies = $ticket->serviceType
             ? $this->attachments->policiesFor($ticket->serviceType, true, 'public')
             : collect();
@@ -230,6 +245,9 @@ class TicketController extends Controller
             'canRequesterReply' => $canRequesterReply,
             'canStartThirdParty' => $canStartThirdParty,
             'canResumeThirdParty' => $canResumeThirdParty,
+            'canRequestApproval' => $canRequestApproval,
+            'approvalRequest' => $approvalRequest,
+            'canDecideApproval' => $canDecideApproval,
             'commentPublicPolicies' => $commentPublicPolicies,
             'commentInternalPolicies' => $commentInternalPolicies,
             'activeWait' => $activeWait,
@@ -240,6 +258,19 @@ class TicketController extends Controller
             'priorityOptions' => Priority::labels(),
             'timeline' => $this->buildTimeline($ticket),
         ]);
+    }
+
+    public function requestApproval(RequestApprovalRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $this->approvals->request(
+            $request->user(),
+            $ticket,
+            $request->validated('reason'),
+        );
+
+        return redirect()
+            ->route('tickets.show', $ticket)
+            ->with('success', 'Tiket berhasil dikirim untuk persetujuan Manajer TI.');
     }
 
     public function cancel(Request $request, Ticket $ticket): RedirectResponse
@@ -351,6 +382,31 @@ class TicketController extends Controller
                 'reason' => $history->reason,
                 'kind' => 'category',
             ]);
+        }
+
+        foreach ($ticket->approvalRequests as $approval) {
+            $timeline->push([
+                'occurred_at' => $approval->requested_at,
+                'title' => 'Persetujuan diminta',
+                'description' => 'Permintaan diarahkan kepada '.($approval->approver?->name ?? 'Manajer TI/Approver aktif').'.',
+                'actor' => $approval->requestedBy?->name,
+                'reason' => null,
+                'kind' => 'approval',
+            ]);
+
+            if ($approval->decided_at !== null) {
+                $approved = $approval->status === ApprovalRequest::STATUS_APPROVED;
+                $timeline->push([
+                    'occurred_at' => $approval->decided_at,
+                    'title' => $approved ? 'Persetujuan disetujui' : 'Persetujuan tidak disetujui',
+                    'description' => $approved
+                        ? 'State tiket sebelum persetujuan dipulihkan.'
+                        : 'Tiket ditetapkan sebagai Tidak Disetujui.',
+                    'actor' => $approval->approver?->name,
+                    'reason' => $approval->decision_note,
+                    'kind' => 'approval',
+                ]);
+            }
         }
 
         return $timeline

@@ -17,12 +17,37 @@ class ApproverAssignmentService
         private readonly AuditLogger $auditLogger,
     ) {}
 
-    public function current(): ?ApproverAssignment
+    public function current(bool $lockForUpdate = false): ?ApproverAssignment
     {
-        return ApproverAssignment::query()
-            ->with('user')
-            ->active()
-            ->first();
+        $query = ApproverAssignment::query()
+            ->with('user.roles')
+            ->active();
+
+        if ($lockForUpdate) {
+            $query->lockForUpdate();
+        }
+
+        return $query->first();
+    }
+
+    public function currentEligible(bool $lockForUpdate = false): ?ApproverAssignment
+    {
+        $assignment = $this->current($lockForUpdate);
+        $user = $assignment?->user;
+
+        if ($user === null
+            || ! $user->isActive()
+            || ! $user->hasRole(Role::Approver)
+            || $user->requiresPasswordChange()) {
+            return null;
+        }
+
+        return $assignment;
+    }
+
+    public function isCurrentApprover(User $user): bool
+    {
+        return (int) ($this->currentEligible()?->user_id ?? 0) === (int) $user->getKey();
     }
 
     public function pendingCount(?int $userId): int

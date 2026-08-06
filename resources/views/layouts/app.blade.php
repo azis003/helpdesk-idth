@@ -14,6 +14,9 @@
         $isTier1 = $currentUser->hasRole(\App\Enums\Role::AgenTier1);
         $canAccessTickets = $currentUser->hasAnyRole([\App\Enums\Role::Pemohon, \App\Enums\Role::AgenTier1, \App\Enums\Role::AgenTier2]);
         $canCreateTickets = $currentUser->hasAnyRole([\App\Enums\Role::Pemohon, \App\Enums\Role::AgenTier1]);
+        $canReviewApprovals = ! $currentUser->requiresPasswordChange()
+            && $currentUser->hasRole(\App\Enums\Role::Approver)
+            && \App\Models\ApproverAssignment::query()->active()->where('user_id', $currentUser->getKey())->exists();
         $canManageAnnouncements = $isSuperAdmin || $isTier1;
         $unreadNotificationCount = $currentUser->unreadNotifications()->count();
         $latestNotifications = $currentUser->notifications()->latest()->limit(5)->get();
@@ -48,6 +51,12 @@
                     <a href="{{ route('tickets.create') }}" class="ui-nav-link {{ request()->routeIs('tickets.create', 'tickets.store') ? 'is-active' : '' }}" aria-label="Buat tiket" title="Buat tiket">
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M12 5v14M5 12h14" /></svg></span>
                         <span class="ui-nav-label">Buat tiket</span>
+                    </a>
+                @endif
+                @if ($canReviewApprovals)
+                    <a href="{{ route('approvals.index') }}" class="ui-nav-link {{ request()->routeIs('approvals.*') ? 'is-active' : '' }}" aria-label="Persetujuan" title="Persetujuan">
+                        <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m12 3.5 7 2.5v5.3c0 4.1-2.8 7.5-7 9.2-4.2-1.7-7-5.1-7-9.2V6l7-2.5Z" /><path stroke-linecap="round" stroke-linejoin="round" d="m8.8 11.8 2.1 2.1 4.4-4.4" /></svg></span>
+                        <span class="ui-nav-label">Persetujuan</span>
                     </a>
                 @endif
             </nav>
@@ -179,6 +188,9 @@
                             @endif
                             @if ($canCreateTickets)
                                 <a href="{{ route('tickets.create') }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.create', 'tickets.store') ? 'is-active' : '' }}">Buat tiket</a>
+                            @endif
+                            @if ($canReviewApprovals)
+                                <a href="{{ route('approvals.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('approvals.*') ? 'is-active' : '' }}">Persetujuan</a>
                             @endif
                             @if ($isSuperAdmin)
                                 <a href="{{ route('admin.users.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.users.*') ? 'is-active' : '' }}">Pengguna</a>

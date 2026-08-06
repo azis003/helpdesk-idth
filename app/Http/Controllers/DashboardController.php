@@ -5,11 +5,18 @@ namespace App\Http\Controllers;
 use App\Enums\Role;
 use App\Models\Announcement;
 use App\Models\Ticket;
+use App\Services\ApproverAssignmentService;
+use App\Services\TicketApprovalService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        private readonly ApproverAssignmentService $approvers,
+        private readonly TicketApprovalService $approvals,
+    ) {}
+
     public function __invoke(Request $request): mixed
     {
         $user = $request->user()->load('roles');
@@ -37,6 +44,8 @@ class DashboardController extends Controller
             $query->where('requester_id', $user->getKey());
         };
         $myTicketsQuery = Ticket::query()->where($ticketScope);
+        $canReviewApprovals = ! $requiresPasswordChange
+            && $this->approvers->isCurrentApprover($user);
 
         return view('dashboard', [
             'user' => $user,
@@ -52,6 +61,8 @@ class DashboardController extends Controller
             'myTickets' => $canAccessTickets && ! $requiresPasswordChange
                 ? $myTicketsQuery->with('serviceType')->orderByDesc('submitted_at')->orderByDesc('id')->limit(5)->get()
                 : collect(),
+            'canReviewApprovals' => $canReviewApprovals,
+            'pendingApprovals' => $canReviewApprovals ? $this->approvals->pendingFor($user) : collect(),
             'announcements' => Announcement::query()
                 ->activeAt(now())
                 ->orderByDesc('starts_at')

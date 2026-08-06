@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Announcement;
+use App\Models\ApprovalRequest;
 use App\Models\Attachment;
 use App\Models\AttachmentPolicy;
 use App\Models\Building;
@@ -17,6 +18,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Models\WorkTeam;
 use App\Policies\AnnouncementPolicy;
+use App\Policies\ApprovalRequestPolicy;
 use App\Policies\AttachmentAccessPolicy;
 use App\Policies\AttachmentPolicyPolicy;
 use App\Policies\BuildingPolicy;
@@ -54,6 +56,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Announcement::class, AnnouncementPolicy::class);
         Gate::policy(Attachment::class, AttachmentAccessPolicy::class);
         Gate::policy(AttachmentPolicy::class, AttachmentPolicyPolicy::class);
+        Gate::policy(ApprovalRequest::class, ApprovalRequestPolicy::class);
         Gate::policy(Building::class, BuildingPolicy::class);
         Gate::policy(Floor::class, FloorPolicy::class);
         Gate::policy(Room::class, RoomPolicy::class);

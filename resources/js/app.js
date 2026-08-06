@@ -344,3 +344,20 @@ communicationForms.forEach((communicationForm) => {
         button.textContent = 'Menyimpan…';
     });
 });
+
+const approvalForms = document.querySelectorAll('[data-approval-request-form], [data-approval-decision-form]');
+
+approvalForms.forEach((approvalForm) => {
+    approvalForm.addEventListener('submit', () => {
+        const button = approvalForm.querySelector('[data-approval-request-submit], [data-approval-submit]');
+
+        if (!button) {
+            return;
+        }
+
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        button.dataset.originalLabel = button.textContent;
+        button.textContent = 'Memproses...';
+    });
+});

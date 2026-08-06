@@ -24,6 +24,9 @@
     $canRequesterReply = $canRequesterReply ?? false;
     $canStartThirdParty = $canStartThirdParty ?? false;
     $canResumeThirdParty = $canResumeThirdParty ?? false;
+    $canRequestApproval = $canRequestApproval ?? false;
+    $approvalRequest = $approvalRequest ?? null;
+    $canDecideApproval = $canDecideApproval ?? false;
     $commentPublicPolicies = $commentPublicPolicies ?? collect();
     $commentInternalPolicies = $commentInternalPolicies ?? collect();
     $activeWait = $activeWait ?? null;
@@ -35,9 +38,11 @@
         \App\Enums\TicketStatus::Baru => ['Tiket menunggu diproses', 'Tiket baru masuk ke antrean Tier 1 dan belum memiliki penanggung jawab.'],
         \App\Enums\TicketStatus::Diproses => ['Tiket sedang ditriase', 'Agen Tier 1 sedang memeriksa kategori, prioritas, dan jalur penanganan tiket.'],
         \App\Enums\TicketStatus::Dikerjakan => ['Tiket sedang dikerjakan', 'Penanggung jawab aktif melanjutkan pekerjaan sesuai jalur penanganan yang dipilih.'],
+        \App\Enums\TicketStatus::MenungguPersetujuan => ['Menunggu persetujuan Manajer TI', 'State tiket dan penanggung jawab sebelumnya tersimpan sampai keputusan persetujuan diberikan.'],
         \App\Enums\TicketStatus::MenungguPemohon => ['Menunggu balasan Pemohon', $activeWait?->due_at ? 'Pemohon perlu melengkapi informasi sebelum '. $activeWait->due_at->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i').'.' : 'Agen sedang menunggu informasi tambahan dari Pemohon.'],
         \App\Enums\TicketStatus::MenungguPihakKetiga => ['Menunggu pihak ketiga', $activeWait?->third_party_name ? 'Menunggu tindak lanjut dari '.$activeWait->third_party_name.'.' : 'Agen sedang menunggu tindak lanjut dari pihak ketiga.'],
         \App\Enums\TicketStatus::Ditolak => ['Tiket ditolak', $ticket->rejection_reason ?: 'Permintaan ini tidak dilanjutkan oleh Agen Tier 1.'],
+        \App\Enums\TicketStatus::TidakDisetujui => ['Persetujuan tidak disetujui', $approvalRequest?->decision_note ?: 'Permintaan persetujuan ini bersifat final.'],
         \App\Enums\TicketStatus::Dibatalkan => ['Tiket telah dibatalkan', 'Tiket ini tidak akan masuk ke proses penanganan lebih lanjut.'],
         default => ['Status tiket diperbarui', 'Tim TI akan melanjutkan tiket sesuai status dan kewenangan penanganannya.'],
     };
@@ -76,6 +81,12 @@
                         <div class="rounded-xl border border-rose-200 bg-[#fff5f6] p-4" role="status">
                             <p class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#be123c]">Alasan penolakan</p>
                             <p class="mt-2 whitespace-pre-line text-sm leading-6 text-[#7f1d1d]">{{ $ticket->rejection_reason }}</p>
+                        </div>
+                    @endif
+                    @if ($ticket->status === \App\Enums\TicketStatus::TidakDisetujui && filled($approvalRequest?->decision_note))
+                        <div class="rounded-xl border border-rose-200 bg-[#fff5f6] p-4" role="status">
+                            <p class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#be123c]">Catatan Tidak Setuju</p>
+                            <p class="mt-2 whitespace-pre-line text-sm leading-6 text-[#7f1d1d]">{{ $approvalRequest->decision_note }}</p>
                         </div>
                     @endif
                     <div>
@@ -333,7 +344,7 @@
                 <div class="ui-panel-header">
                     <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Jejak pekerjaan</p>
                     <h2 id="timeline-heading" class="mt-2 ui-section-title">Histori tiket</h2>
-                    <p class="ui-section-description">Perubahan status, penugasan, kategori, dan prioritas disusun berdasarkan waktu kejadian.</p>
+                    <p class="ui-section-description">Perubahan status, penugasan, kategori, prioritas, dan persetujuan disusun berdasarkan waktu kejadian.</p>
                 </div>
                 @if ($timeline === [])
                     <p class="p-5 text-sm leading-6 text-[#78909a] sm:p-6">Belum ada histori operasional pada tiket ini.</p>
@@ -344,7 +355,7 @@
                                 @if (! $loop->last)
                                     <span class="absolute left-[0.45rem] top-5 h-full w-px bg-[#dfe8ec]" aria-hidden="true"></span>
                                 @endif
-                                <span class="relative mt-1 h-2.5 w-2.5 shrink-0 rounded-full {{ $entry['kind'] === 'status' ? 'bg-[#75d5f3]' : ($entry['kind'] === 'priority' ? 'bg-[#e4a72c]' : 'bg-[#2bb8aa]') }} ring-4 ring-white" aria-hidden="true"></span>
+                                <span class="relative mt-1 h-2.5 w-2.5 shrink-0 rounded-full {{ $entry['kind'] === 'status' ? 'bg-[#75d5f3]' : ($entry['kind'] === 'priority' || $entry['kind'] === 'approval' ? 'bg-[#e4a72c]' : 'bg-[#2bb8aa]') }} ring-4 ring-white" aria-hidden="true"></span>
                                 <div class="min-w-0 flex-1">
                                     <div class="flex flex-wrap items-start justify-between gap-2">
                                         <p class="text-sm font-extrabold text-[#35505b]">{{ $entry['title'] }}</p>
@@ -372,6 +383,29 @@
                 <p class="mt-2 text-sm leading-6 text-[#52747b]">{{ $nextStepDescription }}</p>
                 <div class="mt-4"><x-status-badge :status="$ticket->status" /></div>
             </section>
+
+            @if ($approvalRequest)
+                <x-approval-panel :approval-request="$approvalRequest" :ticket="$ticket" :can-decide="$canDecideApproval" />
+            @endif
+
+            @if ($canRequestApproval)
+                <section class="ui-panel border-l-4 border-l-[#e4a72c]" aria-labelledby="request-approval-heading">
+                    <div class="ui-panel-header">
+                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#e4a72c] !shadow-[0_0_0_4px_#fff4d7]" aria-hidden="true"></span>Keputusan operasional</p>
+                        <h2 id="request-approval-heading" class="mt-2 ui-section-title">Butuh Persetujuan</h2>
+                        <p class="ui-section-description">Tiket akan masuk ke status Menunggu Persetujuan. State, penanggung jawab, dan tier saat ini akan dipulihkan setelah disetujui.</p>
+                    </div>
+                    <form method="POST" action="{{ route('tickets.request-approval', $ticket) }}" class="space-y-4 p-5 sm:p-6" data-approval-request-form>
+                        @csrf
+                        <div>
+                            <label for="approval-request-reason" class="ui-field-label">Catatan permintaan</label>
+                            <textarea id="approval-request-reason" name="reason" rows="3" maxlength="1000" class="ui-textarea mt-2" placeholder="Opsional: jelaskan konteks yang perlu diputuskan Manajer TI.">{{ old('reason') }}</textarea>
+                            @error('reason')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+                        </div>
+                        <button type="submit" class="ui-btn ui-btn-warning w-full" data-approval-request-submit>Butuh Persetujuan</button>
+                    </form>
+                </section>
+            @endif
 
             @if ($canStartThirdParty || $canResumeThirdParty)
                 <section class="ui-panel border-l-4 border-l-[#2bb8aa]" aria-labelledby="third-party-heading">

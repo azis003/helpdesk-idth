@@ -20,6 +20,43 @@
         </div>
     </section>
 
+    @if ($canReviewApprovals)
+        <section class="mt-7" aria-labelledby="my-approvals-heading">
+            <div class="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                    <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#e4a72c] !shadow-[0_0_0_4px_#fff4d7]" aria-hidden="true"></span>Perlu tindakan saya</p>
+                    <h2 id="my-approvals-heading" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">Perlu Tindakan Saya</h2>
+                    <p class="mt-2 max-w-2xl text-sm leading-6 text-[#6a8089]">Tinjau tiket yang menunggu keputusan Anda sebagai Manajer TI/Approver aktif.</p>
+                </div>
+                <a href="{{ route('approvals.index') }}" class="ui-btn ui-btn-secondary">Lihat semua persetujuan</a>
+            </div>
+
+            <div class="mt-4 grid gap-3 lg:grid-cols-2">
+                @forelse ($pendingApprovals as $approval)
+                    <article class="ui-panel border-l-4 border-l-[#e4a72c] p-5 sm:p-6">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="text-xs font-extrabold text-[#1d5d72]">{{ $approval->ticket?->ticket_number ?? 'Tiket #'.$approval->ticket_id }}</p>
+                                <h3 class="mt-2 truncate text-sm font-extrabold text-[#35505b]">{{ $approval->ticket?->subject ?? 'Tiket tidak tersedia' }}</h3>
+                            </div>
+                            <span class="shrink-0 rounded-full bg-[#fff4d7] px-2.5 py-1 text-[0.68rem] font-extrabold text-[#9a6700]">Menunggu</span>
+                        </div>
+                        <dl class="mt-4 grid gap-3 sm:grid-cols-2">
+                            <div class="rounded-lg bg-[#f8fbfc] p-3"><dt class="text-[0.65rem] font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Pemohon</dt><dd class="mt-1 truncate text-sm font-bold text-[#35505b]">{{ $approval->ticket?->requester?->name ?? 'Tidak tersedia' }}</dd></div>
+                            <div class="rounded-lg bg-[#f8fbfc] p-3"><dt class="text-[0.65rem] font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Menunggu sejak</dt><dd class="mt-1 text-sm font-bold text-[#526f79]">{{ $approval->requested_at?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</dd></div>
+                        </dl>
+                        <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+                            <span class="text-xs text-[#78909a]">State sebelumnya: {{ \App\Enums\TicketStatus::tryFrom((string) $approval->previous_status)?->label() ?? 'Tidak tercatat' }}</span>
+                            <a href="{{ route('tickets.show', $approval->ticket_id) }}" class="ui-action-link">Tinjau persetujuan <span aria-hidden="true">→</span></a>
+                        </div>
+                    </article>
+                @empty
+                    <x-empty-state class="lg:col-span-2" title="Belum ada persetujuan tertunda." description="Permintaan baru akan tampil ketika agen mengirim tiket untuk keputusan Anda." action="{{ route('approvals.index') }}" action-label="Buka daftar persetujuan" />
+                @endforelse
+            </div>
+        </section>
+    @endif
+
     @if ($announcements->isNotEmpty())
         <section class="mt-7" aria-labelledby="announcements-heading">
             <div class="flex items-end justify-between gap-4"><div><p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#e4a72c] !shadow-[0_0_0_4px_#fff4d7]" aria-hidden="true"></span>Informasi terbaru</p><h2 id="announcements-heading" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">Pengumuman layanan</h2></div><span class="text-xs font-bold text-[#86979e]">{{ $announcements->count() }} informasi aktif</span></div>

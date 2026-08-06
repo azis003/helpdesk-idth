@@ -4,6 +4,8 @@ namespace App\Policies;
 
 use App\Enums\Role;
 use App\Enums\TicketStatus;
+use App\Models\ApprovalRequest;
+use App\Models\ApproverAssignment;
 use App\Models\Ticket;
 use App\Models\User;
 
@@ -48,8 +50,20 @@ class TicketPolicy
             return true;
         }
 
+        if ($this->isCurrentApprover($actor)) {
+            return $this->hasPendingApproval($actor, $ticket);
+        }
+
         return $actor->hasRole(Role::AgenTier2)
             && (int) $ticket->assigned_to_id === (int) $actor->getKey();
+    }
+
+    public function requestApproval(User $actor, Ticket $ticket): bool
+    {
+        return $actor->isActive()
+            && $actor->hasAnyRole([Role::AgenTier1, Role::AgenTier2])
+            && (int) $ticket->assigned_to_id === (int) $actor->getKey()
+            && in_array($ticket->status, [TicketStatus::Diproses, TicketStatus::Dikerjakan], true);
     }
 
     public function claim(User $actor, Ticket $ticket): bool
@@ -111,6 +125,10 @@ class TicketPolicy
             return false;
         }
 
+        if ($this->hasPendingApproval($actor, $ticket)) {
+            return true;
+        }
+
         if ($actor->hasRole(Role::Pemohon)
             && ! $actor->hasAnyRole([Role::AgenTier1, Role::AgenTier2])) {
             return (int) $ticket->requester_id === (int) $actor->getKey()
@@ -128,6 +146,10 @@ class TicketPolicy
 
     public function commentInternal(User $actor, Ticket $ticket): bool
     {
+        if ($this->hasPendingApproval($actor, $ticket)) {
+            return true;
+        }
+
         return $this->isAssignedAgent($actor, $ticket)
             && in_array($ticket->status, [
                 TicketStatus::Diproses,
@@ -168,5 +190,26 @@ class TicketPolicy
         return $actor->isActive()
             && $actor->hasAnyRole([Role::AgenTier1, Role::AgenTier2])
             && (int) $ticket->assigned_to_id === (int) $actor->getKey();
+    }
+
+    private function isCurrentApprover(User $actor): bool
+    {
+        return $actor->isActive()
+            && ! $actor->requiresPasswordChange()
+            && $actor->hasRole(Role::Approver)
+            && ApproverAssignment::query()
+                ->active()
+                ->where('user_id', $actor->getKey())
+                ->exists();
+    }
+
+    private function hasPendingApproval(User $actor, Ticket $ticket): bool
+    {
+        return $this->isCurrentApprover($actor)
+            && ApprovalRequest::query()
+                ->pending()
+                ->where('ticket_id', $ticket->getKey())
+                ->where('approver_id', $actor->getKey())
+                ->exists();
     }
 }

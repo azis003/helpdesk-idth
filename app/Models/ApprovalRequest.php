@@ -13,6 +13,10 @@ class ApprovalRequest extends Model
 
     public const STATUS_PENDING = 'pending';
 
+    public const STATUS_APPROVED = 'approved';
+
+    public const STATUS_REJECTED = 'rejected';
+
     protected $fillable = [
         'ticket_id',
         'approver_id',
@@ -65,5 +69,30 @@ class ApprovalRequest extends Model
     public function scopePending(Builder $query): Builder
     {
         return $query->where('status', self::STATUS_PENDING);
+    }
+
+    public function scopeApproved(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_APPROVED);
+    }
+
+    public function scopeRejected(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_REJECTED);
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->status === self::STATUS_APPROVED;
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === self::STATUS_REJECTED;
     }
 }

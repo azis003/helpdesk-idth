@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\ServiceCatalogController;
 use App\Http\Controllers\Admin\SkillController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Admin\WorkTeamController;
+use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
@@ -43,6 +44,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
         Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
         Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
+        Route::post('/tickets/{ticket}/request-approval', [TicketController::class, 'requestApproval'])->name('tickets.request-approval');
         Route::post('/tickets/{ticket}/comments/public', [TicketCommunicationController::class, 'publicReply'])->name('tickets.comments.public');
         Route::post('/tickets/{ticket}/comments/internal', [TicketCommunicationController::class, 'internalNote'])->name('tickets.comments.internal');
         Route::post('/tickets/{ticket}/request-information', [TicketCommunicationController::class, 'requestInformation'])->name('tickets.request-information');
@@ -59,6 +61,9 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/tickets/{ticket}/triage', [TicketController::class, 'triage'])->name('tickets.triage');
         Route::post('/tickets/{ticket}/assign-tier-2', [TicketController::class, 'assignTierTwo'])->name('tickets.assign-tier-2');
         Route::post('/tickets/{ticket}/return-to-tier-1', [TicketController::class, 'returnToTierOne'])->name('tickets.return-to-tier-1');
+        Route::get('/approvals', [ApprovalController::class, 'index'])->name('approvals.index');
+        Route::post('/approval-requests/{approvalRequest}/approve', [ApprovalController::class, 'approve'])->name('approvals.approve');
+        Route::post('/approval-requests/{approvalRequest}/reject', [ApprovalController::class, 'reject'])->name('approvals.reject');
 
         Route::prefix('admin')->name('admin.')->middleware('role:super_admin')->group(function () {
             Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
