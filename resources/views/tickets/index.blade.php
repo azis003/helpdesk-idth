@@ -1,15 +1,23 @@
 @extends('layouts.app')
 
-@section('title', 'Tiket saya — SIHATI')
+@php
+    $isTeamChair = $isTeamChair ?? false;
+    $hasPersonalScope = $canAccessTickets ?? false;
+    $ticketListLabel = $isTeamChair && $hasPersonalScope
+        ? 'Tiket saya dan tim'
+        : ($isTeamChair ? 'Tiket tim' : 'Tiket saya');
+@endphp
+
+@section('title', $ticketListLabel.' — SIHATI')
 @section('header_kicker', 'Tiket')
-@section('header_title', 'Tiket saya')
+@section('header_title', $ticketListLabel)
 
 @section('content')
     <div class="ui-page-header">
         <div>
-            <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Pelacakan permintaan</p>
-            <h1 class="ui-page-title">Tiket saya</h1>
-            <p class="ui-page-description">Pantau nomor, status, prioritas, dan ringkasan permintaan yang menjadi tanggung jawab Anda.</p>
+            <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>{{ ($isTeamChair ?? false) ? 'Pemantauan tim' : 'Pelacakan permintaan' }}</p>
+            <h1 class="ui-page-title">{{ $ticketListLabel }}</h1>
+            <p class="ui-page-description">{{ $isTeamChair ? 'Pantau metadata, status, SLA, penanggung jawab, balasan publik, dan solusi anggota tim dalam mode baca saja.' : 'Pantau nomor, status, prioritas, dan ringkasan permintaan yang menjadi tanggung jawab Anda.' }}</p>
         </div>
         <div class="flex flex-wrap gap-2">
             @if ($canViewQueue)
@@ -22,7 +30,7 @@
     </div>
 
     @if ($tickets->isEmpty())
-        <x-empty-state class="mt-8" title="Belum ada tiket pada daftar ini." description="Tiket yang Anda buat, ajukan, atau tangani akan muncul di sini setelah tercatat." :action="auth()->user()->can('create', \App\Models\Ticket::class) ? route('tickets.create') : null" action-label="Buat tiket pertama" />
+        <x-empty-state class="mt-8" title="Belum ada tiket pada daftar ini." :description="$isTeamChair ? 'Tiket anggota tim yang dipantau akan muncul di sini setelah tercatat.' : 'Tiket yang Anda buat, ajukan, atau tangani akan muncul di sini setelah tercatat.'" :action="auth()->user()->can('create', \App\Models\Ticket::class) ? route('tickets.create') : null" action-label="Buat tiket pertama" />
     @else
         <section class="ui-panel mt-8 overflow-hidden" aria-labelledby="tickets-list-heading">
             <div class="ui-panel-header flex flex-wrap items-end justify-between gap-3">

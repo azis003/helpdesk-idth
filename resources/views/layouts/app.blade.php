@@ -12,8 +12,12 @@
         $currentUser = auth()->user()->loadMissing('roles');
         $isSuperAdmin = $currentUser->hasRole(\App\Enums\Role::SuperAdmin);
         $isTier1 = $currentUser->hasRole(\App\Enums\Role::AgenTier1);
+        $isTeamChair = $currentUser->hasRole(\App\Enums\Role::KetuaTimKerja);
         $canAccessTickets = $currentUser->hasAnyRole([\App\Enums\Role::Pemohon, \App\Enums\Role::AgenTier1, \App\Enums\Role::AgenTier2]);
         $canCreateTickets = $currentUser->hasAnyRole([\App\Enums\Role::Pemohon, \App\Enums\Role::AgenTier1]);
+        $ticketListLabel = $isTeamChair && $canAccessTickets
+            ? 'Tiket saya dan tim'
+            : ($isTeamChair ? 'Tiket tim' : 'Tiket saya');
         $canReviewApprovals = ! $currentUser->requiresPasswordChange()
             && $currentUser->hasRole(\App\Enums\Role::Approver)
             && \App\Models\ApproverAssignment::query()->active()->where('user_id', $currentUser->getKey())->exists();
@@ -35,10 +39,10 @@
                     <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m3 12 9-8 9 8M5 10v10h5v-6h4v6h5V10" /></svg></span>
                     <span class="ui-nav-label">Dasbor</span>
                 </a>
-                @if ($canAccessTickets)
-                    <a href="{{ route('tickets.index') }}" class="ui-nav-link {{ request()->routeIs('tickets.index', 'tickets.show', 'tickets.cancel') ? 'is-active' : '' }}" aria-label="Tiket saya" title="Tiket saya">
+                @if ($canAccessTickets || $isTeamChair)
+                    <a href="{{ route('tickets.index') }}" class="ui-nav-link {{ request()->routeIs('tickets.index', 'tickets.show', 'tickets.cancel') ? 'is-active' : '' }}" aria-label="{{ $ticketListLabel }}" title="{{ $ticketListLabel }}">
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 9h8M8 12h5M8 15h7" /></svg></span>
-                        <span class="ui-nav-label">Tiket saya</span>
+                        <span class="ui-nav-label">{{ $ticketListLabel }}</span>
                     </a>
                 @endif
                 @if ($isTier1)
@@ -180,8 +184,8 @@
                                     <span class="ml-1 rounded-full bg-[#e4a72c] px-1.5 py-0.5 text-[0.62rem] text-white">{{ $unreadNotificationCount }}</span>
                                 @endif
                             </a>
-                            @if ($canAccessTickets)
-                                <a href="{{ route('tickets.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.index', 'tickets.show', 'tickets.cancel') ? 'is-active' : '' }}">Tiket saya</a>
+                            @if ($canAccessTickets || $isTeamChair)
+                                <a href="{{ route('tickets.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.index', 'tickets.show', 'tickets.cancel') ? 'is-active' : '' }}">{{ $ticketListLabel }}</a>
                             @endif
                             @if ($isTier1)
                                 <a href="{{ route('tickets.queue') }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.queue') ? 'is-active' : '' }}">Antrean Tier 1</a>

@@ -27,6 +27,7 @@ use App\Models\User;
 use App\Services\DatabaseChangeControlService;
 use App\Services\DomainAuthorization;
 use App\Services\SkillSuggestionService;
+use App\Services\TeamScopeService;
 use App\Services\TicketApprovalService;
 use App\Services\TicketAttachmentService;
 use App\Services\TicketCancellationService;
@@ -34,6 +35,7 @@ use App\Services\TicketCreationService;
 use App\Services\TicketResolutionService;
 use App\Services\TicketSlaService;
 use App\Services\TicketWorkflowService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -50,6 +52,7 @@ class TicketController extends Controller
         private readonly TicketResolutionService $resolution,
         private readonly TicketSlaService $sla,
         private readonly DatabaseChangeControlService $specialControls,
+        private readonly TeamScopeService $teamScope,
     ) {}
 
     public function index(Request $request): mixed
@@ -62,21 +65,48 @@ class TicketController extends Controller
             ->orderByDesc('submitted_at')
             ->orderByDesc('id');
 
-        if ($actor->hasRole(Role::AgenTier1)) {
-            $query->where(function ($query) use ($actor): void {
-                $query->where('requester_id', $actor->getKey())
-                    ->orWhere('created_by_id', $actor->getKey())
-                    ->orWhere('assigned_to_id', $actor->getKey());
-            });
-        } elseif ($actor->hasRole(Role::AgenTier2)) {
-            $query->where('assigned_to_id', $actor->getKey());
-        } else {
-            $query->where('requester_id', $actor->getKey());
-        }
+        $query->where(function (Builder $scopeQuery) use ($actor): void {
+            $firstScope = true;
+            $addScope = function (callable $scope) use (&$firstScope, $scopeQuery): void {
+                $method = $firstScope ? 'where' : 'orWhere';
+                $scopeQuery->{$method}($scope);
+                $firstScope = false;
+            };
+
+            if ($actor->hasRole(Role::Pemohon)) {
+                $addScope(fn (Builder $query): Builder => $query->where('requester_id', $actor->getKey()));
+            }
+
+            if ($actor->hasRole(Role::AgenTier1)) {
+                $addScope(function (Builder $query) use ($actor): void {
+                    $query->where(function (Builder $query) use ($actor): void {
+                        $query->where('requester_id', $actor->getKey())
+                            ->orWhere('created_by_id', $actor->getKey())
+                            ->orWhere('assigned_to_id', $actor->getKey());
+                    });
+                });
+            }
+
+            if ($actor->hasRole(Role::AgenTier2)) {
+                $addScope(fn (Builder $query): Builder => $query->where('assigned_to_id', $actor->getKey()));
+            }
+
+            if ($actor->hasRole(Role::KetuaTimKerja)) {
+                $addScope(function (Builder $query) use ($actor): void {
+                    $this->teamScope->constrain($query, $actor);
+                });
+            }
+        });
 
         return view('tickets.index', [
             'tickets' => $query->paginate(15)->withQueryString(),
             'canViewQueue' => $actor->hasRole(Role::AgenTier1),
+            'isTeamChair' => $actor->hasRole(Role::KetuaTimKerja),
+            'canAccessTickets' => $actor->hasAnyRole([
+                Role::Pemohon,
+                Role::AgenTier1,
+                Role::AgenTier2,
+            ]),
         ]);
     }
 

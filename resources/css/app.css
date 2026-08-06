@@ -666,6 +666,11 @@
         color: #a16207;
     }
 
+    .ui-status-danger {
+        background: #fff1f2;
+        color: #be123c;
+    }
+
     .ui-avatar {
         display: inline-flex;
         height: 2.35rem;

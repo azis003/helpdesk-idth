@@ -8,13 +8,21 @@ use App\Models\ApprovalRequest;
 use App\Models\ApproverAssignment;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Services\TeamScopeService;
 
 class TicketPolicy
 {
+    public function __construct(private readonly TeamScopeService $teamScope) {}
+
     public function viewAny(User $actor): bool
     {
         return $actor->isActive()
-            && $actor->hasAnyRole([Role::Pemohon, Role::AgenTier1, Role::AgenTier2]);
+            && $actor->hasAnyRole([
+                Role::Pemohon,
+                Role::AgenTier1,
+                Role::AgenTier2,
+                Role::KetuaTimKerja,
+            ]);
     }
 
     public function create(User $actor): bool
@@ -52,6 +60,10 @@ class TicketPolicy
 
         if ($this->isCurrentApprover($actor)) {
             return $this->hasPendingApproval($actor, $ticket);
+        }
+
+        if ($actor->hasRole(Role::KetuaTimKerja)) {
+            return $this->teamScope->canViewTicket($actor, $ticket);
         }
 
         return $actor->hasRole(Role::AgenTier2)

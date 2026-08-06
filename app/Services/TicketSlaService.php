@@ -158,13 +158,16 @@ class TicketSlaService
     public function metrics(Ticket $ticket, ?Carbon $at = null): ?array
     {
         $at ??= Carbon::now(config('app.timezone'));
-        $segments = TicketSlaSegment::query()
-            ->where('ticket_id', $ticket->getKey())
-            ->with('calendar.holidays')
-            ->orderBy('cycle')
-            ->orderBy('started_at')
-            ->orderBy('id')
-            ->get();
+        $segments = $ticket->relationLoaded('slaSegments')
+            ? $ticket->getRelation('slaSegments')
+            : TicketSlaSegment::query()
+                ->where('ticket_id', $ticket->getKey())
+                ->orderBy('cycle')
+                ->orderBy('started_at')
+                ->orderBy('id')
+                ->get();
+
+        $segments->loadMissing('calendar.holidays');
 
         if ($segments->isEmpty()) {
             return null;
