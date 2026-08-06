@@ -6,6 +6,9 @@ use App\Enums\Priority;
 use App\Enums\Role;
 use App\Enums\TicketCommentVisibility;
 use App\Http\Requests\AssignTicketRequest;
+use App\Http\Requests\CompleteTicketRequest;
+use App\Http\Requests\NotSatisfiedTicketRequest;
+use App\Http\Requests\ReopenTicketRequest;
 use App\Http\Requests\RequestApprovalRequest;
 use App\Http\Requests\ReturnTicketRequest;
 use App\Http\Requests\StoreTicketRequest;
@@ -24,6 +27,8 @@ use App\Services\TicketApprovalService;
 use App\Services\TicketAttachmentService;
 use App\Services\TicketCancellationService;
 use App\Services\TicketCreationService;
+use App\Services\TicketResolutionService;
+use App\Services\TicketSlaService;
 use App\Services\TicketWorkflowService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -38,6 +43,8 @@ class TicketController extends Controller
         private readonly SkillSuggestionService $skillSuggestions,
         private readonly TicketAttachmentService $attachments,
         private readonly TicketApprovalService $approvals,
+        private readonly TicketResolutionService $resolution,
+        private readonly TicketSlaService $sla,
     ) {}
 
     public function index(Request $request): mixed
@@ -215,6 +222,11 @@ class TicketController extends Controller
         $canStartThirdParty = $actor->can('startThirdPartyWait', $ticket);
         $canResumeThirdParty = $actor->can('resumeThirdPartyWait', $ticket);
         $canRequestApproval = $actor->can('requestApproval', $ticket);
+        $canComplete = $actor->can('complete', $ticket);
+        $canConfirm = $actor->can('confirm', $ticket);
+        $canNotSatisfied = $actor->can('notSatisfied', $ticket);
+        $canReopen = $actor->can('reopen', $ticket);
+        $slaMetrics = $this->sla->metrics($ticket);
         $commentPublicPolicies = $ticket->serviceType
             ? $this->attachments->policiesFor($ticket->serviceType, true, 'public')
             : collect();
@@ -246,6 +258,11 @@ class TicketController extends Controller
             'canStartThirdParty' => $canStartThirdParty,
             'canResumeThirdParty' => $canResumeThirdParty,
             'canRequestApproval' => $canRequestApproval,
+            'canComplete' => $canComplete,
+            'canConfirm' => $canConfirm,
+            'canNotSatisfied' => $canNotSatisfied,
+            'canReopen' => $canReopen,
+            'slaMetrics' => $slaMetrics,
             'approvalRequest' => $approvalRequest,
             'canDecideApproval' => $canDecideApproval,
             'commentPublicPolicies' => $commentPublicPolicies,
@@ -271,6 +288,54 @@ class TicketController extends Controller
         return redirect()
             ->route('tickets.show', $ticket)
             ->with('success', 'Tiket berhasil dikirim untuk persetujuan Manajer TI.');
+    }
+
+    public function complete(CompleteTicketRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $this->resolution->complete(
+            $request->user(),
+            $ticket,
+            (string) $request->validated('solution'),
+        );
+
+        return redirect()
+            ->route('tickets.show', $ticket)
+            ->with('success', 'Solusi berhasil disimpan. Tiket sekarang Menunggu Konfirmasi.');
+    }
+
+    public function confirm(Request $request, Ticket $ticket): RedirectResponse
+    {
+        $this->resolution->confirm($request->user(), $ticket);
+
+        return redirect()
+            ->route('tickets.show', $ticket)
+            ->with('success', 'Hasil tiket dikonfirmasi dan tiket berhasil ditutup.');
+    }
+
+    public function notSatisfied(NotSatisfiedTicketRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $this->resolution->notSatisfied(
+            $request->user(),
+            $ticket,
+            (string) $request->validated('reason'),
+        );
+
+        return redirect()
+            ->route('tickets.show', $ticket)
+            ->with('success', 'Tiket kembali Dikerjakan oleh penanggung jawab terakhir.');
+    }
+
+    public function reopen(ReopenTicketRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $this->resolution->reopen(
+            $request->user(),
+            $ticket,
+            $request->validated('reason'),
+        );
+
+        return redirect()
+            ->route('tickets.show', $ticket)
+            ->with('success', 'Tiket berhasil dibuka kembali dan SLA baru dimulai.');
     }
 
     public function cancel(Request $request, Ticket $ticket): RedirectResponse
@@ -339,9 +404,17 @@ class TicketController extends Controller
         foreach ($ticket->statusHistories as $history) {
             $from = $history->from_status?->label() ?? 'Tiket dibuat';
             $to = $history->to_status?->label() ?? 'Status tidak diketahui';
+            $statusTitle = match ($history->action) {
+                'ticket.completed' => 'Solusi disimpan',
+                'ticket.closed' => 'Tiket ditutup',
+                'ticket.auto_closed' => 'Tiket ditutup otomatis',
+                'ticket.confirmation.not_satisfied' => 'Hasil belum sesuai',
+                'ticket.reopened' => 'Tiket dibuka kembali',
+                default => 'Status diperbarui',
+            };
             $timeline->push([
                 'occurred_at' => $history->occurred_at,
-                'title' => 'Status diperbarui',
+                'title' => $statusTitle,
                 'description' => $from.' → '.$to,
                 'actor' => $history->actor?->name,
                 'reason' => $history->reason,

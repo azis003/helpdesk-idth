@@ -257,6 +257,8 @@ class TicketApprovalService
 
             if ($decision === ApprovalRequest::STATUS_APPROVED) {
                 $this->sla->resume($lockedTicket, $now);
+            } else {
+                $this->sla->stop($lockedTicket, $now);
             }
 
             $this->auditLogger->succeeded(

@@ -13,10 +13,12 @@ class TicketSlaSegment extends Model
 
     protected $fillable = [
         'ticket_id',
+        'cycle',
         'state',
         'reason',
         'sla_policy_id',
         'target_working_days',
+        'target_working_minutes',
         'calendar_id',
         'calendar_version',
         'started_at',
@@ -27,7 +29,9 @@ class TicketSlaSegment extends Model
     {
         return [
             'state' => TicketSlaSegmentState::class,
+            'cycle' => 'integer',
             'target_working_days' => 'integer',
+            'target_working_minutes' => 'integer',
             'calendar_version' => 'integer',
             'started_at' => 'datetime',
             'ended_at' => 'datetime',

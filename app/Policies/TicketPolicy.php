@@ -185,6 +185,33 @@ class TicketPolicy
             && $ticket->status === TicketStatus::MenungguPihakKetiga;
     }
 
+    public function complete(User $actor, Ticket $ticket): bool
+    {
+        return $this->isAssignedAgent($actor, $ticket)
+            && $ticket->status === TicketStatus::Dikerjakan;
+    }
+
+    public function confirm(User $actor, Ticket $ticket): bool
+    {
+        return $actor->isActive()
+            && $actor->hasRole(Role::Pemohon)
+            && (int) $ticket->requester_id === (int) $actor->getKey()
+            && $ticket->status === TicketStatus::MenungguKonfirmasi;
+    }
+
+    public function notSatisfied(User $actor, Ticket $ticket): bool
+    {
+        return $this->confirm($actor, $ticket);
+    }
+
+    public function reopen(User $actor, Ticket $ticket): bool
+    {
+        return $actor->isActive()
+            && $actor->hasRole(Role::Pemohon)
+            && (int) $ticket->requester_id === (int) $actor->getKey()
+            && $ticket->status === TicketStatus::Ditutup;
+    }
+
     private function isAssignedAgent(User $actor, Ticket $ticket): bool
     {
         return $actor->isActive()

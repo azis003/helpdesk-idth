@@ -25,6 +25,11 @@
     $canStartThirdParty = $canStartThirdParty ?? false;
     $canResumeThirdParty = $canResumeThirdParty ?? false;
     $canRequestApproval = $canRequestApproval ?? false;
+    $canComplete = $canComplete ?? false;
+    $canConfirm = $canConfirm ?? false;
+    $canNotSatisfied = $canNotSatisfied ?? false;
+    $canReopen = $canReopen ?? false;
+    $slaMetrics = $slaMetrics ?? null;
     $approvalRequest = $approvalRequest ?? null;
     $canDecideApproval = $canDecideApproval ?? false;
     $commentPublicPolicies = $commentPublicPolicies ?? collect();
@@ -41,6 +46,8 @@
         \App\Enums\TicketStatus::MenungguPersetujuan => ['Menunggu persetujuan Manajer TI', 'State tiket dan penanggung jawab sebelumnya tersimpan sampai keputusan persetujuan diberikan.'],
         \App\Enums\TicketStatus::MenungguPemohon => ['Menunggu balasan Pemohon', $activeWait?->due_at ? 'Pemohon perlu melengkapi informasi sebelum '. $activeWait->due_at->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i').'.' : 'Agen sedang menunggu informasi tambahan dari Pemohon.'],
         \App\Enums\TicketStatus::MenungguPihakKetiga => ['Menunggu pihak ketiga', $activeWait?->third_party_name ? 'Menunggu tindak lanjut dari '.$activeWait->third_party_name.'.' : 'Agen sedang menunggu tindak lanjut dari pihak ketiga.'],
+        \App\Enums\TicketStatus::MenungguKonfirmasi => ['Menunggu konfirmasi Pemohon', $ticket->confirmation_due_at ? 'Pemohon dapat memberikan konfirmasi sampai '.$ticket->confirmation_due_at->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i').'.' : 'Pemohon perlu mengonfirmasi hasil pekerjaan.'],
+        \App\Enums\TicketStatus::Ditutup => ['Tiket telah ditutup', $ticket->closed_reason === 'auto_closed' ? 'Tiket ditutup otomatis karena batas konfirmasi terlewati.' : 'Tiket ditutup setelah hasil dikonfirmasi Pemohon.'],
         \App\Enums\TicketStatus::Ditolak => ['Tiket ditolak', $ticket->rejection_reason ?: 'Permintaan ini tidak dilanjutkan oleh Agen Tier 1.'],
         \App\Enums\TicketStatus::TidakDisetujui => ['Persetujuan tidak disetujui', $approvalRequest?->decision_note ?: 'Permintaan persetujuan ini bersifat final.'],
         \App\Enums\TicketStatus::Dibatalkan => ['Tiket telah dibatalkan', 'Tiket ini tidak akan masuk ke proses penanganan lebih lanjut.'],
@@ -93,6 +100,34 @@
                         <p class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Deskripsi</p>
                         <p class="mt-2 whitespace-pre-line text-sm leading-7 text-[#526f79]">{{ $ticket->description ?: 'Deskripsi belum tersedia.' }}</p>
                     </div>
+                    @if (filled($ticket->solution))
+                        <div class="rounded-xl border border-[#cdeef7] bg-[#f5fcfe] p-4" role="status">
+                            <p class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#147a79]">Solusi</p>
+                            <p class="mt-2 whitespace-pre-line text-sm leading-7 text-[#35505b]">{{ $ticket->solution }}</p>
+                        </div>
+                    @endif
+                    @if ($slaMetrics && $slaMetrics['uses_sla'])
+                        @php
+                            $remainingMinutes = $slaMetrics['remaining_minutes'];
+                            $remainingHours = intdiv(max(0, (int) $remainingMinutes), 60);
+                            $remainingRemainder = max(0, (int) $remainingMinutes) % 60;
+                            $slaLabel = $slaMetrics['paused'] ? 'Dijeda karena status menunggu' : ($slaMetrics['overdue'] ? 'Melewati target SLA' : ($slaMetrics['near_limit'] ? 'Mendekati batas SLA' : 'SLA berjalan'));
+                        @endphp
+                        <div class="rounded-xl border border-[#dce7eb] bg-[#fbfdfd] p-4" aria-labelledby="sla-summary-heading">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <p id="sla-summary-heading" class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">SLA tiket</p>
+                                    <p class="mt-2 text-sm font-extrabold text-[#35505b]">{{ $slaLabel }}</p>
+                                </div>
+                                <span class="rounded-full bg-[#eef7f8] px-3 py-1 text-xs font-extrabold text-[#147a79]">Siklus {{ $slaMetrics['cycle'] }}</span>
+                            </div>
+                            <dl class="mt-4 grid gap-3 sm:grid-cols-3">
+                                <div><dt class="text-xs font-bold text-[#78909a]">Target</dt><dd class="mt-1 text-sm font-extrabold text-[#35505b]">{{ $slaMetrics['target_working_days'] }} hari kerja</dd></div>
+                                <div><dt class="text-xs font-bold text-[#78909a]">Sisa waktu aktif</dt><dd class="mt-1 text-sm font-extrabold text-[#35505b]">{{ $remainingHours }}j {{ $remainingRemainder }}m</dd></div>
+                                <div><dt class="text-xs font-bold text-[#78909a]">Kepatuhan</dt><dd class="mt-1 text-sm font-extrabold text-[#35505b]">{{ $slaMetrics['compliant'] === null ? 'Belum diukur' : ($slaMetrics['compliant'] ? 'Sesuai target' : 'Tidak sesuai target') }}</dd></div>
+                            </dl>
+                        </div>
+                    @endif
                     <dl class="grid gap-4 border-t border-[#edf2f4] pt-5 sm:grid-cols-2">
                         <div>
                             <dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Layanan</dt>
@@ -383,6 +418,73 @@
                 <p class="mt-2 text-sm leading-6 text-[#52747b]">{{ $nextStepDescription }}</p>
                 <div class="mt-4"><x-status-badge :status="$ticket->status" /></div>
             </section>
+
+            @if ($canComplete)
+                <section class="ui-panel border-l-4 border-l-[#2bb8aa]" aria-labelledby="complete-heading">
+                    <div class="ui-panel-header">
+                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#2bb8aa] !shadow-[0_0_0_4px_#d7f7f1]" aria-hidden="true"></span>Penyelesaian</p>
+                        <h2 id="complete-heading" class="mt-2 ui-section-title">Simpan solusi</h2>
+                        <p class="ui-section-description">Solusi wajib diisi. Setelah disimpan, tiket masuk Menunggu Konfirmasi dan SLA berhenti.</p>
+                    </div>
+                    <form method="POST" action="{{ route('tickets.complete', $ticket) }}" class="space-y-4 p-5 sm:p-6" data-ticket-resolution-form>
+                        @csrf
+                        <div>
+                            <label for="ticket-solution" class="ui-field-label">Solusi <span class="text-rose-600" aria-hidden="true">*</span></label>
+                            <textarea id="ticket-solution" name="solution" rows="6" required maxlength="20000" class="ui-textarea mt-2" placeholder="Jelaskan tindakan dan hasil penyelesaian tiket.">{{ old('solution') }}</textarea>
+                            @error('solution')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+                        </div>
+                        <button type="submit" class="ui-btn ui-btn-primary w-full" data-ticket-resolution-submit>Simpan solusi dan minta konfirmasi</button>
+                    </form>
+                </section>
+            @endif
+
+            @if ($canConfirm || $canNotSatisfied)
+                <section class="ui-panel border-l-4 border-l-[#2bb8aa]" aria-labelledby="confirmation-heading">
+                    <div class="ui-panel-header">
+                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#2bb8aa] !shadow-[0_0_0_4px_#d7f7f1]" aria-hidden="true"></span>Konfirmasi hasil</p>
+                        <h2 id="confirmation-heading" class="mt-2 ui-section-title">Apakah hasilnya sudah sesuai?</h2>
+                        <p class="ui-section-description">Konfirmasi menutup tiket. Jika belum sesuai, tiket kembali kepada penanggung jawab terakhir tanpa triase ulang.</p>
+                    </div>
+                    <div class="grid gap-3 p-5 sm:p-6">
+                        @if ($canConfirm)
+                            <form method="POST" action="{{ route('tickets.confirm', $ticket) }}" onsubmit="return window.confirm('Konfirmasi hasil ini dan tutup tiket?');">
+                                @csrf
+                                <button type="submit" class="ui-btn ui-btn-primary w-full">Hasil sudah sesuai dan tutup tiket</button>
+                            </form>
+                        @endif
+                        @if ($canNotSatisfied)
+                            <form method="POST" action="{{ route('tickets.not-satisfied', $ticket) }}" class="space-y-3 rounded-xl border border-[#f0d28c] bg-[#fffaf0] p-4" data-ticket-resolution-form>
+                                @csrf
+                                <div>
+                                    <label for="not-satisfied-reason" class="ui-field-label">Alasan hasil belum sesuai <span class="text-rose-600" aria-hidden="true">*</span></label>
+                                    <textarea id="not-satisfied-reason" name="reason" rows="4" required maxlength="5000" class="ui-textarea mt-2" placeholder="Jelaskan bagian hasil yang masih perlu diperbaiki.">{{ old('reason') }}</textarea>
+                                    @error('reason')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+                                </div>
+                                <button type="submit" class="ui-btn ui-btn-warning w-full" data-ticket-resolution-submit>Hasil belum sesuai</button>
+                            </form>
+                        @endif
+                    </div>
+                </section>
+            @endif
+
+            @if ($canReopen)
+                <section class="ui-panel border-l-4 border-l-[#e4a72c]" aria-labelledby="reopen-heading">
+                    <div class="ui-panel-header">
+                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#e4a72c] !shadow-[0_0_0_4px_#fff4d7]" aria-hidden="true"></span>Tindak lanjut</p>
+                        <h2 id="reopen-heading" class="mt-2 ui-section-title">Buka kembali tiket</h2>
+                        <p class="ui-section-description">Tiket kembali Dikerjakan kepada penanggung jawab terakhir dan mendapatkan siklus SLA penuh baru sesuai batas yang berlaku.</p>
+                    </div>
+                    <form method="POST" action="{{ route('tickets.reopen', $ticket) }}" class="space-y-4 p-5 sm:p-6" data-ticket-resolution-form>
+                        @csrf
+                        <div>
+                            <label for="reopen-reason" class="ui-field-label">Alasan buka kembali</label>
+                            <textarea id="reopen-reason" name="reason" rows="3" maxlength="5000" class="ui-textarea mt-2" placeholder="Opsional: jelaskan tindak lanjut yang masih diperlukan.">{{ old('reason') }}</textarea>
+                            @error('reason')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+                        </div>
+                        <button type="submit" class="ui-btn ui-btn-warning w-full" data-ticket-resolution-submit>Buka kembali tiket</button>
+                    </form>
+                </section>
+            @endif
 
             @if ($approvalRequest)
                 <x-approval-panel :approval-request="$approvalRequest" :ticket="$ticket" :can-decide="$canDecideApproval" />

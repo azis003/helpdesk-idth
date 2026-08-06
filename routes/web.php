@@ -45,6 +45,13 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
         Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
         Route::post('/tickets/{ticket}/request-approval', [TicketController::class, 'requestApproval'])->name('tickets.request-approval');
+        Route::post('/tickets/{ticket}/complete', [TicketController::class, 'complete'])->name('tickets.complete');
+        Route::post('/tickets/{ticket}/resolve', [TicketController::class, 'complete'])->name('tickets.resolve');
+        Route::post('/tickets/{ticket}/confirm', [TicketController::class, 'confirm'])->name('tickets.confirm');
+        Route::post('/tickets/{ticket}/requester-confirmation', [TicketController::class, 'confirm'])->name('tickets.requester-confirm');
+        Route::post('/tickets/{ticket}/not-satisfied', [TicketController::class, 'notSatisfied'])->name('tickets.not-satisfied');
+        Route::post('/tickets/{ticket}/confirmation/not-satisfied', [TicketController::class, 'notSatisfied'])->name('tickets.confirmation.not-satisfied');
+        Route::post('/tickets/{ticket}/reopen', [TicketController::class, 'reopen'])->name('tickets.reopen');
         Route::post('/tickets/{ticket}/comments/public', [TicketCommunicationController::class, 'publicReply'])->name('tickets.comments.public');
         Route::post('/tickets/{ticket}/comments/internal', [TicketCommunicationController::class, 'internalNote'])->name('tickets.comments.internal');
         Route::post('/tickets/{ticket}/request-information', [TicketCommunicationController::class, 'requestInformation'])->name('tickets.request-information');

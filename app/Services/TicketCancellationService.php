@@ -14,6 +14,7 @@ class TicketCancellationService
         private readonly DatabaseManager $database,
         private readonly DomainAuthorization $authorization,
         private readonly AuditLogger $auditLogger,
+        private readonly TicketSlaService $sla,
     ) {}
 
     public function cancel(User $actor, Ticket $ticket): void
@@ -47,6 +48,7 @@ class TicketCancellationService
                 'actor_id' => $actor->getKey(),
                 'occurred_at' => $occurredAt,
             ]);
+            $this->sla->stop($lockedTicket, $occurredAt);
 
             $this->auditLogger->succeeded(
                 $actor,

@@ -20,6 +20,7 @@ class TicketWorkflowService
         private readonly DomainAuthorization $authorization,
         private readonly AuditLogger $auditLogger,
         private readonly SkillSuggestionService $skillSuggestions,
+        private readonly TicketSlaService $sla,
     ) {}
 
     public function claim(User $actor, Ticket $ticket): bool
@@ -289,6 +290,10 @@ class TicketWorkflowService
                 'priority' => $priority,
                 'rejection_reason' => $rejectionReason,
             ])->save();
+
+            if ($outcome === TicketTriageOutcome::Reject) {
+                $this->sla->stop($lockedTicket, $occurredAt);
+            }
 
             if ($categoryChanged) {
                 $this->recordCategoryHistory(

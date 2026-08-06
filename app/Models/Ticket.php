@@ -40,6 +40,15 @@ class Ticket extends Model
         'service_type_variant_label_snapshot',
         'priority',
         'description',
+        'solution',
+        'confirmation_started_at',
+        'confirmation_due_at',
+        'closed_at',
+        'closed_reason',
+        'reopen_count',
+        'sla_cycle',
+        'sla_compliant',
+        'sla_elapsed_working_minutes',
         'rejection_reason',
         'room_id',
         'building_name_snapshot',
@@ -57,6 +66,13 @@ class Ticket extends Model
             'ticket_sequence' => 'integer',
             'is_self_created' => 'boolean',
             'submitted_at' => 'datetime',
+            'confirmation_started_at' => 'datetime',
+            'confirmation_due_at' => 'datetime',
+            'closed_at' => 'datetime',
+            'reopen_count' => 'integer',
+            'sla_cycle' => 'integer',
+            'sla_compliant' => 'boolean',
+            'sla_elapsed_working_minutes' => 'integer',
         ];
     }
 
@@ -161,6 +177,11 @@ class Ticket extends Model
         return $this->hasMany(TicketSlaSegment::class)
             ->orderBy('started_at')
             ->orderBy('id');
+    }
+
+    public function scopeAwaitingConfirmation(Builder $query): Builder
+    {
+        return $query->where('status', TicketStatus::MenungguKonfirmasi->value);
     }
 
     public function scopeNewQueue(Builder $query): Builder
