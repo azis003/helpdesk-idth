@@ -49,6 +49,10 @@
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 9h8M8 12h5M8 15h7" /></svg></span>
                         <span class="ui-nav-label">Katalog layanan</span>
                     </a>
+                    <a href="{{ route('admin.operational-policies.index') }}" class="ui-nav-link {{ request()->routeIs('admin.operational-policies.*') ? 'is-active' : '' }}" aria-label="Kebijakan operasional" title="Kebijakan operasional">
+                        <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.5 19 6v5.3c0 4.1-2.8 7.5-7 9.2-4.2-1.7-7-5.1-7-9.2V6l7-2.5Z" /><path stroke-linecap="round" stroke-linejoin="round" d="m9.2 12 1.8 1.8 3.9-4" /></svg></span>
+                        <span class="ui-nav-label">Kebijakan operasional</span>
+                    </a>
                     <a href="{{ route('admin.audit-logs.index') }}" class="ui-nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'is-active' : '' }}" aria-label="Audit log" title="Audit log">
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 3.5h9l3 3V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" /><path stroke-linecap="round" d="M14 3.5V7h4M8 11h8M8 14.5h8M8 18h5" /></svg></span>
                         <span class="ui-nav-label">Audit log</span>
@@ -111,6 +115,7 @@
                                 <a href="{{ route('admin.teams.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.teams.*') ? 'is-active' : '' }}">Tim kerja</a>
                                 <a href="{{ route('admin.skills.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.skills.*', 'admin.categories.*') ? 'is-active' : '' }}">Data keahlian</a>
                                 <a href="{{ route('admin.catalog.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.catalog.*') ? 'is-active' : '' }}">Katalog layanan</a>
+                                <a href="{{ route('admin.operational-policies.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.operational-policies.*') ? 'is-active' : '' }}">Kebijakan operasional</a>
                                 <a href="{{ route('admin.audit-logs.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'is-active' : '' }}">Audit log</a>
                             @endif
                             @if ($canManageAnnouncements)

@@ -75,6 +75,16 @@ class User extends Authenticatable
         return $this->hasMany(Announcement::class, 'created_by');
     }
 
+    public function approverAssignments(): HasMany
+    {
+        return $this->hasMany(ApproverAssignment::class);
+    }
+
+    public function approvalRequests(): HasMany
+    {
+        return $this->hasMany(ApprovalRequest::class, 'approver_id');
+    }
+
     public function teamMemberships(): HasMany
     {
         return $this->hasMany(TeamMembership::class);

@@ -20,6 +20,7 @@ class OrganizationService
     public function __construct(
         private readonly DatabaseManager $database,
         private readonly AuditLogger $auditLogger,
+        private readonly ApproverAssignmentService $approverAssignments,
     ) {}
 
     /**
@@ -69,6 +70,10 @@ class OrganizationService
      */
     public function updateUser(User $actor, User $user, array $data): User
     {
+        if (array_key_exists('role_ids', $data)) {
+            $this->approverAssignments->assertCanRevokeApproverRole($actor, $user, $data['role_ids'] ?? []);
+        }
+
         return $this->database->transaction(function () use ($actor, $user, $data): User {
             $before = $this->userSnapshot($user);
 
@@ -114,6 +119,10 @@ class OrganizationService
 
     public function setUserStatus(User $actor, User $user, bool $active): User
     {
+        if (! $active) {
+            $this->approverAssignments->assertCanDeactivate($actor, $user);
+        }
+
         return $this->database->transaction(function () use ($actor, $user, $active): User {
             $before = $this->userSnapshot($user);
 
@@ -141,6 +150,9 @@ class OrganizationService
      */
     public function syncRoles(User $actor, User $user, iterable $roleIds): User
     {
+        $roleIds = collect($roleIds)->values()->all();
+        $this->approverAssignments->assertCanRevokeApproverRole($actor, $user, $roleIds);
+
         return $this->database->transaction(fn (): User => $this->syncRolesInTransaction($actor, $user, $roleIds));
     }
 

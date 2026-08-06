@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ServiceType extends Model
@@ -55,6 +56,16 @@ class ServiceType extends Model
     public function attachmentPolicies(): HasMany
     {
         return $this->hasMany(AttachmentPolicy::class);
+    }
+
+    public function slaPolicies(): HasMany
+    {
+        return $this->hasMany(SlaPolicy::class);
+    }
+
+    public function activeSlaPolicy(): HasOne
+    {
+        return $this->hasOne(SlaPolicy::class)->where('is_active', true);
     }
 
     public function scopeActive(Builder $query): Builder

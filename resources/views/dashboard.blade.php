@@ -38,7 +38,7 @@
         <section class="mt-7" aria-labelledby="shortcuts-heading">
             <div class="flex items-end justify-between gap-4">
                 <div><p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Akses cepat</p><h2 id="shortcuts-heading" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">Pusat administrasi</h2></div>
-                <span class="hidden text-xs font-bold text-[#86979e] sm:block">5 area tersedia</span>
+                <span class="hidden text-xs font-bold text-[#86979e] sm:block">6 area tersedia</span>
             </div>
             <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <a href="{{ route('admin.users.index') }}" class="ui-catalog-card group">
@@ -56,6 +56,10 @@
                 <a href="{{ route('admin.catalog.index') }}" class="ui-catalog-card group">
                     <span class="ui-catalog-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 9h8M8 12h5M8 15h7" /></svg></span>
                     <span class="mt-4 flex items-center justify-between gap-2"><span><span class="block text-sm font-extrabold text-[#263a43]">Katalog layanan</span><span class="mt-1 block text-xs leading-5 text-[#84959c]">Layanan dan formulir dinamis</span></span><span class="text-lg text-[#56bedf] transition-transform group-hover:translate-x-1" aria-hidden="true">→</span></span>
+                </a>
+                <a href="{{ route('admin.operational-policies.index') }}" class="ui-catalog-card group">
+                    <span class="ui-catalog-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.5 19 6v5.3c0 4.1-2.8 7.5-7 9.2-4.2-1.7-7-5.1-7-9.2V6l7-2.5Z" /><path stroke-linecap="round" stroke-linejoin="round" d="m9.2 12 1.8 1.8 3.9-4" /></svg></span>
+                    <span class="mt-4 flex items-center justify-between gap-2"><span><span class="block text-sm font-extrabold text-[#263a43]">Kebijakan operasional</span><span class="mt-1 block text-xs leading-5 text-[#84959c]">SLA, kalender, dan approver</span></span><span class="text-lg text-[#56bedf] transition-transform group-hover:translate-x-1" aria-hidden="true">→</span></span>
                 </a>
                 <a href="{{ route('admin.audit-logs.index') }}" class="ui-catalog-card group">
                     <span class="ui-catalog-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 3.5h9l3 3V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" /><path stroke-linecap="round" d="M14 3.5V7h4M8 11h8M8 14.5h8" /></svg></span>

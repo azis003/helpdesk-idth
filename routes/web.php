@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\AttachmentPolicyController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\LocationController;
+use App\Http\Controllers\Admin\OperationalPolicyController;
 use App\Http\Controllers\Admin\ServiceCatalogController;
 use App\Http\Controllers\Admin\SkillController;
 use App\Http\Controllers\Admin\UserManagementController;
@@ -76,6 +77,12 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::put('/categories/{problemCategory}/skills', [SkillController::class, 'updateCategorySkills'])->name('categories.skills.update');
 
             Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+
+            Route::get('/operational-policies', [OperationalPolicyController::class, 'index'])->name('operational-policies.index');
+            Route::put('/operational-policies/sla', [OperationalPolicyController::class, 'updateSla'])->name('operational-policies.sla.update');
+            Route::put('/operational-policies/calendar', [OperationalPolicyController::class, 'updateCalendar'])->name('operational-policies.calendar.update');
+            Route::put('/operational-policies/settings', [OperationalPolicyController::class, 'updateSettings'])->name('operational-policies.settings.update');
+            Route::put('/operational-policies/approver', [OperationalPolicyController::class, 'replaceApprover'])->name('operational-policies.approver.update');
 
             Route::get('/catalog', [ServiceCatalogController::class, 'index'])->name('catalog.index');
             Route::put('/catalog/services/{serviceType}', [ServiceCatalogController::class, 'updateService'])->name('catalog.services.update');
