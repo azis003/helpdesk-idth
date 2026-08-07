@@ -148,6 +148,13 @@ class Ticket extends Model
         return $this->hasMany(TicketFieldValue::class)->orderBy('id');
     }
 
+    public function fieldValueHistories(): HasMany
+    {
+        return $this->hasMany(TicketFieldValueHistory::class)
+            ->orderBy('occurred_at')
+            ->orderBy('id');
+    }
+
     public function attachments(): HasMany
     {
         return $this->hasMany(Attachment::class)->latest('id');

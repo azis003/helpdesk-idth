@@ -147,6 +147,17 @@
                 @foreach ($serviceTypes as $serviceType)
                     <fieldset data-ticket-service-panel data-service-id="{{ $serviceType->id }}" data-service-code="{{ $serviceType->code }}" class="hidden space-y-4" @if ((string) $selectedServiceId !== (string) $serviceType->id) disabled @endif>
                         <legend class="sr-only">Field layanan {{ $serviceType->code }}</legend>
+                        @if ($serviceType->code === 'SVC-07')
+                            <div class="rounded-xl border border-[#b9e5f2] bg-[#f1fbfe] p-4 sm:p-5">
+                                <div class="flex items-start gap-3">
+                                    <span class="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#d9f6ff] text-sm font-black text-[#1d5d72]" aria-hidden="true">P</span>
+                                    <div>
+                                        <p class="text-sm font-extrabold text-[#1d5d72]">Bagian Pemohon</p>
+                                        <p class="mt-1 text-xs leading-5 text-[#52747b]">Lengkapi kebutuhan dan konteks usulan di bawah ini. Setelah tiket dibuat, Tim TI akan mengisi bagian internalnya pada detail tiket.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                         @foreach ($serviceType->activeFieldDefinitions->whereIn('visibility', ['requester', 'both']) as $field)
                             <x-tickets.dynamic-field :field="$field" :service="$serviceType" />
                         @endforeach

@@ -7,6 +7,7 @@ use App\Enums\Role;
 use App\Enums\TicketCommentVisibility;
 use App\Http\Requests\AssignTicketRequest;
 use App\Http\Requests\CompleteTicketRequest;
+use App\Http\Requests\InternalTicketFieldRequest;
 use App\Http\Requests\NotSatisfiedTicketRequest;
 use App\Http\Requests\ReopenTicketRequest;
 use App\Http\Requests\RequestApprovalRequest;
@@ -32,6 +33,7 @@ use App\Services\TicketApprovalService;
 use App\Services\TicketAttachmentService;
 use App\Services\TicketCancellationService;
 use App\Services\TicketCreationService;
+use App\Services\TicketInternalFieldService;
 use App\Services\TicketResolutionService;
 use App\Services\TicketSlaService;
 use App\Services\TicketWorkflowService;
@@ -44,6 +46,7 @@ class TicketController extends Controller
     public function __construct(
         private readonly DomainAuthorization $authorization,
         private readonly TicketCreationService $creation,
+        private readonly TicketInternalFieldService $internalFields,
         private readonly TicketCancellationService $cancellation,
         private readonly TicketWorkflowService $workflow,
         private readonly SkillSuggestionService $skillSuggestions,
@@ -195,9 +198,11 @@ class TicketController extends Controller
             'lastTriagedBy',
             'serviceType',
             'serviceTypeVariant',
+            'serviceType.activeFieldDefinitions.options',
             'problemCategory',
             'room.floor.building',
             'fieldValues',
+            'fieldValueHistories.actor',
             'attachments.uploadedBy',
             'comments.author',
             'comments.attachments.uploadedBy',
@@ -227,6 +232,16 @@ class TicketController extends Controller
             && $actor->can('decide', $approvalRequest);
         $canSeeInternal = $actor->hasAnyRole([Role::SuperAdmin, Role::AgenTier1, Role::AgenTier2])
             || $canDecideApproval;
+
+        $internalFieldValues = $canSeeInternal
+            ? $ticket->fieldValues->filter(fn ($fieldValue): bool => $fieldValue->isInternal())->values()
+            : collect();
+        $ticket->setRelation(
+            'fieldValues',
+            $ticket->fieldValues
+                ->filter(fn ($fieldValue): bool => $fieldValue->isRequesterVisible())
+                ->values(),
+        );
 
         if (! $canSeeInternal) {
             $ticket->setRelation(
@@ -262,6 +277,7 @@ class TicketController extends Controller
         $canRequestApproval = $actor->can('requestApproval', $ticket);
         $canComplete = $actor->can('complete', $ticket);
         $canUploadAttachments = $actor->can('uploadAttachment', $ticket);
+        $canUpdateInternalFields = $actor->can('updateInternalFields', $ticket);
         $canStartDatabaseChange = $actor->can('startDatabaseChange', $ticket);
         $canVerifyDatabaseChange = $actor->can('verifyDatabaseChange', $ticket);
         $canConfirm = $actor->can('confirm', $ticket);
@@ -306,6 +322,11 @@ class TicketController extends Controller
             'canRequestApproval' => $canRequestApproval,
             'canComplete' => $canComplete,
             'canUploadAttachments' => $canUploadAttachments,
+            'canUpdateInternalFields' => $canUpdateInternalFields,
+            'internalFieldDefinitions' => $ticket->serviceType?->activeFieldDefinitions
+                ->where('visibility', 'internal')
+                ->values() ?? collect(),
+            'internalFieldValues' => $internalFieldValues,
             'canStartDatabaseChange' => $canStartDatabaseChange,
             'canVerifyDatabaseChange' => $canVerifyDatabaseChange,
             'canConfirm' => $canConfirm,
@@ -365,6 +386,19 @@ class TicketController extends Controller
         return redirect()
             ->route('tickets.show', $ticket)
             ->with('success', 'Lampiran berhasil ditambahkan dan metadata aksesnya dicatat.');
+    }
+
+    public function updateInternalFields(InternalTicketFieldRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $this->internalFields->update(
+            $request->user(),
+            $ticket,
+            $request->validated(),
+        );
+
+        return redirect()
+            ->route('tickets.show', $ticket)
+            ->with('success', 'Field internal SVC-07 berhasil disimpan.');
     }
 
     public function startDatabaseChange(StartDatabaseChangeExecutionRequest $request, Ticket $ticket): RedirectResponse
@@ -557,6 +591,21 @@ class TicketController extends Controller
                 'reason' => null,
                 'kind' => 'attachment',
             ]);
+        }
+
+        if ($canSeeInternal) {
+            foreach ($ticket->fieldValueHistories as $history) {
+                $timeline->push([
+                    'occurred_at' => $history->occurred_at,
+                    'title' => $history->change_type === 'created'
+                        ? 'Field internal SVC-07 diisi'
+                        : 'Field internal SVC-07 diperbarui',
+                    'description' => "{$history->label_snapshot} disimpan menggunakan definisi versi {$history->version_snapshot}.",
+                    'actor' => $history->actor?->name,
+                    'reason' => null,
+                    'kind' => 'internal',
+                ]);
+            }
         }
 
         if ($canSeeInternal && $ticket->databaseChangeControl !== null) {

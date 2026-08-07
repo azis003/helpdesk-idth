@@ -345,6 +345,25 @@ communicationForms.forEach((communicationForm) => {
     });
 });
 
+const internalFieldForms = document.querySelectorAll('[data-ticket-internal-fields-form]');
+
+internalFieldForms.forEach((form) => {
+    form.addEventListener('submit', () => {
+        const button = form.querySelector('[data-ticket-internal-fields-submit]');
+        const label = form.querySelector('[data-ticket-internal-fields-label]');
+        const loading = form.querySelector('[data-ticket-internal-fields-loading]');
+
+        if (!button) {
+            return;
+        }
+
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        label?.classList.add('hidden');
+        loading?.classList.remove('hidden');
+    });
+});
+
 const approvalForms = document.querySelectorAll('[data-approval-request-form], [data-approval-decision-form]');
 
 approvalForms.forEach((approvalForm) => {

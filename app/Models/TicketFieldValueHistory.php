@@ -6,26 +6,32 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class TicketFieldValue extends Model
+class TicketFieldValueHistory extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'ticket_id',
         'service_field_definition_id',
+        'actor_id',
         'field_key',
         'label_snapshot',
         'field_type_snapshot',
         'visibility_snapshot',
         'version_snapshot',
-        'value',
+        'change_type',
+        'old_value',
+        'new_value',
+        'occurred_at',
     ];
 
     protected function casts(): array
     {
         return [
             'version_snapshot' => 'integer',
-            'value' => 'json',
+            'old_value' => 'json',
+            'new_value' => 'json',
+            'occurred_at' => 'datetime',
         ];
     }
 
@@ -39,13 +45,8 @@ class TicketFieldValue extends Model
         return $this->belongsTo(ServiceFieldDefinition::class);
     }
 
-    public function isRequesterVisible(): bool
+    public function actor(): BelongsTo
     {
-        return in_array($this->visibility_snapshot, ['requester', 'both'], true);
-    }
-
-    public function isInternal(): bool
-    {
-        return $this->visibility_snapshot === 'internal';
+        return $this->belongsTo(User::class, 'actor_id');
     }
 }

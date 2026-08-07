@@ -171,6 +171,18 @@ class TicketPolicy
             ], true);
     }
 
+    public function updateInternalFields(User $actor, Ticket $ticket): bool
+    {
+        return $this->isAssignedAgent($actor, $ticket)
+            && $this->serviceCode($ticket) === 'SVC-07'
+            && in_array($ticket->status, [
+                TicketStatus::Diproses,
+                TicketStatus::Dikerjakan,
+                TicketStatus::MenungguPemohon,
+                TicketStatus::MenungguPihakKetiga,
+            ], true);
+    }
+
     public function requestInformation(User $actor, Ticket $ticket): bool
     {
         return $this->isAssignedAgent($actor, $ticket)

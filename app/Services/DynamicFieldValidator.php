@@ -16,15 +16,70 @@ class DynamicFieldValidator
      */
     public function validate(ServiceType $serviceType, array $input): array
     {
+        return $this->validateDefinitions(
+            $serviceType,
+            $input,
+            ['requester', 'both'],
+            'fields',
+        );
+    }
+
+    /**
+     * Validate the active fields that are owned by the internal TI workflow.
+     *
+     * The ticket service supplies the submitted keys so every value being
+     * changed must include a version that matches the active definition.
+     * Direct callers that omit the key list remain backwards-compatible.
+     *
+     * @param  array<string, mixed>  $input
+     * @param  array<string, mixed>  $expectedVersions
+     * @return array<string, array{definition:ServiceFieldDefinition,value:mixed}>
+     */
+    public function validateInternal(
+        ServiceType $serviceType,
+        array $input,
+        array $expectedVersions = [],
+        ?array $versionKeys = null,
+    ): array {
+        return $this->validateDefinitions(
+            $serviceType,
+            $input,
+            ['internal'],
+            'internal_fields',
+            $expectedVersions,
+            $versionKeys,
+        );
+    }
+
+    /**
+     * @param  list<string>  $visibilities
+     * @param  array<string, mixed>  $expectedVersions
+     * @param  list<string>|null  $versionKeys
+     * @return array<string, array{definition:ServiceFieldDefinition,value:mixed}>
+     */
+    private function validateDefinitions(
+        ServiceType $serviceType,
+        array $input,
+        array $visibilities,
+        string $errorPrefix,
+        array $expectedVersions = [],
+        ?array $versionKeys = null,
+    ): array {
         $definitions = $serviceType->activeFieldDefinitions
-            ->filter(fn (ServiceFieldDefinition $field): bool => in_array($field->visibility, ['requester', 'both'], true))
+            ->filter(fn (ServiceFieldDefinition $field): bool => in_array($field->visibility, $visibilities, true))
             ->values();
         $knownKeys = $definitions->pluck('key')->all();
         $errors = [];
 
         foreach (array_keys($input) as $key) {
             if (! in_array($key, $knownKeys, true)) {
-                $errors["fields.{$key}"] = 'Field formulir yang dikirim tidak tersedia pada layanan yang dipilih.';
+                $errors["{$errorPrefix}.{$key}"] = 'Field formulir yang dikirim tidak tersedia pada layanan yang dipilih.';
+            }
+        }
+
+        foreach (array_keys($expectedVersions) as $key) {
+            if (! in_array($key, $knownKeys, true)) {
+                $errors["{$errorPrefix}.{$key}"] = 'Versi field yang dikirim tidak tersedia pada layanan yang dipilih.';
             }
         }
 
@@ -32,6 +87,21 @@ class DynamicFieldValidator
 
         foreach ($definitions as $field) {
             $value = $input[$field->key] ?? null;
+
+            if ($versionKeys !== null && in_array($field->key, $versionKeys, true)) {
+                if (! array_key_exists($field->key, $expectedVersions)) {
+                    $errors["{$errorPrefix}.{$field->key}"] = "Versi definisi {$field->label} wajib dikirim sebelum menyimpan.";
+
+                    continue;
+                }
+
+                if ((int) $expectedVersions[$field->key] !== (int) $field->version) {
+                    $errors["{$errorPrefix}.{$field->key}"] = "Definisi field {$field->label} telah berubah. Muat ulang halaman sebelum menyimpan.";
+
+                    continue;
+                }
+            }
+
             $rules = $this->rulesFor($field);
             $validator = Validator::make(
                 ['value' => $value],
@@ -40,7 +110,7 @@ class DynamicFieldValidator
             );
 
             if ($validator->fails()) {
-                $errors["fields.{$field->key}"] = $validator->errors()->first('value');
+                $errors["{$errorPrefix}.{$field->key}"] = $validator->errors()->first('value');
 
                 continue;
             }
@@ -49,7 +119,7 @@ class DynamicFieldValidator
                 $allowed = $field->options->where('is_active', true)->pluck('value')->all();
 
                 if (array_diff($value, $allowed) !== []) {
-                    $errors["fields.{$field->key}"] = "Pilihan {$field->label} tidak valid.";
+                    $errors["{$errorPrefix}.{$field->key}"] = "Pilihan {$field->label} tidak valid.";
 
                     continue;
                 }

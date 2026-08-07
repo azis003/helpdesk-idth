@@ -111,6 +111,7 @@ class TicketCreationService
                     'field_key' => $definition->key,
                     'label_snapshot' => $definition->label,
                     'field_type_snapshot' => $definition->field_type,
+                    'visibility_snapshot' => $definition->visibility,
                     'version_snapshot' => $definition->version,
                     'value' => $field['value'],
                 ]);

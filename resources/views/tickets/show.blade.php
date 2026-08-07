@@ -40,6 +40,9 @@
     $ticketAttachmentPolicies = $ticketAttachmentPolicies ?? collect();
     $specialControlReadiness = $specialControlReadiness ?? ['kind' => null, 'ready' => true];
     $canSeeInternal = $canSeeInternal ?? false;
+    $canUpdateInternalFields = $canUpdateInternalFields ?? false;
+    $internalFieldDefinitions = $internalFieldDefinitions ?? collect();
+    $internalFieldValues = $internalFieldValues ?? collect();
     $activeWait = $activeWait ?? null;
     $lastTimedOutWait = $lastTimedOutWait ?? null;
     $currentCategory = old('problem_category_id', $ticket->problem_category_id);
@@ -380,6 +383,58 @@
                     </dl>
                 @endif
             </section>
+
+            @if ($canSeeInternal && ($ticket->service_type_code_snapshot ?? $ticket->serviceType?->code) === 'SVC-07' && ($internalFieldDefinitions->isNotEmpty() || $internalFieldValues->isNotEmpty()))
+                @php
+                    $internalValuesByKey = $internalFieldValues->keyBy('field_key');
+                @endphp
+                <section class="ui-panel border-l-4 border-l-[#e4a72c]" aria-labelledby="internal-fields-heading">
+                    <div class="ui-panel-header">
+                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#e4a72c] !shadow-[0_0_0_4px_#fff4d7]" aria-hidden="true"></span>Ruang kerja Tim TI</p>
+                        <h2 id="internal-fields-heading" class="mt-2 ui-section-title">Bagian internal SVC-07</h2>
+                        <p class="ui-section-description">Nilai ini hanya terlihat oleh petugas berwenang Tim TI. Setiap penyimpanan mencatat versi definisi dan histori perubahan.</p>
+                    </div>
+
+                    @if ($canUpdateInternalFields && $internalFieldDefinitions->isNotEmpty())
+                        <form method="POST" action="{{ route('tickets.internal-fields.update', $ticket) }}" class="space-y-4 bg-[#fffaf0] p-5 sm:p-6" data-ticket-internal-fields-form>
+                            @csrf
+                            @method('PUT')
+                            <div class="grid gap-4 lg:grid-cols-2">
+                                @foreach ($internalFieldDefinitions as $field)
+                                    <x-tickets.internal-field :field="$field" :value="$internalValuesByKey->get($field->key)" />
+                                @endforeach
+                            </div>
+                            @error('internal_fields')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror
+                            <div class="flex flex-wrap items-center justify-between gap-3 border-t border-[#f0dca7] pt-4">
+                                <p class="text-xs leading-5 text-[#8a7440]">Simpan bertahap jika penilaian internal belum lengkap.</p>
+                                <button type="submit" class="ui-btn ui-btn-warning" data-ticket-internal-fields-submit>
+                                    <span data-ticket-internal-fields-label>Simpan bagian internal</span>
+                                    <span class="hidden" data-ticket-internal-fields-loading aria-hidden="true">Menyimpan…</span>
+                                </button>
+                            </div>
+                        </form>
+                    @else
+                        @if ($internalFieldValues->isEmpty())
+                            <p class="p-5 text-sm leading-6 text-[#8a7440] sm:p-6">Belum ada nilai internal yang disimpan oleh Tim TI.</p>
+                        @else
+                            <dl class="grid gap-4 bg-[#fffaf0] p-5 sm:grid-cols-2 sm:p-6">
+                                @foreach ($internalFieldValues as $fieldValue)
+                                    @php
+                                        $displayValue = is_array($fieldValue->value)
+                                            ? implode(', ', $fieldValue->value)
+                                            : ($fieldValue->field_type_snapshot === 'boolean' ? ((bool) $fieldValue->value ? 'Ya' : 'Tidak') : $fieldValue->value);
+                                    @endphp
+                                    <div class="rounded-lg border border-[#f0dca7] bg-[#fffdf7] p-4">
+                                        <dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#8a7440]">{{ $fieldValue->label_snapshot }}</dt>
+                                        <dd class="mt-2 whitespace-pre-line text-sm leading-6 text-[#6f5314]">{{ filled($displayValue) ? $displayValue : 'Tidak diisi' }}</dd>
+                                        <dd class="mt-2 text-[0.68rem] font-bold text-[#a18442]">Definisi versi {{ $fieldValue->version_snapshot }}</dd>
+                                    </div>
+                                @endforeach
+                            </dl>
+                        @endif
+                    @endif
+                </section>
+            @endif
 
             <section class="ui-panel" aria-labelledby="timeline-heading">
                 <div class="ui-panel-header">
