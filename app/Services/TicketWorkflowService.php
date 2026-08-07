@@ -21,6 +21,7 @@ class TicketWorkflowService
         private readonly AuditLogger $auditLogger,
         private readonly SkillSuggestionService $skillSuggestions,
         private readonly TicketSlaService $sla,
+        private readonly TicketNotificationService $notifications,
     ) {}
 
     public function claim(User $actor, Ticket $ticket): bool
@@ -83,6 +84,15 @@ class TicketWorkflowService
                 'Tiket diklaim dari antrean Tier 1.',
                 $before,
                 $this->snapshot($lockedTicket),
+            );
+
+            $this->notifications->send(
+                $lockedTicket,
+                'ticket_claimed',
+                'Tiket diambil dari antrean',
+                "Tiket {$lockedTicket->ticket_number} diambil oleh {$actor->name} dan mulai diproses.",
+                [$lockedTicket->requester_id, $lockedTicket->created_by_id],
+                "ticket:{$lockedTicket->getKey()}:claimed",
             );
 
             return true;
@@ -388,6 +398,30 @@ class TicketWorkflowService
                 );
             }
 
+            if ($outcome === TicketTriageOutcome::Reject) {
+                $this->notifications->send(
+                    $lockedTicket,
+                    'ticket_rejected',
+                    'Tiket ditolak',
+                    "Tiket {$lockedTicket->ticket_number} ditolak saat triase. Alasan: {$rejectionReason}",
+                    [$lockedTicket->requester_id, $lockedTicket->created_by_id],
+                    "ticket:{$lockedTicket->getKey()}:triaged:{$lockedTicket->statusHistories()->latest('id')->value('id')}",
+                );
+            } else {
+                $isEscalated = $outcome === TicketTriageOutcome::TierTwo;
+                $assignedName = $isEscalated ? $selectedUser->name : $actor->name;
+                $this->notifications->send(
+                    $lockedTicket,
+                    $isEscalated ? 'ticket_escalated' : 'ticket_assigned',
+                    $isEscalated ? 'Tiket dieskalasi ke Tier 2' : 'Tiket ditugaskan',
+                    $isEscalated
+                        ? "Tiket {$lockedTicket->ticket_number} dieskalasi kepada {$assignedName}."
+                        : "Tiket {$lockedTicket->ticket_number} ditugaskan kepada {$assignedName}.",
+                    [$lockedTicket->requester_id, $lockedTicket->created_by_id, $lockedTicket->assigned_to_id],
+                    "ticket:{$lockedTicket->getKey()}:triaged:{$lockedTicket->statusHistories()->latest('id')->value('id')}",
+                );
+            }
+
             return $lockedTicket->fresh([
                 'requester',
                 'creator',
@@ -484,6 +518,15 @@ class TicketWorkflowService
                 $this->snapshot($lockedTicket),
             );
 
+            $this->notifications->send(
+                $lockedTicket,
+                'ticket_escalated',
+                'Tiket dieskalasi ke Tier 2',
+                "Tiket {$lockedTicket->ticket_number} dieskalasi kepada {$selectedUser->name}.",
+                [$lockedTicket->requester_id, $lockedTicket->created_by_id, $lockedTicket->assigned_to_id],
+                "ticket:{$lockedTicket->getKey()}:assigned:{$lockedTicket->statusHistories()->latest('id')->value('id')}",
+            );
+
             return $lockedTicket->fresh(['assignee', 'problemCategory', 'lastTriagedBy']);
         });
 
@@ -566,6 +609,15 @@ class TicketWorkflowService
                 'Tiket dikembalikan kepada Agen Tier 1 terakhir yang melakukan triase.',
                 $before,
                 $this->snapshot($lockedTicket),
+            );
+
+            $this->notifications->send(
+                $lockedTicket,
+                'ticket_assigned',
+                'Tiket dikembalikan ke Tier 1',
+                "Tiket {$lockedTicket->ticket_number} dikembalikan kepada {$target->name}.",
+                [$lockedTicket->requester_id, $lockedTicket->created_by_id, $lockedTicket->assigned_to_id],
+                "ticket:{$lockedTicket->getKey()}:returned:{$lockedTicket->statusHistories()->latest('id')->value('id')}",
             );
 
             return $lockedTicket->fresh(['assignee', 'lastTriagedBy', 'problemCategory']);

@@ -7,7 +7,6 @@ use App\Enums\TicketCommentVisibility;
 use App\Models\Ticket;
 use App\Models\TicketComment;
 use App\Models\User;
-use App\Notifications\TicketEventNotification;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Validation\ValidationException;
 
@@ -18,6 +17,7 @@ class TicketCommunicationService
         private readonly DomainAuthorization $authorization,
         private readonly AuditLogger $auditLogger,
         private readonly TicketCommentService $comments,
+        private readonly TicketNotificationService $notifications,
     ) {}
 
     /**
@@ -86,12 +86,14 @@ class TicketCommunicationService
         $notificationTicket = $ticket->fresh(['requester']);
         if ($notificationTicket?->requester !== null
             && (int) $notificationTicket->requester->getKey() !== (int) $actor->getKey()) {
-            $notificationTicket->requester->notify(new TicketEventNotification(
+            $this->notifications->send(
+                $notificationTicket,
                 'public_comment',
                 'Balasan baru pada tiket',
                 "Ada balasan baru dari {$actor->name} pada tiket {$notificationTicket->ticket_number}.",
-                $notificationTicket,
-            ));
+                [$notificationTicket->requester_id],
+                "ticket:{$notificationTicket->getKey()}:comment:{$comment->getKey()}",
+            );
         }
 
         return $comment;
@@ -151,12 +153,14 @@ class TicketCommunicationService
         $notificationTicket = $ticket->fresh(['assignee']);
         if ($notificationTicket?->assignee !== null
             && (int) $notificationTicket->assignee->getKey() !== (int) $actor->getKey()) {
-            $notificationTicket->assignee->notify(new TicketEventNotification(
+            $this->notifications->send(
+                $notificationTicket,
                 'internal_note',
                 'Catatan internal baru',
                 "Ada catatan internal baru pada tiket {$notificationTicket->ticket_number} dari {$actor->name}.",
-                $notificationTicket,
-            ));
+                [$notificationTicket->assigned_to_id],
+                "ticket:{$notificationTicket->getKey()}:comment:{$comment->getKey()}",
+            );
         }
 
         return $comment;

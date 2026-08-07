@@ -6,7 +6,6 @@ use App\Enums\TicketStatus;
 use App\Models\ApprovalRequest;
 use App\Models\Ticket;
 use App\Models\User;
-use App\Notifications\TicketEventNotification;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -20,6 +19,7 @@ class TicketApprovalService
         private readonly AuditLogger $auditLogger,
         private readonly ApproverAssignmentService $approvers,
         private readonly TicketSlaService $sla,
+        private readonly TicketNotificationService $notifications,
     ) {}
 
     public function request(User $actor, Ticket $ticket, ?string $reason = null): ApprovalRequest
@@ -112,12 +112,16 @@ class TicketApprovalService
             return $approval->fresh(['ticket', 'approver', 'requestedBy']);
         });
 
-        $approval->approver?->notify(new TicketEventNotification(
-            'approval_requested',
-            'Persetujuan diperlukan',
-            "Tiket {$approval->ticket?->ticket_number} menunggu keputusan Anda.",
-            $approval->ticket,
-        ));
+        if ($approval->ticket !== null && $approval->approver_id !== null) {
+            $this->notifications->send(
+                $approval->ticket,
+                'approval_requested',
+                'Persetujuan diperlukan',
+                "Tiket {$approval->ticket->ticket_number} menunggu keputusan Anda.",
+                [$approval->approver_id],
+                "ticket:{$approval->ticket->getKey()}:approval-request:{$approval->getKey()}",
+            );
+        }
 
         return $approval;
     }
@@ -326,15 +330,14 @@ class TicketApprovalService
             $message .= " Catatan: {$note}";
         }
 
-        User::query()
-            ->whereIn('id', $recipientIds->all())
-            ->get()
-            ->each(fn (User $recipient) => $recipient->notify(new TicketEventNotification(
-                $approved ? 'approval_approved' : 'approval_rejected',
-                $title,
-                $message,
-                $ticket,
-            )));
+        $this->notifications->send(
+            $ticket,
+            $approved ? 'approval_approved' : 'approval_rejected',
+            $title,
+            $message,
+            $recipientIds->all(),
+            "ticket:{$ticket->getKey()}:approval-decision:{$approvalRequest->getKey()}:{$decision}",
+        );
     }
 
     private function deny(

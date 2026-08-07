@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Enums\TicketStatus;
 use App\Models\Ticket;
 use App\Models\User;
-use App\Notifications\TicketEventNotification;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
@@ -20,6 +19,7 @@ class TicketResolutionService
         private readonly WorkingCalendarService $calendar,
         private readonly OperationalPolicyService $policies,
         private readonly DatabaseChangeControlService $specialControls,
+        private readonly TicketNotificationService $notifications,
     ) {}
 
     public function complete(User $actor, Ticket $ticket, string $solution): Ticket
@@ -109,12 +109,14 @@ class TicketResolutionService
             throw ValidationException::withMessages(['ticket' => $reason]);
         }
 
-        $result->requester?->notify(new TicketEventNotification(
+        $this->notifications->send(
+            $result,
             'ticket_completed',
             'Tiket menunggu konfirmasi',
             "Solusi untuk tiket {$result->ticket_number} sudah tersedia. Silakan konfirmasi hasilnya.",
-            $result,
-        ));
+            [$result->requester_id],
+            "ticket:{$result->getKey()}:completed:{$result->statusHistories()->where('action', 'ticket.completed')->latest('id')->value('id')}",
+        );
 
         return $result;
     }
@@ -171,6 +173,7 @@ class TicketResolutionService
             'Tiket ditutup',
             "Tiket {$result->ticket_number} telah ditutup berdasarkan konfirmasi Pemohon.",
             $result,
+            "ticket:{$result->getKey()}:closed:{$result->statusHistories()->where('action', 'ticket.closed')->latest('id')->value('id')}",
         );
 
         return $result;
@@ -235,12 +238,14 @@ class TicketResolutionService
         });
 
         if ($assigneeId > 0) {
-            User::query()->find($assigneeId)?->notify(new TicketEventNotification(
+            $this->notifications->send(
+                $result,
                 'ticket_not_satisfied',
                 'Hasil tiket belum sesuai',
                 "Pemohon menyatakan hasil tiket {$result->ticket_number} belum sesuai. Tiket kembali dikerjakan oleh Anda.",
-                $result,
-            ));
+                [$assigneeId],
+                "ticket:{$result->getKey()}:not-satisfied:{$result->statusHistories()->where('action', 'ticket.confirmation.not_satisfied')->latest('id')->value('id')}",
+            );
         }
 
         return $result;
@@ -317,12 +322,14 @@ class TicketResolutionService
         });
 
         if ($assigneeId > 0) {
-            User::query()->find($assigneeId)?->notify(new TicketEventNotification(
+            $this->notifications->send(
+                $result,
                 'ticket_reopened',
                 'Tiket dibuka kembali',
                 "Tiket {$result->ticket_number} dibuka kembali oleh Pemohon dan kembali berstatus Dikerjakan.",
-                $result,
-            ));
+                [$assigneeId],
+                "ticket:{$result->getKey()}:reopened:{$result->statusHistories()->where('action', 'ticket.reopened')->latest('id')->value('id')}",
+            );
         }
 
         return $result;
@@ -350,6 +357,7 @@ class TicketResolutionService
                     'Tiket ditutup otomatis',
                     "Tiket {$result['ticket']->ticket_number} ditutup otomatis karena tidak ada konfirmasi Pemohon sampai batas waktu.",
                     $result['ticket'],
+                    "ticket:{$result['ticket']->getKey()}:auto-closed:{$result['ticket']->statusHistories()->where('action', 'ticket.auto_closed')->latest('id')->value('id')}",
                 );
             }
         }
@@ -478,20 +486,9 @@ class TicketResolutionService
         string $title,
         string $message,
         Ticket $ticket,
+        ?string $eventKey = null,
     ): void {
-        if ($recipientIds === []) {
-            return;
-        }
-
-        User::query()
-            ->whereIn('id', $recipientIds)
-            ->get()
-            ->each(fn (User $recipient) => $recipient->notify(new TicketEventNotification(
-                $event,
-                $title,
-                $message,
-                $ticket,
-            )));
+        $this->notifications->send($ticket, $event, $title, $message, $recipientIds, $eventKey);
     }
 
     /** @return array<string, mixed> */

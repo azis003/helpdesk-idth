@@ -9,7 +9,6 @@ use App\Enums\TicketWaitType;
 use App\Models\Ticket;
 use App\Models\TicketWait;
 use App\Models\User;
-use App\Notifications\TicketEventNotification;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
@@ -24,6 +23,7 @@ class TicketWaitingService
         private readonly TicketSlaService $sla,
         private readonly WorkingCalendarService $calendar,
         private readonly OperationalPolicyService $policies,
+        private readonly TicketNotificationService $notifications,
     ) {}
 
     /**
@@ -90,12 +90,15 @@ class TicketWaitingService
 
         if ($result->requester !== null
             && (int) $result->requester->getKey() !== (int) $actor->getKey()) {
-            $result->requester->notify(new TicketEventNotification(
+            $waitId = $result->activeWait?->getKey();
+            $this->notifications->send(
+                $result,
                 'requester_information',
                 'Informasi tambahan diperlukan',
                 "Agen meminta informasi tambahan untuk tiket {$result->ticket_number}.",
-                $result,
-            ));
+                [$result->requester_id],
+                "ticket:{$result->getKey()}:requester-wait:".($waitId ?? 'unknown'),
+            );
         }
 
         return $result;
@@ -109,7 +112,7 @@ class TicketWaitingService
         $this->authorization->authorize($actor, 'replyRequester', $ticket, 'ticket.reply.requester');
         $now = Carbon::now(config('app.timezone'));
 
-        [$result, $assignee] = $this->database->transaction(function () use ($actor, $ticket, $body, $fileGroups, $now): array {
+        [$result, $assignee, $commentId] = $this->database->transaction(function () use ($actor, $ticket, $body, $fileGroups, $now): array {
             $lockedTicket = $this->lockTicket($ticket, $actor, 'ticket.reply.requester');
             $this->authorization->authorize($actor, 'replyRequester', $lockedTicket, 'ticket.reply.requester');
             $wait = $lockedTicket->waits()->active()->requester()->latest('started_at')->lockForUpdate()->first();
@@ -152,16 +155,18 @@ class TicketWaitingService
                 ['wait_id' => $wait->getKey(), 'comment_id' => $comment->getKey()],
             );
 
-            return [$lockedTicket->fresh(['requester', 'assignee']), $assigneeId];
+            return [$lockedTicket->fresh(['requester', 'assignee']), $assigneeId, $comment->getKey()];
         });
 
         if ($assignee !== null && (int) $assignee !== (int) $actor->getKey()) {
-            User::query()->find($assignee)?->notify(new TicketEventNotification(
+            $this->notifications->send(
+                $result,
                 'requester_reply',
                 'Pemohon membalas tiket',
                 "Pemohon membalas tiket {$result->ticket_number} dan tiket kembali dikerjakan.",
-                $result,
-            ));
+                [$assignee],
+                "ticket:{$result->getKey()}:comment:{$commentId}",
+            );
         }
 
         return $result;
@@ -220,12 +225,15 @@ class TicketWaitingService
 
         if ($result->requester !== null
             && (int) $result->requester->getKey() !== (int) $actor->getKey()) {
-            $result->requester->notify(new TicketEventNotification(
+            $waitId = $result->activeWait?->getKey();
+            $this->notifications->send(
+                $result,
                 'third_party_wait',
                 'Tiket menunggu pihak ketiga',
                 "Tiket {$result->ticket_number} sedang menunggu pihak ketiga: {$thirdPartyName}.",
-                $result,
-            ));
+                [$result->requester_id],
+                "ticket:{$result->getKey()}:third-party-wait:".($waitId ?? 'unknown'),
+            );
         }
 
         return $result;
@@ -275,12 +283,14 @@ class TicketWaitingService
 
         if ($result->requester !== null
             && (int) $result->requester->getKey() !== (int) $actor->getKey()) {
-            $result->requester->notify(new TicketEventNotification(
+            $this->notifications->send(
+                $result,
                 'third_party_resumed',
                 'Tiket kembali dikerjakan',
                 "Tiket {$result->ticket_number} kembali dikerjakan setelah menunggu pihak ketiga.",
-                $result,
-            ));
+                [$result->requester_id],
+                "ticket:{$result->getKey()}:third-party-resumed:{$result->statusHistories()->where('action', 'ticket.resume.third_party')->latest('id')->value('id')}",
+            );
         }
 
         return $result;
@@ -304,19 +314,21 @@ class TicketWaitingService
             if ($transition !== null) {
                 $expired++;
 
-                $transition['user']?->notify(new TicketEventNotification(
+                $this->notifications->send(
+                    $transition['ticket'],
                     'requester_wait_timeout',
                     'Waktu tunggu Pemohon berakhir',
                     "Waktu tunggu informasi untuk tiket {$transition['ticket']->ticket_number} telah berakhir.",
-                    $transition['ticket'],
-                ));
+                    [$transition['user']?->getKey()],
+                    "ticket:{$transition['ticket']->getKey()}:requester-wait-timeout:{$transition['wait_id']}",
+                );
             }
         }
 
         return $expired;
     }
 
-    /** @return array{user:?User,ticket:Ticket}|null */
+    /** @return array{user:?User,ticket:Ticket,wait_id:int}|null */
     private function expireWait(int $waitId, Carbon $now): ?array
     {
         return $this->database->transaction(function () use ($waitId, $now): ?array {
@@ -361,7 +373,11 @@ class TicketWaitingService
 
             $user = $assigneeId === null ? null : User::query()->find($assigneeId);
 
-            return ['user' => $user, 'ticket' => $ticket->fresh(['requester', 'assignee'])];
+            return [
+                'user' => $user,
+                'ticket' => $ticket->fresh(['requester', 'assignee']),
+                'wait_id' => (int) $wait->getKey(),
+            ];
         });
     }
 

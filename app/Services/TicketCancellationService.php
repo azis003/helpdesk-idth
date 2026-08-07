@@ -15,13 +15,14 @@ class TicketCancellationService
         private readonly DomainAuthorization $authorization,
         private readonly AuditLogger $auditLogger,
         private readonly TicketSlaService $sla,
+        private readonly TicketNotificationService $notifications,
     ) {}
 
     public function cancel(User $actor, Ticket $ticket): void
     {
         $this->authorization->authorize($actor, 'cancel', $ticket, 'ticket.cancel');
 
-        $this->database->transaction(function () use ($actor, $ticket): void {
+        $this->database->transaction(function () use ($actor, $ticket): Ticket {
             $lockedTicket = Ticket::query()->whereKey($ticket->getKey())->lockForUpdate()->first();
 
             if ($lockedTicket === null) {
@@ -66,6 +67,17 @@ class TicketCancellationService
                 $before,
                 ['status' => TicketStatus::Dibatalkan->value],
             );
+
+            $this->notifications->send(
+                $lockedTicket,
+                'ticket_cancelled',
+                'Tiket dibatalkan',
+                "Tiket {$lockedTicket->ticket_number} dibatalkan oleh Pemohon.",
+                [$lockedTicket->requester_id, $lockedTicket->created_by_id],
+                "ticket:{$lockedTicket->getKey()}:cancelled",
+            );
+
+            return $lockedTicket->fresh(['requester', 'creator']);
         });
     }
 }

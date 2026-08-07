@@ -24,6 +24,7 @@ class TicketCreationService
         private readonly DynamicFieldValidator $fieldValidator,
         private readonly TicketAttachmentService $attachmentService,
         private readonly TicketSlaService $sla,
+        private readonly TicketNotificationService $notifications,
     ) {}
 
     /**
@@ -45,7 +46,7 @@ class TicketCreationService
         $attachments = $this->attachmentService->validate($fileGroups, $policies);
         $now = Carbon::now(config('app.timezone'));
 
-        return $this->database->transaction(function () use (
+        $ticket = $this->database->transaction(function () use (
             $actor,
             $requester,
             $serviceType,
@@ -129,8 +130,19 @@ class TicketCreationService
                 $this->snapshot($ticket),
             );
 
+            $this->notifications->send(
+                $ticket,
+                'ticket_created',
+                'Tiket berhasil dibuat',
+                "Tiket {$ticket->ticket_number} berhasil dibuat dan masuk antrean Tier 1.",
+                [$ticket->requester_id, $ticket->created_by_id],
+                "ticket:{$ticket->getKey()}:created",
+            );
+
             return $ticket;
         });
+
+        return $ticket;
     }
 
     private function resolveRequester(User $actor, mixed $requesterId): User
