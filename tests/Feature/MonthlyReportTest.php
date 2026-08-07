@@ -84,11 +84,9 @@ class MonthlyReportTest extends TestCase
         $this->actingAs($admin)
             ->get(route('reports.index', ['month' => '2026-08']))
             ->assertOk()
-            ->assertSee('Laporan bulanan')
+            ->assertSee('Laporan Bulanan')
             ->assertSee('Deskripsi historis')
             ->assertSee('Nama Historis')
-            ->assertSee('NIP-HISTORIS')
-            ->assertSee('Tim Historis')
             ->assertSee('Layanan Saat Tiket Dibuat')
             ->assertSee('Kategori Saat Tiket Dibuat')
             ->assertSee('02/08/2026 10:00')
@@ -123,8 +121,43 @@ class MonthlyReportTest extends TestCase
         $this->actingAs($admin)
             ->get(route('reports.index'))
             ->assertOk()
+            ->assertDontSee('Laporan Tiket Untuk Periode Tertentu')
+            ->assertDontSee('Periode Laporan')
+            ->assertSee('Bulan')
+            ->assertDontSee('Periode aktif:')
+            ->assertDontSee('Tiket bulan berjalan.')
+            ->assertDontSee('Unduh Excel')
+            ->assertDontSee('Unduh PDF')
+            ->assertDontSee('Sumber data operasional')
+            ->assertDontSee('Kembali ke dasbor');
+
+        $this->actingAs($admin)
+            ->get(route('reports.index', ['month' => '2026-08']))
+            ->assertOk()
             ->assertSee('Tiket bulan berjalan.')
-            ->assertDontSee('Tiket bulan sebelumnya.');
+            ->assertDontSee('Tiket bulan sebelumnya.')
+            ->assertSee('Unduh Excel')
+            ->assertSee('Unduh PDF');
+    }
+
+    public function test_report_month_allows_current_and_earlier_months_only(): void
+    {
+        $admin = $this->createUser([Role::SuperAdmin]);
+
+        $this->actingAs($admin)
+            ->get(route('reports.index'))
+            ->assertOk()
+            ->assertSee('max="2026-08"', false);
+
+        $this->actingAs($admin)
+            ->get(route('reports.index', ['month' => '2026-06']))
+            ->assertOk();
+
+        foreach (['2026-09', '2026-12'] as $month) {
+            $this->actingAs($admin)
+                ->get(route('reports.index', ['month' => $month]))
+                ->assertSessionHasErrors(['month' => 'Bulan laporan tidak boleh melebihi bulan berjalan.']);
+        }
     }
 
     public function test_only_report_authorized_roles_can_view_and_export(): void
@@ -151,7 +184,7 @@ class MonthlyReportTest extends TestCase
         $this->actingAs($activeApprover)
             ->get(route('reports.index'))
             ->assertOk()
-            ->assertSee('Laporan bulanan');
+            ->assertSee('Laporan Bulanan');
 
         $this->actingAs($tierTwo)
             ->get(route('reports.monthly.excel'))

@@ -23,16 +23,17 @@ class ReportController extends Controller
     {
         $this->authorizeReports($request);
         [$start, $end, $periodQuery] = $this->resolvePeriod($request);
-        $report = $this->reports->forPeriod($start, $end);
+        $reportRequested = $request->hasAny(['month', 'start_date', 'end_date', 'from', 'to']);
+        $report = $reportRequested ? $this->reports->forPeriod($start, $end) : null;
+        $now = Carbon::now(MonthlyReportService::TIMEZONE);
 
         return view('reports.monthly', [
             'report' => $report,
-            'periodStart' => $start,
-            'periodEnd' => $end,
+            'reportRequested' => $reportRequested,
             'periodLabel' => $this->periodLabel($start, $end),
             'periodMonth' => $periodQuery['month'] ?? null,
+            'periodMaxMonth' => $now->format('Y-m'),
             'periodQuery' => $periodQuery,
-            'periodTimezone' => MonthlyReportService::TIMEZONE,
         ]);
     }
 
@@ -114,13 +115,21 @@ class ReportController extends Controller
             ],
         )->validate();
 
+        $now = Carbon::now(MonthlyReportService::TIMEZONE);
+
         if (filled($monthInput)) {
             $start = Carbon::createFromFormat('!Y-m', (string) $monthInput, MonthlyReportService::TIMEZONE)->startOfMonth();
+            $maximumMonth = $now->copy()->startOfMonth();
+
+            if ($start->greaterThan($maximumMonth)) {
+                throw ValidationException::withMessages([
+                    'month' => 'Bulan laporan tidak boleh melebihi bulan berjalan.',
+                ]);
+            }
 
             return [$start, $start->copy()->endOfMonth(), ['month' => (string) $monthInput]];
         }
 
-        $now = Carbon::now(MonthlyReportService::TIMEZONE);
         $start = filled($startInput)
             ? Carbon::createFromFormat('!Y-m-d', (string) $startInput, MonthlyReportService::TIMEZONE)->startOfDay()
             : (filled($endInput)

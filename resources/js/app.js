@@ -423,13 +423,64 @@ reportFilterForms.forEach((form) => {
 
 const reportExportForms = document.querySelectorAll('[data-report-export-form]');
 
+const downloadReportFile = async (form, button, label, loading, errorMessage) => {
+    const url = new URL(form.action, window.location.href);
+
+    for (const [key, value] of new FormData(form).entries()) {
+        url.searchParams.append(key, value);
+    }
+
+    try {
+        const response = await fetch(url, {
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'application/octet-stream, application/pdf',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`Export failed with status ${response.status}`);
+        }
+
+        const content = await response.blob();
+        const disposition = response.headers.get('Content-Disposition') || '';
+        const fileNameMatch = disposition.match(/filename\*=UTF-8''([^;]+)|filename="([^"]+)"|filename=([^;]+)/i);
+        const fallbackFileName = form.action.includes('/pdf')
+            ? 'laporan-tiket-bulanan.pdf'
+            : 'laporan-tiket-bulanan.xlsx';
+        const fileName = fileNameMatch
+            ? decodeURIComponent((fileNameMatch[1] || fileNameMatch[2] || fileNameMatch[3]).trim())
+            : fallbackFileName;
+        const downloadUrl = URL.createObjectURL(content);
+        const link = document.createElement('a');
+
+        link.href = downloadUrl;
+        link.download = fileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+    } catch (error) {
+        errorMessage?.classList.remove('hidden');
+    } finally {
+        button.disabled = false;
+        button.setAttribute('aria-busy', 'false');
+        label?.classList.remove('hidden');
+        loading?.classList.add('hidden');
+    }
+};
+
 reportExportForms.forEach((form) => {
-    form.addEventListener('submit', () => {
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+
         const button = form.querySelector('[data-report-export-submit]');
         const label = form.querySelector('[data-report-export-label]');
         const loading = form.querySelector('[data-report-export-loading]');
+        const errorMessage = form.querySelector('[data-report-export-error]');
 
-        if (!button) {
+        if (!button || button.disabled) {
             return;
         }
 
@@ -437,6 +488,9 @@ reportExportForms.forEach((form) => {
         button.setAttribute('aria-busy', 'true');
         label?.classList.add('hidden');
         loading?.classList.remove('hidden');
+        errorMessage?.classList.add('hidden');
+
+        void downloadReportFile(form, button, label, loading, errorMessage);
     });
 });
 
