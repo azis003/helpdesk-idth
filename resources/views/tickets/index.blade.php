@@ -54,17 +54,25 @@
                     </thead>
                     <tbody>
                         @foreach ($tickets as $ticket)
+                            @php
+                                $ticketRouteTarget = $isTeamChair ? $ticket->id : $ticket;
+                                $ticketNumber = $isTeamChair ? $ticket->ticketLabel() : ($ticket->ticket_number ?? 'Tiket #'.$ticket->id);
+                                $serviceCode = $isTeamChair ? $ticket->serviceCode : ($ticket->service_type_code_snapshot ?? $ticket->serviceType?->code);
+                                $serviceName = $isTeamChair ? $ticket->serviceLabel() : $ticket->service_type_name_snapshot ?? $ticket->serviceType?->name;
+                                $requesterName = $isTeamChair ? ($ticket->requesterName ?? 'Belum tercatat') : ($ticket->requester_name_snapshot ?? $ticket->requester?->name ?? 'Belum tercatat');
+                                $submittedAt = $isTeamChair ? $ticket->submittedAt : ($ticket->submitted_at ?? $ticket->created_at);
+                            @endphp
                             <tr>
                                 <td>
-                                    <a href="{{ route('tickets.show', $ticket) }}" class="font-extrabold text-[#1d5d72] hover:underline">{{ $ticket->ticket_number ?? 'Tiket #'.$ticket->id }}</a>
+                                    <a href="{{ route('tickets.show', $ticketRouteTarget) }}" class="font-extrabold text-[#1d5d72] hover:underline">{{ $ticketNumber }}</a>
                                     <p class="mt-1 max-w-sm text-sm font-bold text-[#35505b]">{{ $ticket->subject }}</p>
-                                    <p class="mt-1 text-xs text-[#78909a]">{{ $ticket->service_type_code_snapshot ?? $ticket->serviceType?->code ?? 'Layanan belum tersedia' }} · {{ $ticket->service_type_name_snapshot ?? $ticket->serviceType?->name }}</p>
+                                    <p class="mt-1 text-xs text-[#78909a]">{{ $serviceCode ?? 'Layanan belum tersedia' }} &middot; {{ $serviceName }}</p>
                                 </td>
-                                <td class="text-sm text-[#526f79]">{{ $ticket->requester_name_snapshot ?? $ticket->requester?->name ?? 'Belum tercatat' }}</td>
+                                <td class="text-sm text-[#526f79]">{{ $requesterName }}</td>
                                 <td><x-status-badge :status="$ticket->status" /></td>
                                 <td><x-priority-badge :priority="$ticket->priority" /></td>
-                                <td class="whitespace-nowrap text-xs text-[#78909a]">{{ ($ticket->submitted_at ?? $ticket->created_at)?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</td>
-                                <td class="text-right"><a href="{{ route('tickets.show', $ticket) }}" class="ui-action-link">Buka detail</a></td>
+                                <td class="whitespace-nowrap text-xs text-[#78909a]">{{ $submittedAt?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</td>
+                                <td class="text-right"><a href="{{ route('tickets.show', $ticketRouteTarget) }}" class="ui-action-link">Buka detail</a></td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -73,16 +81,22 @@
 
             <div class="space-y-3 p-4 md:hidden">
                 @foreach ($tickets as $ticket)
-                    <a href="{{ route('tickets.show', $ticket) }}" class="block rounded-xl border border-[#e1eaed] bg-[#fbfdfd] p-4 transition hover:border-[#8bd7ee] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#2bb8aa]">
+                    @php
+                        $ticketRouteTarget = $isTeamChair ? $ticket->id : $ticket;
+                        $ticketNumber = $isTeamChair ? $ticket->ticketLabel() : ($ticket->ticket_number ?? 'Tiket #'.$ticket->id);
+                        $serviceCode = $isTeamChair ? $ticket->serviceCode : ($ticket->service_type_code_snapshot ?? $ticket->serviceType?->code);
+                        $submittedAt = $isTeamChair ? $ticket->submittedAt : ($ticket->submitted_at ?? $ticket->created_at);
+                    @endphp
+                    <a href="{{ route('tickets.show', $ticketRouteTarget) }}" class="block rounded-xl border border-[#e1eaed] bg-[#fbfdfd] p-4 transition hover:border-[#8bd7ee] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#2bb8aa]">
                         <div class="flex flex-wrap items-start justify-between gap-2">
-                            <span class="text-xs font-extrabold text-[#1d5d72]">{{ $ticket->ticket_number ?? 'Tiket #'.$ticket->id }}</span>
+                            <span class="text-xs font-extrabold text-[#1d5d72]">{{ $ticketNumber }}</span>
                             <x-status-badge :status="$ticket->status" />
                         </div>
                         <h3 class="mt-3 text-sm font-extrabold leading-5 text-[#35505b]">{{ $ticket->subject }}</h3>
-                        <p class="mt-1 text-xs text-[#78909a]">{{ $ticket->service_type_code_snapshot ?? $ticket->serviceType?->code ?? 'Layanan belum tersedia' }}</p>
+                        <p class="mt-1 text-xs text-[#78909a]">{{ $serviceCode ?? 'Layanan belum tersedia' }}</p>
                         <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
                             <x-priority-badge :priority="$ticket->priority" />
-                            <span class="text-xs text-[#78909a]">{{ ($ticket->submitted_at ?? $ticket->created_at)?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</span>
+                            <span class="text-xs text-[#78909a]">{{ $submittedAt?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</span>
                         </div>
                     </a>
                 @endforeach

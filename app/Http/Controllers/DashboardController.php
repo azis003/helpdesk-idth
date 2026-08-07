@@ -27,6 +27,7 @@ class DashboardController extends Controller
             ? $this->dashboard->emptyData()
             : $this->dashboard->build($user, $periodStart, $periodEnd);
         $canReviewApprovals = ! $requiresPasswordChange
+            && ! $user->hasRole(Role::KetuaTimKerja)
             && $this->approvers->isCurrentApprover($user);
         $agentDashboard = $dashboardData['agentDashboard'];
         $requesterDashboard = $dashboardData['requesterDashboard'];
@@ -47,12 +48,14 @@ class DashboardController extends Controller
                 && ! $requiresPasswordChange
                 ? $agentDashboard['queue_count']
                 : null,
-            'canAccessTickets' => $user->hasAnyRole([
-                Role::Pemohon,
-                Role::AgenTier1,
-                Role::AgenTier2,
-            ]) && ! $requiresPasswordChange,
-            'canCreateTickets' => $user->hasAnyRole([Role::Pemohon, Role::AgenTier1])
+            'canAccessTickets' => ! $user->hasRole(Role::KetuaTimKerja)
+                && $user->hasAnyRole([
+                    Role::Pemohon,
+                    Role::AgenTier1,
+                    Role::AgenTier2,
+                ]) && ! $requiresPasswordChange,
+            'canCreateTickets' => ! $user->hasRole(Role::KetuaTimKerja)
+                && $user->hasAnyRole([Role::Pemohon, Role::AgenTier1])
                 && ! $requiresPasswordChange,
             'myTicketCount' => $requesterDashboard['visible']
                 ? $requesterDashboard['ticket_count']

@@ -5,6 +5,7 @@
 @section('header_title', 'Dasbor')
 
 @php
+    $isTeamChair = $user->hasRole(\App\Enums\Role::KetuaTimKerja);
     $formatDate = static fn ($value): string => $value?->timezone($periodTimezone)->locale('id')->translatedFormat('d M Y, H:i') ?? 'Belum tercatat';
     $formatMinutes = static function (?int $minutes): string {
         if ($minutes === null) {
@@ -238,11 +239,19 @@
                     @forelse ($teamDashboard['rows'] as $row)
                         @php($ticket = $row['ticket'])
                         @php($sla = $row['sla'])
+                        @php($latestPublicReply = $row['public_reply'])
                         <article class="p-5 sm:p-6">
                             <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                                @if ($isTeamChair)
+                                    <div class="min-w-0"><p class="text-xs font-extrabold text-[#1d5d72]">{{ $ticket->ticketLabel() }}</p><h4 class="mt-1 text-sm font-extrabold text-[#35505b]">{{ $ticket->subject }}</h4><p class="mt-2 text-xs text-[#78909a]">Pemohon: {{ $ticket->requesterName ?? 'Tidak tersedia' }} &middot; Diperbarui {{ $formatDate($ticket->updatedAt) }}</p></div>
+                                @else
                                 <div class="min-w-0"><p class="text-xs font-extrabold text-[#1d5d72]">{{ $ticket->ticket_number ?? 'Tiket #'.$ticket->id }}</p><h4 class="mt-1 text-sm font-extrabold text-[#35505b]">{{ $ticket->subject }}</h4><p class="mt-2 text-xs text-[#78909a]">Pemohon: {{ $ticket->requester_name_snapshot ?? $ticket->requester?->name ?? 'Tidak tersedia' }} · Diperbarui {{ $formatDate($ticket->updated_at) }}</p></div>
-                                <div class="flex shrink-0 flex-wrap gap-2"><x-status-badge :status="$ticket->status" />@if ($ticket->assigned_to_id)<span class="ui-chip">{{ $ticket->assignee?->name ?? 'Penanggung jawab' }}</span>@else<span class="ui-chip">Belum ditugaskan</span>@endif</div>
+                                <div class="flex shrink-0 flex-wrap gap-2"><x-status-badge :status="$ticket->status" />@if ($ticket->assigned_to_id)<span class="ui-chip">{{ $ticket->assignee?->name ?? 'Penanggung jawab' }}@if ($ticket->assigned_tier) &middot; {{ \App\Enums\Role::tryFrom($ticket->assigned_tier)?->label() ?? $ticket->assigned_tier }}@endif</span>@else<span class="ui-chip">Belum ditugaskan</span>@endif</div>
+                                @endif
                             </div>
+                            @if ($isTeamChair)
+                                <div class="mt-3 flex shrink-0 flex-wrap gap-2"><x-status-badge :status="$ticket->status" />@if ($ticket->assigneeName)<span class="ui-chip">{{ $ticket->assigneeName }}@if ($ticket->assignedTierLabel()) &middot; {{ $ticket->assignedTierLabel() }}@endif</span>@else<span class="ui-chip">Belum ditugaskan</span>@endif</div>
+                            @endif
                             <dl class="mt-4 grid gap-3 md:grid-cols-3">
                                 <div class="rounded-lg bg-[#f8fbfc] p-3"><dt class="text-[0.65rem] font-extrabold uppercase tracking-[0.1em] text-[#78909a]">SLA</dt><dd class="mt-1 text-sm font-bold text-[#526f79]">
                                     @if (!$sla || !($sla['uses_sla'] ?? false))
@@ -255,10 +264,15 @@
                                         {{ $formatMinutes($sla['remaining_minutes']) }} tersisa
                                     @endif
                                 </dd></div>
-                                <div class="rounded-lg bg-[#f8fbfc] p-3"><dt class="text-[0.65rem] font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Balasan publik terbaru</dt><dd class="mt-1 line-clamp-2 text-sm font-bold text-[#526f79]">{{ $row['public_reply']?->body ?? 'Belum ada balasan publik.' }}</dd></div>
+                                <div class="rounded-lg bg-[#f8fbfc] p-3"><dt class="text-[0.65rem] font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Balasan publik terbaru</dt><dd class="mt-1 line-clamp-2 text-sm font-bold text-[#526f79]">{{ $latestPublicReply?->body ?? 'Belum ada balasan publik.' }}</dd></div>
                                 <div class="rounded-lg bg-[#f8fbfc] p-3"><dt class="text-[0.65rem] font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Solusi</dt><dd class="mt-1 line-clamp-2 text-sm font-bold text-[#526f79]">{{ $ticket->solution ?? 'Belum tersedia.' }}</dd></div>
                             </dl>
+                            @if ($isTeamChair)
+                                <div class="mt-4"><a href="{{ route('tickets.show', $ticket->id) }}" class="ui-action-link">Lihat metadata tiket <span aria-hidden="true">&rarr;</span></a></div>
+                            @endif
+                            @if (! $isTeamChair)
                             <div class="mt-4"><a href="{{ route('tickets.show', $ticket) }}" class="ui-action-link">Lihat metadata tiket <span aria-hidden="true">→</span></a></div>
+                            @endif
                         </article>
                     @empty
                         <x-empty-state title="Belum ada tiket anggota pada periode ini." description="Tiket akan tampil setelah ada permintaan dari anggota tim yang dipantau." />

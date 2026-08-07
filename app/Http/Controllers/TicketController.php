@@ -28,7 +28,7 @@ use App\Models\User;
 use App\Services\DatabaseChangeControlService;
 use App\Services\DomainAuthorization;
 use App\Services\SkillSuggestionService;
-use App\Services\TeamScopeService;
+use App\Services\TeamChairTicketProjection;
 use App\Services\TicketApprovalService;
 use App\Services\TicketAttachmentService;
 use App\Services\TicketCancellationService;
@@ -55,13 +55,22 @@ class TicketController extends Controller
         private readonly TicketResolutionService $resolution,
         private readonly TicketSlaService $sla,
         private readonly DatabaseChangeControlService $specialControls,
-        private readonly TeamScopeService $teamScope,
+        private readonly TeamChairTicketProjection $teamChairProjection,
     ) {}
 
     public function index(Request $request): mixed
     {
         $actor = $request->user();
         $this->authorization->authorize($actor, 'viewAny', Ticket::class, 'ticket.list');
+
+        if ($actor->hasRole(Role::KetuaTimKerja)) {
+            return view('tickets.index', [
+                'tickets' => $this->teamChairProjection->paginate($actor),
+                'canViewQueue' => false,
+                'isTeamChair' => true,
+                'canAccessTickets' => false,
+            ]);
+        }
 
         $query = Ticket::query()
             ->with(['serviceType', 'requester', 'creator'])
@@ -94,11 +103,6 @@ class TicketController extends Controller
                 $addScope(fn (Builder $query): Builder => $query->where('assigned_to_id', $actor->getKey()));
             }
 
-            if ($actor->hasRole(Role::KetuaTimKerja)) {
-                $addScope(function (Builder $query) use ($actor): void {
-                    $this->teamScope->constrain($query, $actor);
-                });
-            }
         });
 
         return view('tickets.index', [
@@ -190,6 +194,18 @@ class TicketController extends Controller
     {
         $actor = $request->user();
         $this->authorization->authorize($actor, 'view', $ticket, 'ticket.view');
+
+        if ($actor->hasRole(Role::KetuaTimKerja)) {
+            $teamChairTicket = $this->teamChairProjection->find($actor, (int) $ticket->getKey());
+
+            if ($teamChairTicket === null) {
+                abort(404, 'Tiket tidak ditemukan dalam cakupan tim Anda.');
+            }
+
+            return view('tickets.team-chair-show', [
+                'ticket' => $teamChairTicket,
+            ]);
+        }
 
         $ticket->load([
             'requester',

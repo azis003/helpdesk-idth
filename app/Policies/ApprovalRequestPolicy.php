@@ -30,6 +30,7 @@ class ApprovalRequestPolicy
     {
         return $actor->isActive()
             && ! $actor->requiresPasswordChange()
+            && ! $actor->hasRole(Role::KetuaTimKerja)
             && $actor->hasRole(Role::Approver)
             && ApproverAssignment::query()
                 ->active()

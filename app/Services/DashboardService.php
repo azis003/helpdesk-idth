@@ -29,6 +29,7 @@ class DashboardService
         private readonly ApproverAssignmentService $approvers,
         private readonly TicketSlaService $sla,
         private readonly TeamScopeService $teamScope,
+        private readonly TeamChairTicketProjection $teamChairProjection,
     ) {}
 
     /**
@@ -40,22 +41,24 @@ class DashboardService
      */
     public function build(User $user, Carbon $start, Carbon $end): array
     {
+        $isTeamChair = $user->hasRole(Role::KetuaTimKerja);
         $canReviewApprovals = $this->approvers->isCurrentApprover($user);
-        $canViewOverall = $user->hasRole(Role::SuperAdmin)
+        $canViewOverall = ! $isTeamChair
+            && ($user->hasRole(Role::SuperAdmin)
             || $user->hasRole(Role::AgenTier1)
-            || $canReviewApprovals;
+            || $canReviewApprovals);
 
         return [
-            'requesterDashboard' => $user->hasRole(Role::Pemohon)
+            'requesterDashboard' => $user->hasRole(Role::Pemohon) && ! $isTeamChair
                 ? $this->requesterDashboard($user, $start, $end)
                 : $this->emptyRequesterDashboard(),
-            'agentDashboard' => $user->hasAnyRole([Role::AgenTier1, Role::AgenTier2])
+            'agentDashboard' => $user->hasAnyRole([Role::AgenTier1, Role::AgenTier2]) && ! $isTeamChair
                 ? $this->agentDashboard($user, $start, $end)
                 : $this->emptyAgentDashboard(),
-            'approverDashboard' => $canReviewApprovals
+            'approverDashboard' => $canReviewApprovals && ! $isTeamChair
                 ? $this->approverDashboard($user, $start, $end)
                 : $this->emptyApproverDashboard(),
-            'teamDashboard' => $user->hasRole(Role::KetuaTimKerja)
+            'teamDashboard' => $isTeamChair
                 ? $this->teamDashboard($user, $start, $end)
                 : $this->emptyTeamDashboard(),
             'overallDashboard' => $canViewOverall
@@ -244,19 +247,24 @@ class DashboardService
     private function teamDashboard(User $user, Carbon $start, Carbon $end): array
     {
         $scope = $this->teamScope->scopeFor($user);
-        $baseQuery = $this->teamScope->constrain(Ticket::query(), $user);
+        $baseQuery = $this->teamChairProjection->query($user, true);
         $periodQuery = $this->withinTicketPeriod($baseQuery, $start, $end);
-        $tickets = $this->ticketRelations($periodQuery)
+        $tickets = $periodQuery
             ->orderByDesc('updated_at')
             ->orderByDesc('id')
             ->limit(12)
             ->get();
-        $publicComments = $this->publicCommentsFor($tickets);
+        $publicComments = $this->teamChairProjection->publicCommentsFor($tickets->modelKeys());
         $rows = $tickets->map(function (Ticket $ticket) use ($publicComments): array {
+            $ticketView = $this->teamChairProjection->toView(
+                $ticket,
+                $publicComments->get($ticket->getKey(), collect()),
+            );
+
             return [
-                'ticket' => $ticket,
-                'public_reply' => $publicComments->get($ticket->getKey()),
-                'sla' => $this->sla->metrics($ticket),
+                'ticket' => $ticketView,
+                'public_reply' => $ticketView->latestPublicReply(),
+                'sla' => $ticketView->sla,
             ];
         });
 

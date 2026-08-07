@@ -12,7 +12,7 @@ class AttachmentAccessPolicy
 {
     public function view(User $actor, Attachment $attachment): bool
     {
-        if (! $actor->isActive()) {
+        if (! $actor->isActive() || $actor->hasRole(Role::KetuaTimKerja)) {
             return false;
         }
 

@@ -37,6 +37,7 @@ class ApproverAssignmentService
 
         if ($user === null
             || ! $user->isActive()
+            || $user->hasRole(Role::KetuaTimKerja)
             || ! $user->hasRole(Role::Approver)
             || $user->requiresPasswordChange()) {
             return null;
@@ -47,7 +48,8 @@ class ApproverAssignmentService
 
     public function isCurrentApprover(User $user): bool
     {
-        return (int) ($this->currentEligible()?->user_id ?? 0) === (int) $user->getKey();
+        return ! $user->hasRole(Role::KetuaTimKerja)
+            && (int) ($this->currentEligible()?->user_id ?? 0) === (int) $user->getKey();
     }
 
     public function pendingCount(?int $userId): int

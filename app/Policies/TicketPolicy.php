@@ -28,17 +28,21 @@ class TicketPolicy
     public function create(User $actor): bool
     {
         return $actor->isActive()
+            && ! $this->isReadOnlyTeamChair($actor)
             && $actor->hasAnyRole([Role::Pemohon, Role::AgenTier1]);
     }
 
     public function createSelf(User $actor): bool
     {
-        return $actor->isActive() && $actor->hasRole(Role::Pemohon);
+        return $actor->isActive()
+            && ! $this->isReadOnlyTeamChair($actor)
+            && $actor->hasRole(Role::Pemohon);
     }
 
     public function createForOther(User $actor, User $requester): bool
     {
         return $actor->isActive()
+            && ! $this->isReadOnlyTeamChair($actor)
             && $actor->hasRole(Role::AgenTier1)
             && $requester->isActive();
     }
@@ -47,6 +51,10 @@ class TicketPolicy
     {
         if (! $actor->isActive()) {
             return false;
+        }
+
+        if ($this->isReadOnlyTeamChair($actor)) {
+            return $this->teamScope->canViewTicket($actor, $ticket);
         }
 
         if ((int) $ticket->requester_id === (int) $actor->getKey()
@@ -73,6 +81,7 @@ class TicketPolicy
     public function requestApproval(User $actor, Ticket $ticket): bool
     {
         return $actor->isActive()
+            && ! $this->isReadOnlyTeamChair($actor)
             && $actor->hasAnyRole([Role::AgenTier1, Role::AgenTier2])
             && (int) $ticket->assigned_to_id === (int) $actor->getKey()
             && in_array($ticket->status, [TicketStatus::Diproses, TicketStatus::Dikerjakan], true);
@@ -80,17 +89,22 @@ class TicketPolicy
 
     public function claim(User $actor, Ticket $ticket): bool
     {
-        return $actor->isActive() && $actor->hasRole(Role::AgenTier1);
+        return $actor->isActive()
+            && ! $this->isReadOnlyTeamChair($actor)
+            && $actor->hasRole(Role::AgenTier1);
     }
 
     public function viewQueue(User $actor): bool
     {
-        return $actor->isActive() && $actor->hasRole(Role::AgenTier1);
+        return $actor->isActive()
+            && ! $this->isReadOnlyTeamChair($actor)
+            && $actor->hasRole(Role::AgenTier1);
     }
 
     public function triage(User $actor, Ticket $ticket): bool
     {
         return $actor->isActive()
+            && ! $this->isReadOnlyTeamChair($actor)
             && $actor->hasRole(Role::AgenTier1)
             && $ticket->assigned_tier === Role::AgenTier1->value
             && (int) $ticket->assigned_to_id === (int) $actor->getKey()
@@ -100,6 +114,7 @@ class TicketPolicy
     public function assignTierTwo(User $actor, Ticket $ticket): bool
     {
         return $actor->isActive()
+            && ! $this->isReadOnlyTeamChair($actor)
             && $actor->hasRole(Role::AgenTier1)
             && $ticket->status === TicketStatus::Dikerjakan
             && $ticket->assigned_tier === Role::AgenTier1->value
@@ -109,6 +124,7 @@ class TicketPolicy
     public function returnToTierOne(User $actor, Ticket $ticket): bool
     {
         return $actor->isActive()
+            && ! $this->isReadOnlyTeamChair($actor)
             && $actor->hasRole(Role::AgenTier2)
             && $ticket->status === TicketStatus::Dikerjakan
             && $ticket->assigned_tier === Role::AgenTier2->value
@@ -119,6 +135,7 @@ class TicketPolicy
     public function handle(User $actor, Ticket $ticket): bool
     {
         return $actor->isActive()
+            && ! $this->isReadOnlyTeamChair($actor)
             && $actor->hasAnyRole([Role::AgenTier1, Role::AgenTier2])
             && (int) $ticket->assigned_to_id === (int) $actor->getKey();
     }
@@ -126,6 +143,7 @@ class TicketPolicy
     public function cancel(User $actor, Ticket $ticket): bool
     {
         return $actor->isActive()
+            && ! $this->isReadOnlyTeamChair($actor)
             && $actor->hasRole(Role::Pemohon)
             && (int) $ticket->requester_id === (int) $actor->getKey()
             && $ticket->status === TicketStatus::Baru;
@@ -133,7 +151,7 @@ class TicketPolicy
 
     public function commentPublic(User $actor, Ticket $ticket): bool
     {
-        if (! $actor->isActive()) {
+        if (! $actor->isActive() || $this->isReadOnlyTeamChair($actor)) {
             return false;
         }
 
@@ -158,6 +176,10 @@ class TicketPolicy
 
     public function commentInternal(User $actor, Ticket $ticket): bool
     {
+        if ($this->isReadOnlyTeamChair($actor)) {
+            return false;
+        }
+
         if ($this->hasPendingApproval($actor, $ticket)) {
             return true;
         }
@@ -192,6 +214,7 @@ class TicketPolicy
     public function replyRequester(User $actor, Ticket $ticket): bool
     {
         return $actor->isActive()
+            && ! $this->isReadOnlyTeamChair($actor)
             && $actor->hasRole(Role::Pemohon)
             && (int) $ticket->requester_id === (int) $actor->getKey()
             && $ticket->status === TicketStatus::MenungguPemohon;
@@ -238,6 +261,7 @@ class TicketPolicy
     public function confirm(User $actor, Ticket $ticket): bool
     {
         return $actor->isActive()
+            && ! $this->isReadOnlyTeamChair($actor)
             && $actor->hasRole(Role::Pemohon)
             && (int) $ticket->requester_id === (int) $actor->getKey()
             && $ticket->status === TicketStatus::MenungguKonfirmasi;
@@ -251,6 +275,7 @@ class TicketPolicy
     public function reopen(User $actor, Ticket $ticket): bool
     {
         return $actor->isActive()
+            && ! $this->isReadOnlyTeamChair($actor)
             && $actor->hasRole(Role::Pemohon)
             && (int) $ticket->requester_id === (int) $actor->getKey()
             && $ticket->status === TicketStatus::Ditutup;
@@ -259,6 +284,7 @@ class TicketPolicy
     private function isAssignedAgent(User $actor, Ticket $ticket): bool
     {
         return $actor->isActive()
+            && ! $this->isReadOnlyTeamChair($actor)
             && $actor->hasAnyRole([Role::AgenTier1, Role::AgenTier2])
             && (int) $ticket->assigned_to_id === (int) $actor->getKey();
     }
@@ -272,6 +298,7 @@ class TicketPolicy
     {
         return $actor->isActive()
             && ! $actor->requiresPasswordChange()
+            && ! $this->isReadOnlyTeamChair($actor)
             && $actor->hasRole(Role::Approver)
             && ApproverAssignment::query()
                 ->active()
@@ -287,5 +314,10 @@ class TicketPolicy
                 ->where('ticket_id', $ticket->getKey())
                 ->where('approver_id', $actor->getKey())
                 ->exists();
+    }
+
+    private function isReadOnlyTeamChair(User $actor): bool
+    {
+        return $actor->hasRole(Role::KetuaTimKerja);
     }
 }

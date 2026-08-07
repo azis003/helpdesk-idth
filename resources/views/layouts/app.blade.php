@@ -13,12 +13,15 @@
         $isSuperAdmin = $currentUser->hasRole(\App\Enums\Role::SuperAdmin);
         $isTier1 = $currentUser->hasRole(\App\Enums\Role::AgenTier1);
         $isTeamChair = $currentUser->hasRole(\App\Enums\Role::KetuaTimKerja);
-        $canAccessTickets = $currentUser->hasAnyRole([\App\Enums\Role::Pemohon, \App\Enums\Role::AgenTier1, \App\Enums\Role::AgenTier2]);
-        $canCreateTickets = $currentUser->hasAnyRole([\App\Enums\Role::Pemohon, \App\Enums\Role::AgenTier1]);
+        $canAccessTickets = ! $isTeamChair
+            && $currentUser->hasAnyRole([\App\Enums\Role::Pemohon, \App\Enums\Role::AgenTier1, \App\Enums\Role::AgenTier2]);
+        $canCreateTickets = ! $isTeamChair
+            && $currentUser->hasAnyRole([\App\Enums\Role::Pemohon, \App\Enums\Role::AgenTier1]);
         $ticketListLabel = $isTeamChair && $canAccessTickets
             ? 'Tiket saya dan tim'
             : ($isTeamChair ? 'Tiket tim' : 'Tiket saya');
-        $canReviewApprovals = ! $currentUser->requiresPasswordChange()
+        $canReviewApprovals = ! $isTeamChair
+            && ! $currentUser->requiresPasswordChange()
             && $currentUser->hasRole(\App\Enums\Role::Approver)
             && \App\Models\ApproverAssignment::query()->active()->where('user_id', $currentUser->getKey())->exists();
         $canViewReports = $currentUser->can('viewAny', \App\Models\ReportExport::class);

@@ -15,6 +15,7 @@ class ReportExportPolicy
     {
         return $actor->isActive()
             && ! $actor->requiresPasswordChange()
+            && ! $actor->hasRole(Role::KetuaTimKerja)
             && ($actor->hasAnyRole([Role::SuperAdmin, Role::AgenTier1])
                 || $this->approvers->isCurrentApprover($actor));
     }
