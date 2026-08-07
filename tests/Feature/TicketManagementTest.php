@@ -19,6 +19,7 @@ use App\Models\WorkTeam;
 use Database\Seeders\OperationalPolicySeeder;
 use Database\Seeders\ServiceCatalogSeeder;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -142,6 +143,16 @@ class TicketManagementTest extends TestCase
             'action' => 'ticket.cancelled',
             'outcome' => 'succeeded',
         ]);
+
+        $this->actingAs($pemohon)
+            ->post(route('tickets.store'), $this->payloadFor($service, [
+                'subject' => 'Tiket setelah pembatalan',
+                'room_id' => $room->id,
+            ]))
+            ->assertRedirect();
+
+        $replacement = Ticket::query()->latest('id')->firstOrFail();
+        $this->assertMatchesRegularExpression('/^INC-\d{4}-00002$/', $replacement->ticket_number);
     }
 
     public function test_svc01_and_svc05_require_a_location(): void
@@ -206,6 +217,39 @@ class TicketManagementTest extends TestCase
         $this->assertSame('REQ', $ticket->ticket_class);
     }
 
+    public function test_failed_creation_does_not_reuse_a_reserved_number_on_retry(): void
+    {
+        $pemohon = $this->createUser([Role::Pemohon]);
+        $room = $this->createRoom();
+        $service = ServiceType::query()->where('code', 'SVC-01')->firstOrFail();
+
+        Ticket::creating(function (): void {
+            throw new \RuntimeException('Simulasi kegagalan setelah alokasi nomor.');
+        });
+
+        try {
+            $response = $this->actingAs($pemohon)->post(route('tickets.store'), $this->payloadFor($service, [
+                'subject' => 'Tiket yang gagal disimpan',
+                'room_id' => $room->id,
+            ]));
+
+            $this->assertSame(500, $response->getStatusCode());
+        } finally {
+            Ticket::flushEventListeners();
+        }
+
+        $this->actingAs($pemohon)
+            ->post(route('tickets.store'), $this->payloadFor($service, [
+                'subject' => 'Tiket retry',
+                'room_id' => $room->id,
+            ]))
+            ->assertRedirect();
+
+        $ticket = Ticket::query()->firstOrFail();
+        $this->assertMatchesRegularExpression('/^INC-\d{4}-00002$/', $ticket->ticket_number);
+        $this->assertDatabaseCount('tickets', 1);
+    }
+
     public function test_pemohon_cannot_create_a_ticket_on_behalf_of_another_employee(): void
     {
         $pemohon = $this->createUser([Role::Pemohon]);
@@ -237,6 +281,7 @@ class TicketManagementTest extends TestCase
         $room = $this->createRoom();
         $svc01 = ServiceType::query()->where('code', 'SVC-01')->firstOrFail();
         $svc02 = ServiceType::query()->where('code', 'SVC-02')->firstOrFail();
+        $svc03 = ServiceType::query()->where('code', 'SVC-03')->firstOrFail();
 
         $this->actingAs($pemohon)->post(route('tickets.store'), $this->payloadFor($svc01, [
             'subject' => 'Koneksi pertama',
@@ -249,13 +294,48 @@ class TicketManagementTest extends TestCase
         $this->actingAs($pemohon)->post(route('tickets.store'), $this->payloadFor($svc02, [
             'subject' => 'Permintaan data pertama',
         ]))->assertRedirect();
+        $this->actingAs($pemohon)->post(route('tickets.store'), $this->payloadFor($svc03, [
+            'subject' => 'Perubahan data pertama',
+            'fields' => [
+                'change_target' => 'Data pegawai',
+                'change_type' => 'data_correction',
+                'current_state' => 'Data belum sesuai dokumen sumber.',
+                'desired_state' => 'Data sesuai dokumen sumber.',
+                'business_reason' => 'Koreksi data untuk kebutuhan operasional.',
+                'verification_criteria' => 'Nilai baru dapat diverifikasi oleh pemohon.',
+            ],
+        ]))->assertRedirect();
 
         $numbers = Ticket::query()->orderBy('id')->pluck('ticket_number')->all();
         $this->assertMatchesRegularExpression('/^INC-\d{4}-00001$/', $numbers[0]);
         $this->assertMatchesRegularExpression('/^INC-\d{4}-00002$/', $numbers[1]);
         $this->assertMatchesRegularExpression('/^REQ-\d{4}-00001$/', $numbers[2]);
+        $this->assertMatchesRegularExpression('/^CHG-\d{4}-00001$/', $numbers[3]);
         $this->assertSame(2, Ticket::query()->where('ticket_class', 'INC')->count());
         $this->assertSame(1, Ticket::query()->where('ticket_class', 'REQ')->count());
+        $this->assertSame(1, Ticket::query()->where('ticket_class', 'CHG')->count());
+    }
+
+    public function test_ticket_year_uses_the_asia_jakarta_calendar(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-12-31 18:30:00', 'UTC'));
+
+        try {
+            $pemohon = $this->createUser([Role::Pemohon]);
+            $service = ServiceType::query()->where('code', 'SVC-02')->firstOrFail();
+
+            $this->actingAs($pemohon)
+                ->post(route('tickets.store'), $this->payloadFor($service, [
+                    'subject' => 'Tiket lintas pergantian tahun',
+                ]))
+                ->assertRedirect();
+
+            $ticket = Ticket::query()->firstOrFail();
+            $this->assertSame(2027, $ticket->ticket_year);
+            $this->assertSame('REQ-2027-00001', $ticket->ticket_number);
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     public function test_requester_only_sees_own_tickets_in_the_list(): void
@@ -347,6 +427,14 @@ class TicketManagementTest extends TestCase
                 'period_end' => '2026-08-06',
                 'requested_columns' => 'Nomor tiket dan status.',
                 'output_format' => 'xlsx',
+            ],
+            'SVC-03' => [
+                'change_target' => 'Data pegawai',
+                'change_type' => 'data_correction',
+                'current_state' => 'Data belum sesuai dokumen sumber.',
+                'desired_state' => 'Data sesuai dokumen sumber.',
+                'business_reason' => 'Koreksi data untuk kebutuhan operasional.',
+                'verification_criteria' => 'Nilai baru dapat diverifikasi oleh pemohon.',
             ],
             'SVC-05' => [
                 'request_subtype' => 'repair',

@@ -16,6 +16,8 @@ use Illuminate\Validation\ValidationException;
 
 class TicketCreationService
 {
+    private const TICKET_NUMBER_TIMEZONE = 'Asia/Jakarta';
+
     public function __construct(
         private readonly DatabaseManager $database,
         private readonly DomainAuthorization $authorization,
@@ -44,7 +46,12 @@ class TicketCreationService
             $actor->hasRole(Role::AgenTier1),
         );
         $attachments = $this->attachmentService->validate($fileGroups, $policies);
-        $now = Carbon::now(config('app.timezone'));
+        $now = Carbon::now(self::TICKET_NUMBER_TIMEZONE);
+        $ticketYear = $now->year;
+
+        // Reserve before opening the ticket transaction so a later rollback
+        // cannot return this number to the allocator.
+        $number = $this->numberAllocator->next($ticketClass, $ticketYear);
 
         $ticket = $this->database->transaction(function () use (
             $actor,
@@ -58,9 +65,9 @@ class TicketCreationService
             $attachments,
             $data,
             $now,
+            $ticketYear,
+            $number,
         ): Ticket {
-            $ticketYear = $now->year;
-            $number = $this->numberAllocator->next($ticketClass, $ticketYear);
             $isSelfCreated = (int) $actor->getKey() === (int) $requester->getKey();
 
             $ticket = Ticket::query()->create([
