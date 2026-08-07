@@ -181,7 +181,7 @@ class TicketWorkflowService
             &$failureField,
         ): ?Ticket {
             $lockedTicket = Ticket::query()
-                ->with('problemCategory')
+                ->with(['problemCategory', 'serviceType'])
                 ->whereKey($ticket->getKey())
                 ->lockForUpdate()
                 ->first();
@@ -202,22 +202,15 @@ class TicketWorkflowService
                 return null;
             }
 
-            $categoryId = filled($data['problem_category_id'] ?? null)
+            $categorySelected = filled($data['problem_category_id'] ?? null);
+            $categoryId = $categorySelected
                 ? (int) $data['problem_category_id']
                 : (int) ($lockedTicket->problem_category_id ?? 0);
             $category = $categoryId > 0
                 ? ProblemCategory::query()->active()->with('skills')->find($categoryId)
                 : null;
 
-            if ($outcome !== TicketTriageOutcome::Reject && $category === null) {
-                $failure = 'Kategori masalah wajib dipilih untuk melanjutkan triase.';
-                $failureField = 'problem_category_id';
-                $this->auditLogger->denied($actor, 'ticket.triage', $lockedTicket, $failure);
-
-                return null;
-            }
-
-            if ($categoryId > 0 && $category === null) {
+            if ($categorySelected && $category === null) {
                 $failure = 'Kategori masalah tidak aktif atau tidak tersedia.';
                 $failureField = 'problem_category_id';
                 $this->auditLogger->denied($actor, 'ticket.triage', $lockedTicket, $failure);
@@ -225,7 +218,8 @@ class TicketWorkflowService
                 return null;
             }
 
-            $categoryChanged = (int) ($lockedTicket->problem_category_id ?? 0) !== (int) ($category?->getKey() ?? 0);
+            $categoryChanged = $categorySelected
+                && (int) ($lockedTicket->problem_category_id ?? 0) !== (int) ($category?->getKey() ?? 0);
             $priorityChanged = $lockedTicket->priority !== $priority;
             $fromCategory = $lockedTicket->problemCategory;
             $fromCategoryId = $lockedTicket->problem_category_id;
@@ -248,7 +242,11 @@ class TicketWorkflowService
                 return null;
             }
 
-            $suggestions = $this->skillSuggestions->forCategory($category);
+            $suggestions = $this->skillSuggestions->forServiceType(
+                $lockedTicket->serviceType,
+                null,
+                $category,
+            );
             $fromUserId = $lockedTicket->assigned_to_id;
             $fromTier = $lockedTicket->assigned_tier;
             $selectedUser = null;
@@ -365,7 +363,7 @@ class TicketWorkflowService
                 $occurredAt,
             );
 
-            $lockedTicket->load('problemCategory');
+            $lockedTicket->load(['problemCategory', 'serviceType']);
             $after = $this->snapshot($lockedTicket);
             $this->auditLogger->succeeded(
                 $actor,
@@ -427,6 +425,8 @@ class TicketWorkflowService
                 'creator',
                 'assignee',
                 'lastTriagedBy',
+                'serviceType',
+                'serviceType.skills',
                 'problemCategory',
             ]);
         });
@@ -448,7 +448,7 @@ class TicketWorkflowService
         $failure = null;
         $failureField = 'assigned_to_id';
         $result = $this->database->transaction(function () use ($actor, $ticket, $data, &$failure, &$failureField): ?Ticket {
-            $lockedTicket = Ticket::query()->with('problemCategory')->whereKey($ticket->getKey())->lockForUpdate()->first();
+            $lockedTicket = Ticket::query()->with(['problemCategory', 'serviceType'])->whereKey($ticket->getKey())->lockForUpdate()->first();
 
             if ($lockedTicket === null) {
                 $failure = 'Tiket tidak ditemukan.';
@@ -477,7 +477,11 @@ class TicketWorkflowService
                 return null;
             }
 
-            $suggestions = $this->skillSuggestions->forCategory($lockedTicket->problemCategory);
+            $suggestions = $this->skillSuggestions->forServiceType(
+                $lockedTicket->serviceType,
+                null,
+                $lockedTicket->problemCategory,
+            );
             $before = $this->snapshot($lockedTicket);
             $occurredAt = now();
             $lockedTicket->forceFill([
@@ -508,7 +512,7 @@ class TicketWorkflowService
                 $occurredAt,
             );
 
-            $lockedTicket->load('problemCategory');
+            $lockedTicket->load(['problemCategory', 'serviceType']);
             $this->auditLogger->succeeded(
                 $actor,
                 'ticket.assign_tier_2',
@@ -527,7 +531,7 @@ class TicketWorkflowService
                 "ticket:{$lockedTicket->getKey()}:assigned:{$lockedTicket->statusHistories()->latest('id')->value('id')}",
             );
 
-            return $lockedTicket->fresh(['assignee', 'problemCategory', 'lastTriagedBy']);
+            return $lockedTicket->fresh(['assignee', 'problemCategory', 'serviceType', 'serviceType.skills', 'lastTriagedBy']);
         });
 
         if ($result === null) {

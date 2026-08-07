@@ -22,7 +22,7 @@
         <div>
             <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Konfigurasi layanan</p>
             <h1 class="ui-page-title">Katalog dan formulir dinamis</h1>
-            <p class="ui-page-description">Kelola tujuh layanan, definisi field, lokasi, dan kebijakan lampiran tanpa mengubah kode. Versi field lama tetap disimpan untuk menjaga histori tiket.</p>
+            <p class="ui-page-description">Kelola layanan, formulir, keahlian penanganan, lokasi, dan kebijakan lampiran tanpa mengubah kode. Versi field lama tetap disimpan untuk menjaga histori tiket.</p>
         </div>
         <a href="{{ route('admin.announcements.index') }}" class="ui-btn ui-btn-ghost">Kelola pengumuman <span aria-hidden="true">→</span></a>
     </div>
@@ -46,7 +46,7 @@
                     <summary class="ui-disclosure-summary flex items-center justify-between gap-4 p-5 sm:p-6">
                         <span class="flex min-w-0 items-center gap-3">
                             <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#eef8fa] text-sm font-extrabold text-[#26677b]">{{ str_replace('SVC-', '', $serviceType->code) }}</span>
-                            <span class="min-w-0"><span class="block truncate text-sm font-extrabold text-[#35505b]">{{ $serviceType->name }}</span><span class="mt-1 block text-xs text-[#78909a]">{{ $serviceType->code }} · {{ $serviceType->activeFieldDefinitions->count() }} field aktif</span></span>
+                            <span class="min-w-0"><span class="block truncate text-sm font-extrabold text-[#35505b]">{{ $serviceType->name }}</span><span class="mt-1 block text-xs text-[#78909a]">{{ $serviceType->code }} · {{ $serviceType->activeFieldDefinitions->count() }} field · {{ $serviceType->skills->where('is_active', true)->count() }} keahlian aktif</span></span>
                         </span>
                         <span class="flex shrink-0 items-center gap-2"><span class="ui-status {{ $serviceType->is_active ? 'ui-status-active' : 'ui-status-inactive' }}">{{ $serviceType->is_active ? 'Aktif' : 'Nonaktif' }}</span><span class="hidden rounded-full bg-[#f3f7f8] px-2.5 py-1 text-xs font-extrabold text-[#607681] sm:inline-flex">{{ $serviceType->ticket_class ?? 'SVC-05' }}</span></span>
                     </summary>
@@ -71,6 +71,38 @@
                             <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#e3ecef] pt-4"><p class="text-xs leading-5 text-[#78909a]">Layanan nonaktif tidak tampil pada katalog pengguna.</p><div class="flex flex-wrap gap-2"><button type="submit" class="ui-btn ui-btn-primary !min-h-9 !text-xs">Simpan detail layanan</button></div></div>
                         </form>
                         <form method="POST" action="{{ route('admin.catalog.services.status', [$serviceType, $serviceType->is_active ? 'deactivate' : 'activate']) }}" onsubmit="return {{ $serviceType->is_active ? 'confirm(\'Nonaktifkan layanan ini? Layanan tidak tampil bagi pemohon.\')' : 'true' }};">@csrf<button type="submit" class="ui-btn {{ $serviceType->is_active ? 'ui-btn-warning' : 'ui-btn-secondary' }} !min-h-9 !text-xs">{{ $serviceType->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button></form>
+                        <section aria-labelledby="service-skills-heading-{{ $serviceType->id }}" class="rounded-xl border border-[#dce9ed] bg-[#f8fbfc] p-4 sm:p-5">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <h3 id="service-skills-heading-{{ $serviceType->id }}" class="text-sm font-extrabold text-[#263a43]">Keahlian penanganan</h3>
+                                    <p class="mt-1 max-w-2xl text-xs leading-5 text-[#78909a]">Pilih keahlian yang relevan untuk layanan ini. Pemetaan ini menjadi dasar saran teknisi Tier 2 saat triase.</p>
+                                </div>
+                                <span class="rounded-full bg-[#e8faf4] px-2.5 py-1 text-xs font-extrabold text-[#087f5b]">{{ $serviceType->skills->where('is_active', true)->count() }} aktif</span>
+                            </div>
+                            <form method="POST" action="{{ route('admin.catalog.services.skills.update', $serviceType) }}" class="mt-4">
+                                @csrf
+                                @method('PUT')
+                                @if ($skills->isNotEmpty())
+                                    <fieldset>
+                                        <legend class="ui-field-label">Keahlian yang dipetakan</legend>
+                                        <div class="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                            @foreach ($skills as $skill)
+                                                <label class="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border border-[#e1eaed] bg-white px-3 py-2.5 transition hover:border-[#8bd7ee] has-[:checked]:border-[#75d5f3] has-[:checked]:bg-[#f1fbfe]">
+                                                    <input type="checkbox" name="skill_ids[]" value="{{ $skill->id }}" class="ui-checkbox mt-0.5" @checked($serviceType->skills->contains('id', $skill->id))>
+                                                    <span class="min-w-0"><span class="block text-xs font-extrabold text-[#35505b]">{{ $skill->name }}</span>@if ($skill->description)<span class="mt-0.5 block truncate text-[0.68rem] text-[#78909a]">{{ $skill->description }}</span>@endif</span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </fieldset>
+                                @else
+                                    <div class="ui-empty !p-3">Belum ada keahlian aktif. Tambahkan master keahlian terlebih dahulu.</div>
+                                @endif
+                                <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#e3ecef] pt-4">
+                                    <p class="max-w-xl text-xs leading-5 text-[#78909a]">Keahlian yang dinonaktifkan tidak digunakan untuk saran baru, tetapi histori tiket dan pemetaan lama tetap tersimpan.</p>
+                                    <button type="submit" class="ui-btn ui-btn-primary !min-h-9 !text-xs">Simpan keahlian</button>
+                                </div>
+                            </form>
+                        </section>
                         <section aria-labelledby="fields-heading-{{ $serviceType->id }}">
                             <div class="flex items-start justify-between gap-4"><div><h3 id="fields-heading-{{ $serviceType->id }}" class="text-sm font-extrabold text-[#263a43]">Field formulir aktif</h3><p class="mt-1 text-xs leading-5 text-[#78909a]">Perubahan field dibuat sebagai versi baru agar definisi lama tetap tersedia.</p></div><span class="rounded-full bg-[#eef3ff] px-2.5 py-1 text-xs font-extrabold text-[#4f63a6]">{{ $serviceType->activeFieldDefinitions->count() }}</span></div>
 

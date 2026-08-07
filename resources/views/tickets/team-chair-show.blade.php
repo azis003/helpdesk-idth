@@ -69,8 +69,11 @@
                         <dd class="mt-2 text-sm font-extrabold text-[#35505b]">{{ $ticket->serviceCode ?? 'Kode layanan tidak tersedia' }} <span class="font-normal text-[#78909a]">&mdash;</span> {{ $ticket->serviceName ?? 'Layanan belum tersedia' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Kategori masalah</dt>
-                        <dd class="mt-1 text-sm font-bold text-[#35505b]">{{ $ticket->categoryName ?? 'Belum dikategorikan' }}</dd>
+                        <dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Keahlian layanan</dt>
+                        <dd class="mt-1 text-sm font-bold text-[#35505b]">{{ $ticket->serviceSkills ?? 'Belum dipetakan di Katalog Layanan' }}</dd>
+                        @if ($ticket->categoryName)
+                            <p class="mt-1 text-xs text-[#78909a]">Klasifikasi historis: {{ $ticket->categoryName }}</p>
+                        @endif
                     </div>
                     <div>
                         <dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Pemohon</dt>

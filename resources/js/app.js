@@ -363,6 +363,131 @@ if (teamCreateModal) {
     }
 }
 
+const uiModals = [...document.querySelectorAll('[data-ui-modal]')];
+
+uiModals.forEach((modal) => {
+    const modalId = modal.id;
+    const modalTriggers = [...document.querySelectorAll('[data-ui-modal-open]')]
+        .filter((trigger) => trigger.dataset.uiModalOpen === modalId);
+    const modalForms = [...modal.querySelectorAll('[data-ui-modal-form]')];
+    const focusableSelector = [
+        'button:not([disabled]):not([tabindex="-1"])',
+        'input:not([disabled])',
+        'select:not([disabled])',
+        'textarea:not([disabled])',
+        '[href]',
+        '[tabindex]:not([tabindex="-1"])',
+    ].join(', ');
+    let lastTrigger = null;
+
+    const getFocusableElements = () => [...modal.querySelectorAll(focusableSelector)];
+
+    const resetModalForm = (form) => {
+        if (!form) {
+            return;
+        }
+
+        form.reset();
+
+        const submit = form.querySelector('[data-ui-modal-submit]');
+        const label = form.querySelector('[data-ui-modal-label]');
+        const loading = form.querySelector('[data-ui-modal-loading]');
+
+        if (submit) {
+            submit.disabled = false;
+            submit.setAttribute('aria-busy', 'false');
+        }
+
+        label?.classList.remove('hidden');
+        loading?.classList.add('hidden');
+    };
+
+    const closeModal = () => {
+        modal.classList.add('hidden');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('overflow-hidden');
+
+        if (modal.dataset.resetOnClose === 'true') {
+            modalForms.forEach(resetModalForm);
+        }
+
+        lastTrigger?.focus();
+        lastTrigger = null;
+    };
+
+    const openModal = (trigger = null) => {
+        lastTrigger = trigger;
+        modal.classList.remove('hidden');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('overflow-hidden');
+
+        window.requestAnimationFrame(() => {
+            const initialFocus = modal.querySelector('[data-ui-modal-focus]') || getFocusableElements()[0];
+            initialFocus?.focus();
+        });
+    };
+
+    modalTriggers.forEach((trigger) => {
+        trigger.setAttribute('aria-haspopup', 'dialog');
+        trigger.setAttribute('aria-controls', modalId);
+        trigger.addEventListener('click', () => openModal(trigger));
+    });
+
+    modal.querySelectorAll('[data-ui-modal-close]').forEach((closeButton) => {
+        closeButton.addEventListener('click', closeModal);
+    });
+
+    modal.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            closeModal();
+
+            return;
+        }
+
+        if (event.key !== 'Tab') {
+            return;
+        }
+
+        const focusableElements = getFocusableElements();
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (!firstElement || !lastElement) {
+            return;
+        }
+
+        if (event.shiftKey && document.activeElement === firstElement) {
+            event.preventDefault();
+            lastElement.focus();
+        } else if (!event.shiftKey && document.activeElement === lastElement) {
+            event.preventDefault();
+            firstElement.focus();
+        }
+    });
+
+    modalForms.forEach((form) => {
+        form.addEventListener('submit', () => {
+            const submit = form.querySelector('[data-ui-modal-submit]');
+            const label = form.querySelector('[data-ui-modal-label]');
+            const loading = form.querySelector('[data-ui-modal-loading]');
+
+            if (!submit) {
+                return;
+            }
+
+            submit.disabled = true;
+            submit.setAttribute('aria-busy', 'true');
+            label?.classList.add('hidden');
+            loading?.classList.remove('hidden');
+        });
+    });
+
+    if (modal.dataset.autoOpen === 'true') {
+        openModal(modalTriggers[0] || null);
+    }
+});
+
 const teamAccordions = document.querySelectorAll('[data-team-accordion]');
 
 teamAccordions.forEach((accordion) => {
@@ -576,68 +701,15 @@ queueClaimForms.forEach((claimForm) => {
 const triageForms = document.querySelectorAll('[data-ticket-triage-form]');
 
 triageForms.forEach((triageForm) => {
-    const categorySelect = triageForm.querySelector('[data-ticket-triage-category]');
     const outcomeInputs = [...triageForm.querySelectorAll('[data-ticket-triage-outcome]')];
     const panels = [...triageForm.querySelectorAll('[data-ticket-triage-panel]')];
     const assigneeSelect = triageForm.querySelector('[data-ticket-assignee-select]');
     const rejectionReason = triageForm.querySelector('[name="rejection_reason"]');
-    const suggestionList = triageForm.querySelector('[data-ticket-suggestion-list]');
-    const suggestionEmpty = triageForm.querySelector('[data-ticket-suggestion-empty]');
-    const suggestionMapElement = triageForm.parentElement?.querySelector('[data-ticket-suggestions-map]');
     const submitButton = triageForm.querySelector('[data-ticket-triage-submit]');
     const submitLabel = triageForm.querySelector('[data-ticket-triage-submit-label]');
     const submitLoading = triageForm.querySelector('[data-ticket-triage-submit-loading]');
-    let suggestionMap = {};
-
-    try {
-        suggestionMap = JSON.parse(suggestionMapElement?.textContent || '{}');
-    } catch {
-        suggestionMap = {};
-    }
 
     const selectedOutcome = () => outcomeInputs.find((input) => input.checked)?.value || 'self';
-
-    const renderSuggestions = () => {
-        if (!categorySelect || !suggestionList) {
-            return;
-        }
-
-        const suggestions = Array.isArray(suggestionMap[categorySelect.value])
-            ? suggestionMap[categorySelect.value]
-            : [];
-
-        suggestionList.replaceChildren();
-
-        suggestions.forEach((suggestion) => {
-            const item = document.createElement('li');
-            item.className = 'rounded-lg border border-[#dcebef] bg-white px-3 py-2';
-
-            const name = document.createElement('p');
-            name.className = 'text-xs font-extrabold text-[#35505b]';
-            name.textContent = suggestion.user_name || 'Teknisi tersedia';
-
-            const score = document.createElement('span');
-            score.className = 'ml-1 rounded-full bg-[#e8faf4] px-1.5 py-0.5 text-[0.62rem] text-[#087f5b]';
-            score.textContent = `${suggestion.match_count || 0} skill`;
-            name.append(score);
-
-            const skills = document.createElement('p');
-            skills.className = 'mt-1 text-[0.68rem] text-[#78909a]';
-            skills.textContent = Array.isArray(suggestion.matching_skill_names)
-                ? suggestion.matching_skill_names.join(', ')
-                : 'Skill sesuai kategori';
-
-            item.append(name, skills);
-            suggestionList.append(item);
-        });
-
-        if (suggestionEmpty) {
-            suggestionEmpty.classList.toggle('hidden', suggestions.length > 0);
-            suggestionEmpty.textContent = categorySelect.value
-                ? 'Belum ada teknisi Tier 2 dengan skill yang dipetakan ke kategori ini.'
-                : 'Pilih kategori untuk melihat saran teknisi.';
-        }
-    };
 
     const updateTriagePanels = () => {
         const outcome = selectedOutcome();
@@ -651,10 +723,6 @@ triageForms.forEach((triageForm) => {
             });
         });
 
-        if (categorySelect) {
-            categorySelect.required = outcome !== 'reject';
-        }
-
         if (assigneeSelect) {
             assigneeSelect.required = outcome === 'tier_2';
         }
@@ -663,11 +731,9 @@ triageForms.forEach((triageForm) => {
             rejectionReason.required = outcome === 'reject';
         }
 
-        renderSuggestions();
     };
 
     outcomeInputs.forEach((input) => input.addEventListener('change', updateTriagePanels));
-    categorySelect?.addEventListener('change', renderSuggestions);
 
     triageForm.addEventListener('submit', (event) => {
         if (selectedOutcome() === 'reject' && !window.confirm('Tolak tiket ini? Alasan penolakan akan terlihat oleh Pemohon dan tiket menjadi final.')) {

@@ -3,13 +3,14 @@
 namespace Tests\Feature\Admin;
 
 use App\Enums\Role;
-use App\Models\ProblemCategory;
 use App\Models\Role as RoleModel;
+use App\Models\ServiceType;
 use App\Models\Skill;
 use App\Models\TeamChairAssignment;
 use App\Models\TeamMembership;
 use App\Models\User;
 use App\Models\WorkTeam;
+use Database\Seeders\ServiceCatalogSeeder;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -160,18 +161,19 @@ class OrganizationManagementTest extends TestCase
         ]);
     }
 
-    public function test_category_skill_mapping_and_soft_delete_preserve_history(): void
+    public function test_service_skill_mapping_and_soft_delete_preserve_history(): void
     {
+        $this->seed(ServiceCatalogSeeder::class);
         $admin = $this->createUser([Role::SuperAdmin], ['username' => 'master-admin']);
         $skill = Skill::factory()->create(['name' => 'Basis Data', 'slug' => 'basis-data']);
-        $category = ProblemCategory::factory()->create(['name' => 'Database', 'slug' => 'database']);
+        $service = ServiceType::query()->where('code', 'SVC-01')->firstOrFail();
 
-        $this->actingAs($admin)->put(route('admin.categories.skills.update', $category), [
+        $this->actingAs($admin)->put(route('admin.catalog.services.skills.update', $service), [
             'skill_ids' => [$skill->id],
         ])->assertRedirect();
 
-        $this->assertDatabaseHas('category_skill', [
-            'problem_category_id' => $category->id,
+        $this->assertDatabaseHas('service_type_skill', [
+            'service_type_id' => $service->id,
             'skill_id' => $skill->id,
             'assigned_by' => $admin->id,
         ]);
@@ -179,8 +181,8 @@ class OrganizationManagementTest extends TestCase
         $this->actingAs($admin)->delete(route('admin.skills.destroy', $skill))
             ->assertRedirect();
         $this->assertSoftDeleted('skills', ['id' => $skill->id]);
-        $this->assertDatabaseHas('category_skill', [
-            'problem_category_id' => $category->id,
+        $this->assertDatabaseHas('service_type_skill', [
+            'service_type_id' => $service->id,
             'skill_id' => $skill->id,
         ]);
         $this->assertDatabaseHas('audit_logs', [
@@ -197,6 +199,7 @@ class OrganizationManagementTest extends TestCase
 
         $this->actingAs($user)->get(route('admin.teams.index'))->assertForbidden();
         $this->actingAs($user)->get(route('admin.skills.index'))->assertForbidden();
+        $this->actingAs($user)->get(route('admin.catalog.index'))->assertForbidden();
         $this->assertDatabaseHas('audit_logs', [
             'user_id' => $user->id,
             'action' => 'auth.role_required',
@@ -206,23 +209,19 @@ class OrganizationManagementTest extends TestCase
 
     public function test_super_admin_can_render_organization_pages(): void
     {
+        $this->seed(ServiceCatalogSeeder::class);
         $admin = $this->createUser([Role::SuperAdmin], ['username' => 'page-admin']);
         $team = WorkTeam::factory()->create(['name' => 'Tim Halaman']);
         $skill = Skill::factory()->create(['name' => 'Dukungan Aplikasi', 'slug' => 'dukungan-aplikasi']);
-        $category = ProblemCategory::factory()->create(['name' => 'Aplikasi', 'slug' => 'aplikasi']);
         $team->currentMembers()->attach($admin->id, [
             'assigned_by' => $admin->id,
             'started_at' => now(),
             'is_active' => true,
         ]);
-        $category->skills()->attach($skill->id, [
-            'assigned_by' => $admin->id,
-            'assigned_at' => now(),
-        ]);
-
         $this->actingAs($admin)->get(route('admin.users.index'))->assertOk()->assertSee('Pengguna dan akses');
         $this->actingAs($admin)->get(route('admin.users.edit', $admin))->assertOk()->assertSee('Riwayat organisasi');
         $this->actingAs($admin)->get(route('admin.teams.index'))->assertOk()->assertSee('Tim Halaman');
-        $this->actingAs($admin)->get(route('admin.skills.index'))->assertOk()->assertSee('Dukungan Aplikasi');
+        $this->actingAs($admin)->get(route('admin.skills.index'))->assertOk()->assertSee('Dukungan Aplikasi')->assertDontSee('Kategori Masalah');
+        $this->actingAs($admin)->get(route('admin.catalog.index'))->assertOk()->assertSee('Katalog dan formulir dinamis')->assertSee('Keahlian penanganan');
     }
 }

@@ -72,6 +72,7 @@ class TeamChairTicketProjection
                 'requester:id,name',
                 'assignee:id,name',
                 'serviceType:id,code,name',
+                'serviceType.skills:id,name,is_active',
                 'problemCategory:id,name',
             ]);
 
@@ -167,6 +168,9 @@ class TeamChairTicketProjection
         $assignee = $ticket->relationLoaded('assignee') ? $ticket->assignee : null;
         $serviceType = $ticket->relationLoaded('serviceType') ? $ticket->serviceType : null;
         $problemCategory = $ticket->relationLoaded('problemCategory') ? $ticket->problemCategory : null;
+        $serviceSkills = $serviceType?->relationLoaded('skills')
+            ? $serviceType->skills->where('is_active', true)->pluck('name')->implode(', ')
+            : null;
         $metrics = $this->safeSla($this->sla->metrics($ticket));
 
         return new TeamChairTicketView(
@@ -177,6 +181,7 @@ class TeamChairTicketProjection
             teamName: $ticket->requester_team_snapshot,
             serviceCode: $ticket->service_type_code_snapshot ?: $serviceType?->code,
             serviceName: $ticket->service_type_name_snapshot ?: $serviceType?->name,
+            serviceSkills: $serviceSkills ?: null,
             categoryName: $ticket->problem_category_name_snapshot ?: $problemCategory?->name,
             priority: $ticket->priority,
             status: $ticket->status,

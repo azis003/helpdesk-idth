@@ -21,7 +21,6 @@ use App\Models\Announcement;
 use App\Models\ApprovalRequest;
 use App\Models\AttachmentPolicy;
 use App\Models\Building;
-use App\Models\ProblemCategory;
 use App\Models\ServiceType;
 use App\Models\Ticket;
 use App\Models\User;
@@ -215,6 +214,7 @@ class TicketController extends Controller
             'serviceType',
             'serviceTypeVariant',
             'serviceType.activeFieldDefinitions.options',
+            'serviceType.skills',
             'problemCategory',
             'room.floor.building',
             'fieldValues',
@@ -312,15 +312,11 @@ class TicketController extends Controller
         $specialControlReadiness = $this->specialControls->readiness($ticket);
         $activeWait = $ticket->waits->first(fn ($wait): bool => $wait->ended_at === null);
         $lastTimedOutWait = $ticket->waits->filter(fn ($wait): bool => $wait->timed_out)->last();
-        $triageCategories = $canTriage
-            ? ProblemCategory::query()
-                ->active()
-                ->with(['skills' => fn ($query) => $query->active()->orderBy('name')])
-                ->orderBy('name')
-                ->get()
-            : collect();
         $tierTwoUsers = ($canTriage || $canAssignTierTwo)
             ? $this->skillSuggestions->eligibleTierTwoUsers()
+            : collect();
+        $ticketSuggestions = ($canTriage || $canAssignTierTwo)
+            ? $this->skillSuggestions->forServiceType($ticket->serviceType, $tierTwoUsers, $ticket->problemCategory)
             : collect();
 
         return view('tickets.show', [
@@ -357,9 +353,8 @@ class TicketController extends Controller
             'specialControlReadiness' => $specialControlReadiness,
             'activeWait' => $activeWait,
             'lastTimedOutWait' => $lastTimedOutWait,
-            'triageCategories' => $triageCategories,
             'tierTwoUsers' => $tierTwoUsers,
-            'suggestionsByCategory' => $canTriage ? $this->skillSuggestions->forCategories($triageCategories) : [],
+            'ticketSuggestions' => $ticketSuggestions,
             'priorityOptions' => Priority::labels(),
             'timeline' => $this->buildTimeline($ticket, $canSeeInternal),
         ]);

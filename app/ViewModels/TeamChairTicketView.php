@@ -28,6 +28,7 @@ final class TeamChairTicketView
         public readonly ?string $teamName,
         public readonly ?string $serviceCode,
         public readonly ?string $serviceName,
+        public readonly ?string $serviceSkills,
         public readonly ?string $categoryName,
         public readonly ?Priority $priority,
         public readonly ?TicketStatus $status,

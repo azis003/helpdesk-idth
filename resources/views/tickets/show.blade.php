@@ -13,9 +13,8 @@
     $canTriage = $canTriage ?? false;
     $canAssignTierTwo = $canAssignTierTwo ?? false;
     $canReturnToTierOne = $canReturnToTierOne ?? false;
-    $triageCategories = $triageCategories ?? collect();
     $tierTwoUsers = $tierTwoUsers ?? collect();
-    $suggestionsByCategory = $suggestionsByCategory ?? [];
+    $ticketSuggestions = $ticketSuggestions ?? collect();
     $priorityOptions = $priorityOptions ?? \App\Enums\Priority::labels();
     $timeline = $timeline ?? [];
     $canCommentPublic = $canCommentPublic ?? false;
@@ -45,12 +44,12 @@
     $internalFieldValues = $internalFieldValues ?? collect();
     $activeWait = $activeWait ?? null;
     $lastTimedOutWait = $lastTimedOutWait ?? null;
-    $currentCategory = old('problem_category_id', $ticket->problem_category_id);
     $currentPriority = old('priority', $ticket->priority?->value);
     $currentOutcome = old('outcome', 'self');
+    $serviceSkills = ($ticket->serviceType?->skills ?? collect())->where('is_active', true)->values();
     [$nextStepTitle, $nextStepDescription] = match ($ticket->status) {
         \App\Enums\TicketStatus::Baru => ['Tiket menunggu diproses', 'Tiket baru masuk ke antrean Tier 1 dan belum memiliki penanggung jawab.'],
-        \App\Enums\TicketStatus::Diproses => ['Tiket sedang ditriase', 'Agen Tier 1 sedang memeriksa kategori, prioritas, dan jalur penanganan tiket.'],
+        \App\Enums\TicketStatus::Diproses => ['Tiket sedang ditriase', 'Agen Tier 1 sedang memeriksa prioritas dan jalur penanganan tiket.'],
         \App\Enums\TicketStatus::Dikerjakan => ['Tiket sedang dikerjakan', 'Penanggung jawab aktif melanjutkan pekerjaan sesuai jalur penanganan yang dipilih.'],
         \App\Enums\TicketStatus::MenungguPersetujuan => ['Menunggu persetujuan Manajer TI', 'State tiket dan penanggung jawab sebelumnya tersimpan sampai keputusan persetujuan diberikan.'],
         \App\Enums\TicketStatus::MenungguPemohon => ['Menunggu balasan Pemohon', $activeWait?->due_at ? 'Pemohon perlu melengkapi informasi sebelum '. $activeWait->due_at->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i').'.' : 'Agen sedang menunggu informasi tambahan dari Pemohon.'],
@@ -143,8 +142,8 @@
                             <dd class="mt-1 text-sm font-bold text-[#35505b]">{{ $ticket->service_type_code_snapshot ?? $ticket->serviceType?->code }} — {{ $serviceLabel }}</dd>
                         </div>
                         <div>
-                            <dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Kategori masalah</dt>
-                            <dd class="mt-1 text-sm font-bold text-[#35505b]">{{ $ticket->problemCategory?->name ?? 'Belum dikategorikan' }}</dd>
+                            <dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Keahlian layanan</dt>
+                            <dd class="mt-1 text-sm font-bold text-[#35505b]">{{ $serviceSkills->pluck('name')->implode(', ') ?: 'Belum dipetakan di Katalog Layanan' }}</dd>
                         </div>
                         <div>
                             <dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Dibuat</dt>
@@ -440,7 +439,7 @@
                 <div class="ui-panel-header">
                     <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Jejak pekerjaan</p>
                     <h2 id="timeline-heading" class="mt-2 ui-section-title">Histori tiket</h2>
-                    <p class="ui-section-description">Perubahan status, penugasan, kategori, prioritas, dan persetujuan disusun berdasarkan waktu kejadian.</p>
+                    <p class="ui-section-description">Perubahan status, penugasan, prioritas, dan persetujuan disusun berdasarkan waktu kejadian. Klasifikasi kategori pada tiket lama tetap ditampilkan sebagai histori.</p>
                 </div>
                 @if ($timeline === [])
                     <p class="p-5 text-sm leading-6 text-[#78909a] sm:p-6">Belum ada histori operasional pada tiket ini.</p>
@@ -706,7 +705,7 @@
                     <div class="ui-panel-header">
                         <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#ffd44f] !shadow-[0_0_0_4px_#fff0b9]" aria-hidden="true"></span>Keputusan operasional</p>
                         <h2 id="triage-heading" class="mt-2 ui-section-title">Triase tiket</h2>
-                        <p class="ui-section-description">Pilih satu hasil. Perubahan kategori atau prioritas membutuhkan alasan.</p>
+                        <p class="ui-section-description">Pilih satu hasil. Layanan tiket sudah ditentukan dari Katalog Layanan; perubahan prioritas membutuhkan alasan.</p>
                     </div>
                     <form method="POST" action="{{ route('tickets.triage', $ticket) }}" class="space-y-5 p-5 sm:p-6" data-ticket-triage-form>
                         @csrf
@@ -724,16 +723,10 @@
                         </fieldset>
 
                         <div class="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <label for="problem-category" class="ui-field-label">Kategori masalah</label>
-                                <select id="problem-category" name="problem_category_id" class="ui-select mt-2" data-ticket-triage-category aria-describedby="problem-category-help">
-                                    <option value="">Pilih kategori</option>
-                                    @foreach ($triageCategories as $category)
-                                        <option value="{{ $category->id }}" @selected((string) $currentCategory === (string) $category->id)>{{ $category->name }}</option>
-                                    @endforeach
-                                </select>
-                                <p id="problem-category-help" class="ui-field-help">Wajib untuk Kerjakan sendiri atau Tugaskan Tier 2.</p>
-                                @error('problem_category_id')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+                            <div class="rounded-xl border border-[#dce9ed] bg-[#f8fbfc] p-4">
+                                <p class="ui-field-label">Layanan tiket</p>
+                                <p class="mt-2 text-sm font-extrabold text-[#35505b]">{{ $serviceLabel }}</p>
+                                <p class="mt-1 text-xs leading-5 text-[#78909a]">Keahlian dan saran teknisi diambil dari pemetaan layanan ini pada Katalog Layanan.</p>
                             </div>
                             <div>
                                 <label for="triage-priority" class="ui-field-label">Prioritas <span class="text-rose-600" aria-hidden="true">*</span></label>
@@ -746,17 +739,10 @@
                             </div>
                         </div>
 
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <label for="category-reason" class="ui-field-label">Alasan perubahan kategori</label>
-                                <textarea id="category-reason" name="category_reason" rows="3" class="ui-textarea mt-2" placeholder="Isi jika kategori berubah.">{{ old('category_reason') }}</textarea>
-                                @error('category_reason')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
-                            </div>
-                            <div>
-                                <label for="priority-reason" class="ui-field-label">Alasan perubahan prioritas</label>
-                                <textarea id="priority-reason" name="priority_reason" rows="3" class="ui-textarea mt-2" placeholder="Isi jika prioritas berubah.">{{ old('priority_reason') }}</textarea>
-                                @error('priority_reason')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
-                            </div>
+                        <div class="max-w-2xl">
+                            <label for="priority-reason" class="ui-field-label">Alasan perubahan prioritas</label>
+                            <textarea id="priority-reason" name="priority_reason" rows="3" class="ui-textarea mt-2" placeholder="Isi jika prioritas berubah.">{{ old('priority_reason') }}</textarea>
+                            @error('priority_reason')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
                         </div>
 
                         <div data-ticket-triage-panel="tier_2" class="space-y-4 rounded-xl border border-[#dfe8ec] bg-[#f8fbfc] p-4" @if ($currentOutcome !== 'tier_2') hidden @endif>
@@ -768,23 +754,23 @@
                                         <option value="{{ $tierTwoUser->id }}" @selected((string) old('assigned_to_id') === (string) $tierTwoUser->id)>{{ $tierTwoUser->name }}</option>
                                     @endforeach
                                 </select>
-                                <p id="tier-two-help" class="ui-field-help">Saran di bawah dihitung dari skill kategori. Pilihan manual tetap diperbolehkan.</p>
+                                <p id="tier-two-help" class="ui-field-help">Saran di bawah dihitung dari keahlian layanan. Pilihan manual tetap diperbolehkan.</p>
                                 @error('assigned_to_id')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
                             </div>
                             <div aria-live="polite">
                                 <div class="flex items-center justify-between gap-3">
                                     <p class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#607681]">Saran teknisi</p>
-                                    <span class="text-[0.68rem] font-bold text-[#78909a]">Berdasarkan skill</span>
+                                    <span class="text-[0.68rem] font-bold text-[#78909a]">Berdasarkan keahlian</span>
                                 </div>
                                 <ul class="mt-2 space-y-2" data-ticket-suggestion-list>
-                                    @foreach (($suggestionsByCategory[(string) $currentCategory] ?? []) as $suggestion)
+                                    @foreach ($ticketSuggestions as $suggestion)
                                         <li class="rounded-lg border border-[#dcebef] bg-white px-3 py-2">
-                                            <p class="text-xs font-extrabold text-[#35505b]">{{ $suggestion['user_name'] }} <span class="ml-1 rounded-full bg-[#e8faf4] px-1.5 py-0.5 text-[0.62rem] text-[#087f5b]">{{ $suggestion['match_count'] }} skill</span></p>
+                                            <p class="text-xs font-extrabold text-[#35505b]">{{ $suggestion['user_name'] }} <span class="ml-1 rounded-full bg-[#e8faf4] px-1.5 py-0.5 text-[0.62rem] text-[#087f5b]">{{ $suggestion['match_count'] }} keahlian</span></p>
                                             <p class="mt-1 text-[0.68rem] text-[#78909a]">{{ implode(', ', $suggestion['matching_skill_names']) }}</p>
                                         </li>
                                     @endforeach
                                 </ul>
-                                <p class="mt-2 text-xs leading-5 text-[#78909a] {{ isset($suggestionsByCategory[(string) $currentCategory]) && count($suggestionsByCategory[(string) $currentCategory]) > 0 ? 'hidden' : '' }}" data-ticket-suggestion-empty>Pilih kategori untuk melihat saran teknisi.</p>
+                                <p class="mt-2 text-xs leading-5 text-[#78909a] {{ $ticketSuggestions->isNotEmpty() ? 'hidden' : '' }}" data-ticket-suggestion-empty>Belum ada teknisi Tier 2 dengan keahlian yang sesuai layanan ini.</p>
                             </div>
                         </div>
 
@@ -800,7 +786,6 @@
                             <span class="hidden" data-ticket-triage-submit-loading aria-hidden="true">Menyimpan…</span>
                         </button>
                     </form>
-                    <script type="application/json" data-ticket-suggestions-map>@json($suggestionsByCategory)</script>
                 </section>
             @endif
 

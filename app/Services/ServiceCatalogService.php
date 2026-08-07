@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ServiceFieldDefinition;
 use App\Models\ServiceType;
 use App\Models\ServiceTypeVariant;
+use App\Models\Skill;
 use App\Models\User;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Validation\ValidationException;
@@ -105,6 +106,54 @@ class ServiceCatalogService
             );
 
             return $serviceType;
+        });
+    }
+
+    /**
+     * @param  iterable<int|string>  $skillIds
+     */
+    public function syncServiceSkills(User $actor, ServiceType $serviceType, iterable $skillIds): ServiceType
+    {
+        return $this->database->transaction(function () use ($actor, $serviceType, $skillIds): ServiceType {
+            $requestedIds = $this->normalizeIds($skillIds);
+            $skills = Skill::query()->active()->whereIn('id', $requestedIds)->get()->keyBy('id');
+
+            if ($skills->count() !== count($requestedIds)) {
+                throw ValidationException::withMessages([
+                    'skill_ids' => 'Salah satu keahlian yang dipetakan tidak aktif atau tidak tersedia.',
+                ]);
+            }
+
+            $currentIds = $serviceType->skills()
+                ->pluck('skills.id')
+                ->map(fn ($id): int => (int) $id)
+                ->all();
+            $toAttach = array_values(array_diff($requestedIds, $currentIds));
+            $toDetach = array_values(array_diff($currentIds, $requestedIds));
+            $now = now();
+
+            if ($toDetach !== []) {
+                $serviceType->skills()->detach($toDetach);
+            }
+
+            foreach ($toAttach as $skillId) {
+                $serviceType->skills()->attach($skillId, [
+                    'assigned_by' => $actor->getKey(),
+                    'assigned_at' => $now,
+                ]);
+            }
+
+            $fresh = $serviceType->fresh(['variants', 'skills']);
+            $this->auditLogger->succeeded(
+                $actor,
+                'admin.service_type.skills.updated',
+                $fresh,
+                'Pemetaan keahlian layanan diperbarui.',
+                ['skill_ids' => $this->skillSnapshot($currentIds)],
+                ['skill_ids' => $this->skillSnapshot($requestedIds)],
+            );
+
+            return $fresh;
         });
     }
 
@@ -407,6 +456,12 @@ class ServiceCatalogService
             'description' => $serviceType->description,
             'ticket_class' => $serviceType->ticket_class,
             'is_active' => $serviceType->is_active,
+            'skills' => $serviceType->skills->map(fn (Skill $skill): array => [
+                'id' => $skill->id,
+                'slug' => $skill->slug,
+                'name' => $skill->name,
+                'is_active' => $skill->is_active,
+            ])->values()->all(),
             'variants' => $serviceType->variants->map(fn (ServiceTypeVariant $variant): array => [
                 'code' => $variant->code,
                 'label' => $variant->label,
@@ -414,6 +469,40 @@ class ServiceCatalogService
                 'is_active' => $variant->is_active,
             ])->values()->all(),
         ];
+    }
+
+    /**
+     * @param  iterable<int|string>  $ids
+     * @return list<int>
+     */
+    private function normalizeIds(iterable $ids): array
+    {
+        return collect($ids)
+            ->filter(fn ($id): bool => $id !== null && $id !== '')
+            ->map(fn ($id): int => (int) $id)
+            ->filter(fn (int $id): bool => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  list<int>  $ids
+     * @return list<array{id:int,slug:string,name:string}>
+     */
+    private function skillSnapshot(array $ids): array
+    {
+        return Skill::withTrashed()
+            ->whereIn('id', $ids)
+            ->orderBy('id')
+            ->get(['id', 'slug', 'name'])
+            ->map(fn (Skill $skill): array => [
+                'id' => $skill->id,
+                'slug' => $skill->slug,
+                'name' => $skill->name,
+            ])
+            ->values()
+            ->all();
     }
 
     /**

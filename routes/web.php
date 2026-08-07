@@ -119,13 +119,6 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::post('/skills/{skill}/activate', [SkillController::class, 'activate'])->name('skills.activate');
             Route::post('/skills/{skill}/deactivate', [SkillController::class, 'deactivate'])->name('skills.deactivate');
             Route::delete('/skills/{skill}', [SkillController::class, 'destroy'])->name('skills.destroy');
-            Route::post('/categories', [SkillController::class, 'storeCategory'])->name('categories.store');
-            Route::put('/categories/{problemCategory}', [SkillController::class, 'updateCategory'])->name('categories.update');
-            Route::post('/categories/{problemCategory}/activate', [SkillController::class, 'activateCategory'])->name('categories.activate');
-            Route::post('/categories/{problemCategory}/deactivate', [SkillController::class, 'deactivateCategory'])->name('categories.deactivate');
-            Route::delete('/categories/{problemCategory}', [SkillController::class, 'destroyCategory'])->name('categories.destroy');
-            Route::put('/categories/{problemCategory}/skills', [SkillController::class, 'updateCategorySkills'])->name('categories.skills.update');
-
             Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
 
             Route::get('/branding', [BrandingController::class, 'index'])->name('branding.index');
@@ -139,6 +132,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
             Route::get('/catalog', [ServiceCatalogController::class, 'index'])->name('catalog.index');
             Route::put('/catalog/services/{serviceType}', [ServiceCatalogController::class, 'updateService'])->name('catalog.services.update');
+            Route::put('/catalog/services/{serviceType}/skills', [ServiceCatalogController::class, 'updateServiceSkills'])->name('catalog.services.skills.update');
             Route::post('/catalog/services/{serviceType}/{status}', [ServiceCatalogController::class, 'setServiceStatus'])
                 ->whereIn('status', ['activate', 'deactivate'])
                 ->name('catalog.services.status');

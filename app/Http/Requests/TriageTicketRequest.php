@@ -32,10 +32,6 @@ class TriageTicketRequest extends FormRequest
         $validator->after(function (Validator $validator): void {
             $outcome = (string) $this->input('outcome');
 
-            if ($outcome !== 'reject' && ! filled($this->input('problem_category_id'))) {
-                $validator->errors()->add('problem_category_id', 'Kategori masalah wajib dipilih untuk melanjutkan triase.');
-            }
-
             if ($outcome === 'tier_2' && ! filled($this->input('assigned_to_id'))) {
                 $validator->errors()->add('assigned_to_id', 'Teknisi Tier 2 wajib dipilih.');
             }

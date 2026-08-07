@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ServiceFieldRequest;
 use App\Http\Requests\Admin\ServiceTypeRequest;
+use App\Http\Requests\Admin\UpdateServiceSkillsRequest;
 use App\Models\AttachmentPolicy;
 use App\Models\Building;
 use App\Models\ServiceFieldDefinition;
 use App\Models\ServiceType;
+use App\Models\Skill;
 use App\Services\DomainAuthorization;
 use App\Services\ServiceCatalogService;
 use Illuminate\Http\RedirectResponse;
@@ -26,15 +28,17 @@ class ServiceCatalogController extends Controller
         $actor = $request->user();
         $this->authorization->authorize($actor, 'viewAny', ServiceType::class, 'admin.catalog.view');
         $this->authorization->authorize($actor, 'viewAny', ServiceFieldDefinition::class, 'admin.catalog.fields.view');
+        $this->authorization->authorize($actor, 'viewAny', Skill::class, 'admin.skills.view');
         $this->authorization->authorize($actor, 'viewAny', Building::class, 'admin.locations.view');
         $this->authorization->authorize($actor, 'viewAny', AttachmentPolicy::class, 'admin.attachment-policies.view');
 
         return view('admin.catalog.index', [
             'serviceTypes' => ServiceType::query()
-                ->with(['variants', 'activeFieldDefinitions.options'])
+                ->with(['variants', 'activeFieldDefinitions.options', 'skills'])
                 ->orderBy('sort_order')
                 ->orderBy('code')
                 ->get(),
+            'skills' => Skill::query()->active()->orderBy('name')->get(),
             'buildings' => Building::query()
                 ->with(['floors.rooms'])
                 ->orderBy('name')
@@ -57,6 +61,15 @@ class ServiceCatalogController extends Controller
         $this->catalog->updateServiceType($actor, $serviceType, $request->validated());
 
         return back()->with('success', "Layanan {$serviceType->code} berhasil diperbarui.");
+    }
+
+    public function updateServiceSkills(UpdateServiceSkillsRequest $request, ServiceType $serviceType): RedirectResponse
+    {
+        $actor = $request->user();
+        $this->authorization->authorize($actor, 'update', $serviceType, 'admin.service_type.skills.update');
+        $this->catalog->syncServiceSkills($actor, $serviceType, $request->validated()['skill_ids'] ?? []);
+
+        return back()->with('success', "Keahlian penanganan layanan {$serviceType->code} berhasil diperbarui.");
     }
 
     public function setServiceStatus(Request $request, ServiceType $serviceType, string $status): RedirectResponse

@@ -7,9 +7,11 @@ use App\Enums\Role;
 use App\Enums\TicketAssignmentAction;
 use App\Enums\TicketStatus;
 use App\Models\ProblemCategory;
+use App\Models\ServiceType;
 use App\Models\Skill;
 use App\Models\Ticket;
 use App\Models\TicketAssignmentHistory;
+use Database\Seeders\ServiceCatalogSeeder;
 use Tests\TestCase;
 
 class TicketTriageTest extends TestCase
@@ -177,6 +179,41 @@ class TicketTriageTest extends TestCase
             ->where('action', TicketAssignmentAction::TriagedTier2->value)
             ->firstOrFail();
         $this->assertSame($manual->id, $assignment->to_user_id);
+        $this->assertTrue(collect($assignment->suggestions)->contains('user_id', $suggested->id));
+    }
+
+    public function test_service_mapping_drives_suggestions_without_problem_category(): void
+    {
+        $this->seed(ServiceCatalogSeeder::class);
+
+        $agent = $this->createUser([Role::AgenTier1]);
+        $suggested = $this->createUser([Role::AgenTier2], ['name' => 'Teknisi Layanan']);
+        $manual = $this->createUser([Role::AgenTier2], ['name' => 'Teknisi Manual']);
+        $skill = Skill::factory()->create(['name' => 'Layanan Data']);
+        $service = ServiceType::query()->where('code', 'SVC-02')->firstOrFail();
+        $service->skills()->attach($skill->id);
+        $suggested->skills()->attach($skill->id);
+        $ticket = Ticket::factory()->create([
+            'service_type_id' => $service->id,
+            'status' => TicketStatus::Diproses,
+            'assigned_to_id' => $agent->id,
+            'assigned_tier' => Role::AgenTier1->value,
+            'priority' => Priority::Sedang,
+        ]);
+
+        $this->actingAs($agent)
+            ->post(route('tickets.triage', $ticket), [
+                'outcome' => 'tier_2',
+                'priority' => Priority::Sedang->value,
+                'assigned_to_id' => $manual->id,
+            ])
+            ->assertRedirect(route('tickets.show', $ticket))
+            ->assertSessionHasNoErrors();
+
+        $assignment = TicketAssignmentHistory::query()
+            ->where('ticket_id', $ticket->id)
+            ->where('action', TicketAssignmentAction::TriagedTier2->value)
+            ->firstOrFail();
         $this->assertTrue(collect($assignment->suggestions)->contains('user_id', $suggested->id));
     }
 
