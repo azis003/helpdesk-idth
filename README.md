@@ -42,7 +42,7 @@ Baseline deployment PostgreSQL + Redis + queue worker + scheduler + private stor
 
 Readiness dapat diperiksa tanpa login melalui `GET /health/ready` atau dari CLI melalui `php artisan sihati:ops:health --json`. Pemeriksaan kapasitas private storage tersedia melalui `php artisan sihati:ops:check-storage --json`; ambang warning default adalah 80% dan notifikasi dikirim ke Super Admin aktif.
 
-Backup physical PostgreSQL, WAL age check, backup private storage, dan restore drill berada di [`deploy/backup`](deploy/backup). Matriks UAT AC-01 sampai AC-28 dan prosedur pilot ada di [staging-uat.md](docs/operations/staging-uat.md); performance test P95 ada di [performance.md](docs/operations/performance.md).
+Backup physical PostgreSQL, WAL age check, backup private storage, dan restore drill berada di [`deploy/backup`](deploy/backup). Matriks UAT AC-01 sampai AC-28 dan prosedur pilot ada di [staging-uat.md](docs/operations/staging-uat.md); performance test P95 ada di [performance.md](docs/operations/performance.md). Gunakan [go-live-evidence.md](docs/operations/go-live-evidence.md) dan `bash deploy/scripts/verify-go-live.sh` untuk mengumpulkan bundle evidence yang fail-closed.
 
 ## Scheduler tiket
 
@@ -82,5 +82,7 @@ vendor/bin/pint --test
 php artisan view:cache
 npm run build
 ```
+
+Untuk technical verification staging lengkap, lihat [paket evidence go-live](docs/operations/go-live-evidence.md). Hasil lokal tidak menggantikan UAT, performance test, backup/restore drill, atau sign-off pada environment staging.
 
 Konfigurasi production wajib menggunakan HTTPS dan mengaktifkan `SESSION_SECURE_COOKIE=true`.

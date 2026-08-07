@@ -26,6 +26,7 @@ k6 run \
   --env K6_WRITE_VUS=5 \
   --env K6_DURATION=2m \
   --env K6_CREATE_FORM='subject=Uji+performa&description=Data+uji&service_type_id=1&service_type_variant_id=1' \
+  --summary-export=storage/app/private/evidence/performance/k6-summary.json \
   tests/performance/k6.js
 ```
 
@@ -33,4 +34,4 @@ Jangan menjalankan write scenario terhadap produksi. Bersihkan data uji mengguna
 
 ## Bukti dan interpretasi
 
-Simpan output k6, commit/image tag, ukuran database, jumlah tiket, jumlah VU, konfigurasi instance, timestamp, dan hasil `sihati:ops:health --json`. Kriteria lulus adalah seluruh threshold k6 lulus, error rate di bawah 1%, tidak ada queue backlog permanen, dan tidak ada error kritis pada log. Kegagalan harus menghasilkan analisis bottleneck atau deviasi tertulis.
+Simpan output k6, commit/image tag, ukuran database, jumlah tiket aktif (minimal 300), jumlah VU (minimal 30), konfigurasi instance, timestamp, dan hasil `sihati:ops:health --json`. Metadata harus disimpan sebagai JSON yang dirujuk oleh `GO_LIVE_PERFORMANCE_METADATA`; runner memvalidasi `environment=staging`, volume tiket, VU, error rate, URL, commit, dan timestamp. Kriteria lulus adalah seluruh threshold k6 lulus, error rate di bawah 1%, tidak ada queue backlog permanen, dan tidak ada error kritis pada log. Kegagalan harus menghasilkan analisis bottleneck atau deviasi tertulis.

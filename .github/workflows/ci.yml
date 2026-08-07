@@ -82,7 +82,9 @@ jobs:
         run: vendor/bin/pint --test
 
       - name: Run feature and unit tests
-        run: php artisan test
+        run: |
+          mkdir -p storage/app/private/evidence/ci
+          vendor/bin/phpunit --log-junit=storage/app/private/evidence/ci/phpunit.xml
 
       - name: Install frontend dependencies
         run: npm ci
@@ -96,3 +98,12 @@ jobs:
           php artisan route:cache
           php artisan view:cache
           php artisan sihati:ops:health --json
+
+      - name: Upload verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sihati-verification-${{ github.sha }}
+          path: storage/app/private/evidence/ci/
+          if-no-files-found: warn
+          retention-days: 14

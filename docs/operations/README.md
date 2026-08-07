@@ -5,6 +5,10 @@ Dokumen operasional untuk issue #14:
 - [Runbook deployment, monitoring, incident, dan go-live](runbook.md)
 - [Staging, UAT, pilot, dan matriks AC-01 sampai AC-28](staging-uat.md)
 - [Performance test dan bukti NFR](performance.md)
+- [Paket evidence technical verification dan go-live](go-live-evidence.md)
+- [Access matrix dan negative authorization](access-matrix.md)
+- [Kontrol privacy, retention, password, training, dan support](go-live-controls.md)
+- [Lembar sign-off](go-live-signoff.md)
 
 Artefak teknis yang dirujuk dokumen ini berada di:
 
@@ -12,5 +16,6 @@ Artefak teknis yang dirujuk dokumen ini berada di:
 - `deploy/backup/` untuk backup PostgreSQL, private storage, pemeriksaan WAL, dan restore drill.
 - `app/Services/OperationalHealthService.php` dan `app/Services/StorageCapacityService.php` untuk readiness serta alert storage.
 - `tests/performance/k6.js` untuk uji beban terukur.
+- `deploy/scripts/verify-go-live.sh` untuk mengumpulkan evidence teknis secara fail-closed.
 
 Dokumen ini adalah baseline yang dapat dijalankan. Nilai secret, domain, data master, pemilik sign-off, dan bukti hasil tetap harus diisi oleh lingkungan staging/produksi yang disetujui.
