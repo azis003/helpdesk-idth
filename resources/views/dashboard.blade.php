@@ -48,7 +48,8 @@
         </div>
     </section>
 
-    <section class="ui-panel mt-6 p-4 sm:p-5" aria-labelledby="period-filter-heading">
+    @if (! $isSuperAdmin)
+        <section class="ui-panel mt-6 p-4 sm:p-5" aria-labelledby="period-filter-heading">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
                 <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Periode dasbor</p>
@@ -74,7 +75,8 @@
                 {{ $errors->first('start_date') ?: $errors->first('end_date') }}
             </div>
         @endif
-    </section>
+        </section>
+    @endif
 
     {{-- Approvals intentionally come first for the active Approver persona. --}}
     @if ($approverDashboard['visible'])
@@ -282,6 +284,8 @@
         </section>
     @endif
 
+    {{-- Super Admin only needs the role-specific workspace above; keep the general dashboard blocks hidden. --}}
+    @if (! $isSuperAdmin)
     @if ($overallDashboard['visible'])
         <section class="mt-7" aria-labelledby="overall-dashboard-heading">
             <div class="flex flex-wrap items-end justify-between gap-4"><div><p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#eb3349] !shadow-[0_0_0_4px_#ffe1e6]" aria-hidden="true"></span>Dasbor menyeluruh</p><h2 id="overall-dashboard-heading" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">Gambaran operasional {{ $branding['application_name'] }}</h2><p class="mt-2 max-w-2xl text-sm leading-6 text-[#6a8089]">Agregasi ini hanya tersedia untuk role yang berwenang dan mengikuti periode terpilih.</p></div><span class="rounded-full bg-[#f1fbfe] px-3 py-1.5 text-xs font-extrabold text-[#147a79]">{{ $overallDashboard['ticket_count'] }} tiket</span></div>
@@ -296,17 +300,6 @@
         </section>
     @endif
 
-    @if ($isSuperAdmin)
-        <section class="mt-7" aria-labelledby="shortcuts-heading">
-            <div class="flex items-end justify-between gap-4"><div><p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Akses cepat</p><h2 id="shortcuts-heading" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">Pusat administrasi</h2></div><span class="hidden text-xs font-bold text-[#86979e] sm:block">6 area tersedia</span></div>
-            <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                @foreach ([['route' => 'admin.users.index', 'title' => 'Pengguna', 'description' => 'Identitas dan hak akses'], ['route' => 'admin.teams.index', 'title' => 'Tim kerja', 'description' => 'Struktur dan anggota'], ['route' => 'admin.skills.index', 'title' => 'Data keahlian', 'description' => 'Keahlian dan kategori'], ['route' => 'admin.catalog.index', 'title' => 'Katalog layanan', 'description' => 'Layanan dan formulir dinamis'], ['route' => 'admin.operational-policies.index', 'title' => 'Kebijakan operasional', 'description' => 'SLA, kalender, dan approver'], ['route' => 'admin.audit-logs.index', 'title' => 'Audit log', 'description' => 'Jejak perubahan sistem']] as $shortcut)
-                    <a href="{{ route($shortcut['route']) }}" class="ui-catalog-card group"><span class="ui-catalog-icon" aria-hidden="true">↗</span><span class="mt-4 flex items-center justify-between gap-2"><span><span class="block text-sm font-extrabold text-[#263a43]">{{ $shortcut['title'] }}</span><span class="mt-1 block text-xs leading-5 text-[#84959c]">{{ $shortcut['description'] }}</span></span><span class="text-lg text-[#56bedf] transition-transform group-hover:translate-x-1" aria-hidden="true">→</span></span></a>
-                @endforeach
-            </div>
-        </section>
-    @endif
-
     <section class="mt-8" aria-labelledby="access-summary-heading">
         <div class="flex items-end justify-between gap-4"><div><p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Ringkasan</p><h2 id="access-summary-heading" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">Status akses Anda</h2></div></div>
         <div class="mt-4 grid gap-3 md:grid-cols-3">
@@ -315,6 +308,7 @@
             <article class="ui-stat-card items-start"><span class="ui-stat-icon !bg-[#eef3ff] !text-[#4f63a6]" aria-hidden="true">▤</span><div><p class="ui-stat-label">Antrean Baru</p>@if ($newTicketCount !== null)<p class="ui-stat-value">{{ $newTicketCount }}</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Menunggu klaim Agen Tier 1.</p>@elseif ($requiresPasswordChange)<p class="mt-1 text-lg font-extrabold text-[#a16207]">Terkunci sementara</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Tersedia setelah password diganti.</p>@else<p class="mt-1 text-lg font-extrabold text-[#607681]">Terbatas</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Membutuhkan role Agen Tier 1.</p>@endif</div></article>
         </div>
     </section>
+    @endif
 
     @if ($requiresPasswordChange)
         <div data-mandatory-password-modal class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="mandatory-password-title" aria-describedby="mandatory-password-description" tabindex="-1">

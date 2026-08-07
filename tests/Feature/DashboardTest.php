@@ -177,6 +177,16 @@ class DashboardTest extends TestCase
         $this->actingAs($admin)
             ->get(route('dashboard'))
             ->assertOk()
+            ->assertDontSee('Periode dasbor')
+            ->assertDontSee('Dasbor menyeluruh')
+            ->assertDontSee('Akses cepat')
+            ->assertDontSee('Status akses Anda')
+            ->assertDontSee('Gambaran operasional')
+            ->assertDontSee('Pusat administrasi');
+
+        $this->actingAs($agent)
+            ->get(route('dashboard'))
+            ->assertOk()
             ->assertSee('Dasbor menyeluruh')
             ->assertSee('Sebaran layanan')
             ->assertSee('Jaringan Kantor')
