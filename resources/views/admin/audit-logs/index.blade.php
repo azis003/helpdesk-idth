@@ -20,6 +20,37 @@
             <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#f1f7f7] text-[#0f766e]" aria-hidden="true"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 3.5h9l3 3V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" /><path stroke-linecap="round" d="M14 3.5V7h4M8 11h8M8 14.5h8" /></svg></span>
         </div>
 
+        <form method="GET" action="{{ route('admin.audit-logs.index') }}" class="grid gap-4 border-b border-[#edf2f4] bg-[#f8fbfc] p-5 sm:grid-cols-2 lg:grid-cols-5 sm:p-6" aria-label="Saring audit log">
+            <div>
+                <label for="audit-action" class="ui-field-label">Aksi</label>
+                <input id="audit-action" name="action" value="{{ $filters['action'] ?? '' }}" class="ui-input mt-2" placeholder="Contoh: ticket.claim">
+            </div>
+            <div>
+                <label for="audit-outcome" class="ui-field-label">Hasil</label>
+                <select id="audit-outcome" name="outcome" class="ui-select mt-2">
+                    <option value="">Semua hasil</option>
+                    <option value="succeeded" @selected(($filters['outcome'] ?? '') === 'succeeded')>Berhasil</option>
+                    <option value="denied" @selected(($filters['outcome'] ?? '') === 'denied')>Ditolak</option>
+                </select>
+            </div>
+            <div>
+                <label for="audit-actor" class="ui-field-label">Pelaku</label>
+                <input id="audit-actor" name="actor" value="{{ $filters['actor'] ?? '' }}" class="ui-input mt-2" placeholder="Nama atau username">
+            </div>
+            <div>
+                <label for="audit-from" class="ui-field-label">Dari tanggal</label>
+                <input id="audit-from" name="from" type="date" value="{{ $filters['from'] ?? '' }}" class="ui-input mt-2">
+            </div>
+            <div>
+                <label for="audit-to" class="ui-field-label">Sampai tanggal</label>
+                <input id="audit-to" name="to" type="date" value="{{ $filters['to'] ?? '' }}" class="ui-input mt-2">
+            </div>
+            <div class="flex flex-wrap items-end gap-3 sm:col-span-2 lg:col-span-5">
+                <button type="submit" class="ui-btn ui-btn-secondary">Terapkan filter</button>
+                <a href="{{ route('admin.audit-logs.index') }}" class="ui-btn ui-btn-ghost">Hapus filter</a>
+            </div>
+        </form>
+
         <div class="hidden overflow-x-auto md:block">
             <table class="ui-table">
                 <caption class="sr-only">Daftar audit log</caption>
@@ -33,6 +64,7 @@
                             <td><span class="ui-status {{ $auditLog->outcome === 'succeeded' ? 'ui-status-active' : 'ui-status-inactive !bg-[#fff1f2] !text-[#be123c]' }}">{{ $auditLog->outcome === 'succeeded' ? 'Berhasil' : 'Ditolak' }}</span></td>
                             <td class="max-w-md text-[#6a8089]">
                                 <p>{{ $auditLog->reason ?: '—' }}</p>
+                                <p class="mt-2 text-xs text-[#78909a]">Objek: {{ $auditLog->auditable_type ? class_basename($auditLog->auditable_type).' #'.$auditLog->auditable_id : 'Konteks umum' }}</p>
                                 @if ($auditLog->before || $auditLog->after)
                                     <details class="mt-3 rounded-lg border border-[#e1eaed] bg-[#f7fafb] p-3">
                                         <summary class="ui-disclosure-summary flex items-center justify-between gap-3 text-xs font-extrabold text-[#45606a]">Lihat sebelum/sesudah</summary>
@@ -40,6 +72,12 @@
                                             <div><p class="font-extrabold uppercase tracking-[0.1em] text-[#8aa0a8]">Sebelum</p><pre class="mt-2 overflow-x-auto whitespace-pre-wrap break-words text-[#526b75]">{{ json_encode($auditLog->before, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre></div>
                                             <div><p class="font-extrabold uppercase tracking-[0.1em] text-[#8aa0a8]">Sesudah</p><pre class="mt-2 overflow-x-auto whitespace-pre-wrap break-words text-[#526b75]">{{ json_encode($auditLog->after, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre></div>
                                         </div>
+                                    </details>
+                                @endif
+                                @if ($auditLog->context)
+                                    <details class="mt-3 rounded-lg border border-[#e1eaed] bg-[#f7fafb] p-3">
+                                        <summary class="ui-disclosure-summary flex items-center justify-between gap-3 text-xs font-extrabold text-[#45606a]">Lihat konteks request</summary>
+                                        <pre class="mt-3 overflow-x-auto whitespace-pre-wrap break-words text-xs text-[#526b75]">{{ json_encode($auditLog->context, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
                                     </details>
                                 @endif
                             </td>
@@ -57,8 +95,12 @@
                     <div class="flex items-start justify-between gap-4"><p class="font-extrabold text-[#35505b]">{{ $auditLog->action }}</p><span class="ui-status {{ $auditLog->outcome === 'succeeded' ? 'ui-status-active' : 'ui-status-inactive !bg-[#fff1f2] !text-[#be123c]' }}">{{ $auditLog->outcome === 'succeeded' ? 'Berhasil' : 'Ditolak' }}</span></div>
                     <p class="text-xs text-[#78909a]">{{ $auditLog->user?->username ?? 'Anonymous' }} · {{ $auditLog->created_at?->timezone(config('app.timezone'))->format('d/m/Y H:i:s') }}</p>
                     @if ($auditLog->reason)<p class="text-sm leading-6 text-[#6a8089]">{{ $auditLog->reason }}</p>@endif
+                    <p class="text-xs text-[#78909a]">Objek: {{ $auditLog->auditable_type ? class_basename($auditLog->auditable_type).' #'.$auditLog->auditable_id : 'Konteks umum' }}</p>
                     @if ($auditLog->before || $auditLog->after)
                         <details class="rounded-lg border border-[#e1eaed] bg-[#f7fafb] p-3"><summary class="ui-disclosure-summary flex items-center justify-between gap-3 text-xs font-extrabold text-[#45606a]">Lihat sebelum/sesudah</summary><div class="mt-3 space-y-3 text-xs"><div><p class="font-extrabold uppercase tracking-[0.1em] text-[#8aa0a8]">Sebelum</p><pre class="mt-2 whitespace-pre-wrap break-words text-[#526b75]">{{ json_encode($auditLog->before, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre></div><div><p class="font-extrabold uppercase tracking-[0.1em] text-[#8aa0a8]">Sesudah</p><pre class="mt-2 whitespace-pre-wrap break-words text-[#526b75]">{{ json_encode($auditLog->after, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre></div></div></details>
+                    @endif
+                    @if ($auditLog->context)
+                        <details class="rounded-lg border border-[#e1eaed] bg-[#f7fafb] p-3"><summary class="ui-disclosure-summary flex items-center justify-between gap-3 text-xs font-extrabold text-[#45606a]">Lihat konteks request</summary><pre class="mt-3 whitespace-pre-wrap break-words text-xs text-[#526b75]">{{ json_encode($auditLog->context, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre></details>
                     @endif
                 </article>
             @empty

@@ -46,6 +46,12 @@ Pembersihan waktu tunggu Pemohon dijadwalkan setiap lima menit melalui `routes/c
 
 Perintah scheduler menggunakan row lock dan aman dijalankan berulang. Pastikan `CACHE_STORE` production mendukung lock terdistribusi bila aplikasi berjalan pada lebih dari satu instance.
 
+## Retensi dan hardening audit
+
+Job retensi berjalan harian: hasil ekspor SVC-02 pada 01:00 setelah 90 hari, tiket terminal beserta histori pada 02:00 setelah lima tahun, dan log aplikasi terputar pada 02:30 setelah minimal 30 hari. Nilai ini dapat diubah melalui `RETENTION_DATA_EXPORT_DAYS`, `RETENTION_TICKET_YEARS`, dan `RETENTION_APPLICATION_LOG_DAYS`.
+
+Untuk PostgreSQL production, jalankan migrasi menggunakan owner database lalu set `DB_APP_ROLE` ke role koneksi aplikasi. Migrasi akan mencabut hak `UPDATE` dan `DELETE` pada `audit_logs`; storage lampiran tetap berada di disk private dan hanya dilayani melalui pemeriksaan otorisasi.
+
 ## Fondasi yang tersedia
 
 - Login dengan username, rate limiting, session regeneration, logout, CSRF, dan audit login.

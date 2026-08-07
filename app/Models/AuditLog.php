@@ -25,6 +25,8 @@ class AuditLog extends Model
         'ip_address',
         'user_agent',
         'request_id',
+        'context',
+        'created_at',
     ];
 
     protected function casts(): array
@@ -32,6 +34,8 @@ class AuditLog extends Model
         return [
             'before' => 'array',
             'after' => 'array',
+            'context' => 'array',
+            'created_at' => 'datetime',
         ];
     }
 

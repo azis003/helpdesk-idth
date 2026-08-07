@@ -7,6 +7,8 @@ use App\Services\AuditLogger;
 use App\Services\DomainAuthorization;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Throwable;
 
 class AttachmentController extends Controller
 {
@@ -19,8 +21,15 @@ class AttachmentController extends Controller
     {
         $actor = $request->user();
 
-        if ($attachment->trashed()) {
-            $this->auditLogger->denied($actor, 'attachment.download', $attachment, 'Lampiran sudah dihapus dari storage.');
+        if ($actor === null || $attachment->trashed()) {
+            $this->auditLogger->denied(
+                $actor,
+                'attachment.download',
+                $attachment,
+                $attachment->trashed()
+                    ? 'Lampiran sudah dihapus dari storage.'
+                    : 'Aktor tidak terautentikasi.',
+            );
             abort(404, 'Lampiran tidak ditemukan.');
         }
 
@@ -33,12 +42,31 @@ class AttachmentController extends Controller
             abort(404, 'Lampiran tidak ditemukan.');
         }
 
+        try {
+            $response = $disk->download(
+                $attachment->storage_path,
+                $this->downloadName($attachment->original_name),
+                [
+                    'Cache-Control' => 'private, no-store',
+                    'X-Content-Type-Options' => 'nosniff',
+                    ...array_filter(['Content-Type' => $attachment->mime_type]),
+                ],
+            );
+        } catch (Throwable) {
+            $this->auditLogger->denied($actor, 'attachment.download', $attachment, 'Berkas lampiran gagal disiapkan.');
+            abort(404, 'Lampiran tidak ditemukan.');
+        }
+
         $this->auditLogger->succeeded($actor, 'attachment.download', $attachment, 'Lampiran diakses.');
 
-        return $disk->download(
-            $attachment->storage_path,
-            $attachment->original_name,
-            array_filter(['Content-Type' => $attachment->mime_type]),
-        );
+        return $response;
+    }
+
+    private function downloadName(string $name): string
+    {
+        $name = str_replace(["\0", "\r", "\n", '/', '\\'], '-', $name);
+        $name = trim(Str::limit($name, 255, ''));
+
+        return $name !== '' ? $name : 'lampiran';
     }
 }

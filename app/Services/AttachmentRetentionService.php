@@ -15,20 +15,50 @@ class AttachmentRetentionService
     public function purgeDataExportResults(?Carbon $now = null): int
     {
         $now ??= Carbon::now(config('app.timezone'));
-        $cutoff = $now->copy()->subDays(self::DATA_EXPORT_RETENTION_DAYS);
+        $cutoff = $now->copy()->subDays((int) config('retention.data_export_days', self::DATA_EXPORT_RETENTION_DAYS));
         $deleted = 0;
 
-        Attachment::query()
+        Attachment::withTrashed()
             ->where('type_key', 'data_export_result')
-            ->whereHas('ticket', fn ($query) => $query
-                ->whereNotNull('closed_at')
-                ->where('closed_at', '<=', $cutoff))
+            ->whereHas('ticket', function ($query) use ($cutoff): void {
+                $query
+                    ->where(function ($ticketQuery): void {
+                        $ticketQuery
+                            ->where('service_type_code_snapshot', 'SVC-02')
+                            ->orWhereHas('serviceType', fn ($serviceQuery) => $serviceQuery->where('code', 'SVC-02'));
+                    })
+                    ->whereNotNull('closed_at')
+                    ->where('closed_at', '<=', $cutoff);
+            })
             ->with('ticket')
             ->orderBy('id')
             ->each(function (Attachment $attachment) use ($now, &$deleted): void {
+                $storage = Storage::disk($attachment->storage_disk);
                 $before = $this->metadata($attachment);
-                $storageDeleted = Storage::disk($attachment->storage_disk)->delete($attachment->storage_path);
-                $attachment->delete();
+                $storageExisted = $storage->exists($attachment->storage_path);
+
+                // A previously completed purge is already soft-deleted and has
+                // no physical file left. Skipping it keeps the job idempotent.
+                if ($attachment->trashed() && ! $storageExisted) {
+                    return;
+                }
+
+                $storageDeleted = ! $storageExisted || $storage->delete($attachment->storage_path);
+
+                if (! $storageDeleted) {
+                    $this->auditLogger->denied(
+                        null,
+                        'attachment.retention_delete_failed',
+                        $attachment,
+                        'Berkas hasil tarik data belum dapat dihapus dari storage; job akan mencoba kembali.',
+                    );
+
+                    return;
+                }
+
+                if (! $attachment->trashed()) {
+                    $attachment->delete();
+                }
 
                 $this->auditLogger->succeeded(
                     null,
@@ -40,6 +70,7 @@ class AttachmentRetentionService
                         ...$before,
                         'deleted_at' => $now->toIso8601String(),
                         'storage_deleted' => $storageDeleted,
+                        'storage_existed' => $storageExisted,
                     ],
                 );
                 $deleted++;

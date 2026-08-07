@@ -63,7 +63,9 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/tickets/{ticket}/wait-third-party', [TicketCommunicationController::class, 'startThirdParty'])->name('tickets.wait-third-party');
         Route::post('/tickets/{ticket}/resume-third-party', [TicketCommunicationController::class, 'resumeThirdParty'])->name('tickets.resume-third-party');
         Route::post('/tickets/{ticket}/cancel', [TicketController::class, 'cancel'])->name('tickets.cancel');
-        Route::get('/attachments/{attachment}/download', [AttachmentController::class, 'download'])->name('attachments.download');
+        Route::get('/attachments/{attachment}/download', [AttachmentController::class, 'download'])
+            ->withTrashed()
+            ->name('attachments.download');
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
         Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
         Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');

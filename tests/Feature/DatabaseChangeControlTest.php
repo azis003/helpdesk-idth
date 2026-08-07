@@ -185,6 +185,10 @@ class DatabaseChangeControlTest extends TestCase
             'outcome' => 'succeeded',
             'auditable_id' => $attachment->id,
         ]);
+
+        $this->artisan('sihati:attachments:purge-data-exports')
+            ->expectsOutput('0 lampiran hasil tarik data dihapus.')
+            ->assertExitCode(0);
     }
 
     /** @param array<int, UploadedFile> $files */
