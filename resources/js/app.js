@@ -86,6 +86,108 @@ if (mandatoryPasswordModal) {
     });
 }
 
+const passwordResetModal = document.querySelector('[data-password-reset-modal]');
+
+if (passwordResetModal) {
+    const passwordResetButtons = [...document.querySelectorAll('[data-password-reset-open]')];
+    const passwordResetForm = passwordResetModal.querySelector('[data-password-reset-form]');
+    const passwordResetInput = passwordResetModal.querySelector('[data-password-reset-input]');
+    const passwordResetConfirmation = passwordResetModal.querySelector('[data-password-reset-confirmation]');
+    const passwordResetUserId = passwordResetModal.querySelector('[data-password-reset-user-id]');
+    const passwordResetTitle = passwordResetModal.querySelector('[data-password-reset-title]');
+    const passwordResetSubmit = passwordResetModal.querySelector('[data-password-reset-submit]');
+    const passwordResetFocusableSelector = [
+        'button:not([disabled])',
+        'input:not([disabled])',
+        '[tabindex]:not([tabindex="-1"])',
+    ].join(', ');
+    let passwordResetLastTrigger = null;
+
+    const getPasswordResetFocusableElements = () => [...passwordResetModal.querySelectorAll(passwordResetFocusableSelector)];
+
+    const closePasswordResetModal = () => {
+        passwordResetModal.classList.add('hidden');
+        passwordResetModal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('overflow-hidden');
+        passwordResetForm?.reset();
+        passwordResetLastTrigger?.focus();
+        passwordResetLastTrigger = null;
+    };
+
+    const openPasswordResetModal = (trigger) => {
+        if (!passwordResetForm || !passwordResetInput) {
+            return;
+        }
+
+        passwordResetLastTrigger = trigger;
+        passwordResetForm.action = trigger.dataset.action || '';
+        passwordResetUserId && (passwordResetUserId.value = trigger.dataset.userId || '');
+        passwordResetTitle && (passwordResetTitle.textContent = `Ganti password ${trigger.dataset.userName || ''}`.trim());
+        passwordResetInput.value = '';
+        passwordResetModal.classList.remove('hidden');
+        passwordResetModal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('overflow-hidden');
+        window.requestAnimationFrame(() => passwordResetInput.focus());
+    };
+
+    passwordResetButtons.forEach((button) => {
+        button.setAttribute('aria-haspopup', 'dialog');
+        button.setAttribute('aria-controls', 'password-reset-modal');
+        button.addEventListener('click', () => openPasswordResetModal(button));
+    });
+
+    passwordResetModal.querySelectorAll('[data-password-reset-close]').forEach((closeButton) => {
+        closeButton.addEventListener('click', closePasswordResetModal);
+    });
+
+    passwordResetModal.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            closePasswordResetModal();
+
+            return;
+        }
+
+        if (event.key !== 'Tab') {
+            return;
+        }
+
+        const focusableElements = getPasswordResetFocusableElements();
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (!firstElement || !lastElement) {
+            return;
+        }
+
+        if (event.shiftKey && document.activeElement === firstElement) {
+            event.preventDefault();
+            lastElement.focus();
+        } else if (!event.shiftKey && document.activeElement === lastElement) {
+            event.preventDefault();
+            firstElement.focus();
+        }
+    });
+
+    passwordResetForm?.addEventListener('submit', () => {
+        if (passwordResetConfirmation && passwordResetInput) {
+            passwordResetConfirmation.value = passwordResetInput.value;
+        }
+
+        if (passwordResetSubmit) {
+            passwordResetSubmit.disabled = true;
+            passwordResetSubmit.setAttribute('aria-busy', 'true');
+        }
+    });
+
+    const autoOpenUserId = passwordResetModal.dataset.autoUser;
+    const autoOpenTrigger = passwordResetButtons.find((button) => button.dataset.userId === autoOpenUserId);
+
+    if (autoOpenTrigger) {
+        openPasswordResetModal(autoOpenTrigger);
+    }
+}
+
 const ticketForms = document.querySelectorAll('[data-ticket-form]');
 
 ticketForms.forEach((ticketForm) => {

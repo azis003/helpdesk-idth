@@ -7,19 +7,8 @@
 @section('content')
     <div class="ui-page-header">
         <div>
-            <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Direktori akses</p>
-            <h1 class="ui-page-title">Pengguna dan akses</h1>
-            <p class="ui-page-description">Kelola identitas, role, tim utama, dan bidang keahlian dari satu tempat. Setiap perubahan tetap tercatat di audit log.</p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-            <a href="{{ route('admin.audit-logs.index') }}" class="ui-btn ui-btn-ghost">
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 3.5h9l3 3V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" /><path stroke-linecap="round" d="M14 3.5V7h4M8 11h8M8 14.5h8" /></svg>
-                Audit log
-            </a>
-            <a href="{{ route('admin.users.create') }}" class="ui-btn ui-btn-primary">
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M12 5v14M5 12h14" /></svg>
-                Buat pengguna
-            </a>
+            <h1 class="ui-page-title">Pengguna dan Akses</h1>
+            <p class="ui-page-description">Kelola pengguna, role, tim kerja, dan keahlian pegawai. Setiap perubahan tetap tercatat di audit log.</p>
         </div>
     </div>
 
@@ -40,23 +29,23 @@
             <span class="ui-stat-icon !bg-[#fff6df] !text-[#a16207]" aria-hidden="true">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.5a8.5 8.5 0 1 0 8.5 8.5M12 7v5l3 2" /></svg>
             </span>
-            <div><p class="ui-stat-label">Menunggu ganti password</p><p class="ui-stat-value">{{ $userStats['password_pending'] }}</p></div>
+            <div><p class="ui-stat-label">Perlu ganti password</p><p class="ui-stat-value">{{ $userStats['password_pending'] }}</p></div>
         </article>
         <article class="ui-stat-card">
             <span class="ui-stat-icon !bg-[#f1f4f6] !text-[#607681]" aria-hidden="true">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4 19h16M5 19V9.7a1 1 0 0 1 .5-.87l5-2.83a1 1 0 0 1 1 0l5 2.83a1 1 0 0 1 .5.87V19" /><path stroke-linecap="round" d="M9 12h.01M12 12h.01M15 12h.01" /></svg>
             </span>
-            <div><p class="ui-stat-label">Belum punya tim</p><p class="ui-stat-value">{{ $userStats['without_team'] }}</p></div>
+            <div><p class="ui-stat-label">Belum punya tim kerja</p><p class="ui-stat-value">{{ $userStats['without_team'] }}</p></div>
         </article>
     </section>
 
     <section class="ui-panel mt-8 overflow-hidden" aria-labelledby="users-heading">
         <div class="ui-panel-header flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-            <div>
-                <h2 id="users-heading" class="ui-section-title">Direktori pengguna</h2>
-                <p class="ui-section-description">{{ $users->total() }} akun terdaftar · menampilkan {{ $users->count() }} akun pada halaman ini</p>
-            </div>
-            <a href="{{ route('admin.teams.index') }}" class="ui-action-link">Lihat struktur tim <span aria-hidden="true">→</span></a>
+            <h2 id="users-heading" class="ui-section-title">Daftar pengguna</h2>
+            <a href="{{ route('admin.users.create') }}" class="ui-btn ui-btn-primary w-full shrink-0 sm:w-auto">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M12 5v14M5 12h14" /></svg>
+                Tambah pengguna
+            </a>
         </div>
 
         <div class="hidden overflow-x-auto md:block">
@@ -97,7 +86,7 @@
                                 </div>
                             </td>
                             <td>
-                                <p class="font-semibold text-[#35505b]">{{ $listedUser->currentTeamMembership?->workTeam?->name ?? 'Belum ada tim utama' }}</p>
+                                <p class="font-semibold text-[#35505b]">{{ $listedUser->currentTeamMembership?->workTeam?->name ?? 'Belum punya tim kerja' }}</p>
                                 <div class="mt-2 flex max-w-[14rem] flex-wrap gap-1.5">
                                     @forelse ($listedUser->skills->take(3) as $skill)
                                         <span class="ui-chip">{{ $skill->name }}</span>
@@ -116,11 +105,24 @@
                                 @endif
                             </td>
                             <td class="text-right">
-                                <a href="{{ route('admin.users.edit', $listedUser) }}" class="ui-action-link">Kelola <span aria-hidden="true">→</span></a>
+                                <div class="flex justify-end gap-2">
+                                    <a href="{{ route('admin.users.edit', $listedUser) }}" class="group relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#dce7eb] bg-white text-[#55707a] transition hover:border-[#2bb8aa] hover:bg-[#effcf9] hover:text-[#0f766e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2bb8aa] focus-visible:ring-offset-2" aria-label="Edit pengguna {{ $listedUser->name }}" title="Edit pengguna">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 2.651 2.651M4.5 19.5l4.04-.808a2 2 0 0 0 1.02-.55l8.95-8.95a2 2 0 0 0 0-2.828l-.884-.884a2 2 0 0 0-2.828 0l-8.95 8.95a2 2 0 0 0-.55 1.02L4.5 19.5Z" /></svg>
+                                        <span class="sr-only">Edit pengguna {{ $listedUser->name }}</span>
+                                        <span role="tooltip" class="pointer-events-none absolute right-full top-1/2 z-20 mr-2 -translate-y-1/2 whitespace-nowrap rounded-md bg-[#17313c] px-2 py-1.5 text-[0.68rem] font-semibold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">Edit pengguna</span>
+                                    </a>
+                                    @if ($listedUser->isNot(auth()->user()))
+                                        <button type="button" data-password-reset-open data-user-id="{{ $listedUser->id }}" data-user-name="{{ $listedUser->name }}" data-action="{{ route('admin.users.reset-password', $listedUser) }}" class="group relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#ead8ad] bg-white text-[#a16207] transition hover:border-[#e4a72c] hover:bg-[#fff8e8] hover:text-[#854d0e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e4a72c] focus-visible:ring-offset-2" aria-label="Ganti password {{ $listedUser->name }}" title="Ganti password">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.5 8.5a4 4 0 1 1-1.17 2.83L8 17.66V20H5.5v-2.5H3v-2.5h3.34l4.83-4.83A4 4 0 0 1 15.5 8.5Z" /><path stroke-linecap="round" d="M15.5 8.5h.01" /></svg>
+                                            <span class="sr-only">Ganti password {{ $listedUser->name }}</span>
+                                            <span role="tooltip" class="pointer-events-none absolute right-full top-1/2 z-20 mr-2 -translate-y-1/2 whitespace-nowrap rounded-md bg-[#7a4d07] px-2 py-1.5 text-[0.68rem] font-semibold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">Ganti password</span>
+                                        </button>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5"><div class="ui-empty">Belum ada pengguna yang terdaftar. Gunakan tombol <span class="font-bold">Buat pengguna</span> untuk menambahkan akun pertama.</div></td></tr>
+                        <tr><td colspan="5"><div class="ui-empty">Belum ada pengguna yang terdaftar. Gunakan tombol <span class="font-bold">Tambah pengguna</span> untuk menambahkan akun pertama.</div></td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -147,7 +149,18 @@
                     @if ($listedUser->requiresPasswordChange())
                         <p class="mt-3 text-xs font-bold text-[#a16207]">Perlu ganti password sebelum bekerja.</p>
                     @endif
-                    <a href="{{ route('admin.users.edit', $listedUser) }}" class="ui-btn ui-btn-ghost mt-4 w-full">Kelola pengguna <span aria-hidden="true">→</span></a>
+                    <div class="mt-4 flex gap-2">
+                        <a href="{{ route('admin.users.edit', $listedUser) }}" class="ui-btn ui-btn-ghost min-w-0 flex-1">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 2.651 2.651M4.5 19.5l4.04-.808a2 2 0 0 0 1.02-.55l8.95-8.95a2 2 0 0 0 0-2.828l-.884-.884a2 2 0 0 0-2.828 0l-8.95 8.95a2 2 0 0 0-.55 1.02L4.5 19.5Z" /></svg>
+                            Edit pengguna
+                        </a>
+                        @if ($listedUser->isNot(auth()->user()))
+                            <button type="button" data-password-reset-open data-user-id="{{ $listedUser->id }}" data-user-name="{{ $listedUser->name }}" data-action="{{ route('admin.users.reset-password', $listedUser) }}" class="ui-btn ui-btn-ghost group relative w-11 shrink-0 px-0 text-[#a16207] hover:border-[#e4a72c] hover:bg-[#fff8e8] hover:text-[#854d0e]" aria-label="Ganti password {{ $listedUser->name }}" title="Ganti password">
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.5 8.5a4 4 0 1 1-1.17 2.83L8 17.66V20H5.5v-2.5H3v-2.5h3.34l4.83-4.83A4 4 0 0 1 15.5 8.5Z" /><path stroke-linecap="round" d="M15.5 8.5h.01" /></svg>
+                                <span class="sr-only">Ganti password {{ $listedUser->name }}</span>
+                            </button>
+                        @endif
+                    </div>
                 </article>
             @empty
                 <div class="ui-empty m-4">Belum ada pengguna yang terdaftar.</div>
@@ -158,4 +171,37 @@
             <div class="border-t border-[#e7eef1] px-5 py-4 sm:px-6">{{ $users->links() }}</div>
         @endif
     </section>
+
+    <div id="password-reset-modal" data-password-reset-modal data-auto-user="{{ old('reset_user_id') }}" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+        <div class="absolute inset-0 bg-slate-950/40" data-password-reset-close></div>
+        <div class="relative flex min-h-full items-center justify-center p-4">
+            <section role="dialog" aria-modal="true" aria-labelledby="password-reset-title" class="w-full max-w-md rounded-2xl border border-[#dfe8ec] bg-white shadow-[0_20px_55px_rgba(38,58,67,0.2)]">
+                <div class="flex items-center justify-between gap-4 border-b border-[#e7eef1] px-5 py-4 sm:px-6">
+                    <h2 id="password-reset-title" data-password-reset-title class="text-base font-extrabold text-[#17313c]">Ganti password</h2>
+                    <button type="button" data-password-reset-close class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#78909a] transition hover:bg-[#f4f8f9] hover:text-[#35505b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2bb8aa]" aria-label="Tutup">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="m7 7 10 10M17 7 7 17" /></svg>
+                    </button>
+                </div>
+
+                <form method="POST" data-password-reset-form class="p-5 sm:p-6">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="confirm_reset" value="1">
+                    <input type="hidden" name="temporary_password_confirmation" data-password-reset-confirmation>
+                    <input type="hidden" name="reset_user_id" data-password-reset-user-id>
+
+                    <label for="temporary_password" class="ui-field-label">Password baru</label>
+                    <input id="temporary_password" name="temporary_password" type="password" autocomplete="new-password" required data-password-reset-input class="ui-input mt-2">
+                    @error('temporary_password')
+                        <p class="mt-2 text-sm text-rose-700">{{ $message }}</p>
+                    @enderror
+
+                    <div class="mt-6 flex justify-end gap-3">
+                        <button type="button" data-password-reset-close class="inline-flex items-center justify-center rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-500 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2">Batal</button>
+                        <button type="submit" data-password-reset-submit class="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2">Ganti password</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </div>
 @endsection

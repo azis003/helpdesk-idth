@@ -93,11 +93,16 @@ class UserManagementController extends Controller
     {
         $actor = $request->user();
         $this->authorization->authorize($actor, 'update', $user, 'admin.user.update');
-        $this->organization->updateUser($actor, $user, $request->validated());
+        $data = $request->validated();
+
+        $this->authorization->authorize($actor, 'manageRoles', $user, 'admin.user.roles.update');
+        $this->authorization->authorize($actor, 'manageTeam', $user, 'admin.user.team.update');
+        $this->authorization->authorize($actor, 'manageSkills', $user, 'admin.user.skills.update');
+        $this->organization->updateUser($actor, $user, $data);
 
         return redirect()
-            ->route('admin.users.edit', $user)
-            ->with('success', 'Profil pengguna berhasil diperbarui.');
+            ->route('admin.users.index')
+            ->with('success', 'Perubahan pengguna berhasil disimpan.');
     }
 
     public function activate(Request $request, User $user): RedirectResponse
