@@ -1,5 +1,79 @@
 import './bootstrap';
 
+const toastItems = [...document.querySelectorAll('[data-toast]')];
+const toastReduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+
+toastItems.forEach((toast) => {
+    const closeButton = toast.querySelector('[data-toast-close]');
+    const duration = Number.parseInt(toast.dataset.toastDuration || '0', 10);
+    let dismissTimer = null;
+    let removed = false;
+
+    const clearDismissTimer = () => {
+        if (dismissTimer) {
+            window.clearTimeout(dismissTimer);
+            dismissTimer = null;
+        }
+    };
+
+    const removeToast = () => {
+        if (removed) {
+            return;
+        }
+
+        removed = true;
+        clearDismissTimer();
+        toast.remove();
+    };
+
+    const dismissToast = () => {
+        if (removed) {
+            return;
+        }
+
+        clearDismissTimer();
+        toast.classList.add('translate-x-4', 'scale-95', 'opacity-0');
+
+        if (toastReduceMotion) {
+            removeToast();
+
+            return;
+        }
+
+        window.setTimeout(removeToast, 320);
+    };
+
+    const scheduleDismiss = () => {
+        clearDismissTimer();
+
+        if (duration > 0) {
+            dismissTimer = window.setTimeout(dismissToast, duration);
+        }
+    };
+
+    toast.classList.add('translate-x-4', 'scale-95', 'opacity-0');
+
+    if (toastReduceMotion) {
+        toast.classList.remove('translate-x-4', 'scale-95', 'opacity-0');
+    } else {
+        window.requestAnimationFrame(() => {
+            toast.classList.remove('translate-x-4', 'scale-95', 'opacity-0');
+        });
+    }
+
+    closeButton?.addEventListener('click', dismissToast);
+    toast.addEventListener('mouseenter', clearDismissTimer);
+    toast.addEventListener('mouseleave', scheduleDismiss);
+    toast.addEventListener('focusin', clearDismissTimer);
+    toast.addEventListener('focusout', (event) => {
+        if (!toast.contains(event.relatedTarget)) {
+            scheduleDismiss();
+        }
+    });
+
+    scheduleDismiss();
+});
+
 const sidebar = document.querySelector('[data-sidebar]');
 const sidebarToggle = document.querySelector('[data-sidebar-toggle]');
 
@@ -187,6 +261,222 @@ if (passwordResetModal) {
         openPasswordResetModal(autoOpenTrigger);
     }
 }
+
+const teamCreateModal = document.querySelector('[data-team-create-modal]');
+
+if (teamCreateModal) {
+    const teamCreateButtons = [...document.querySelectorAll('[data-team-create-open]')];
+    const teamCreateForm = teamCreateModal.querySelector('[data-team-create-form]');
+    const teamCreateInput = teamCreateModal.querySelector('#team-create-name');
+    const teamCreateSubmit = teamCreateModal.querySelector('[data-team-create-submit]');
+    const teamCreateLabel = teamCreateModal.querySelector('[data-team-create-label]');
+    const teamCreateLoading = teamCreateModal.querySelector('[data-team-create-loading]');
+    const teamCreateFocusableSelector = [
+        'button:not([disabled])',
+        'input:not([disabled])',
+        'select:not([disabled])',
+        'textarea:not([disabled])',
+        '[href]',
+        '[tabindex]:not([tabindex="-1"])',
+    ].join(', ');
+    let teamCreateLastTrigger = null;
+
+    const getTeamCreateFocusableElements = () => [...teamCreateModal.querySelectorAll(teamCreateFocusableSelector)];
+
+    const closeTeamCreateModal = () => {
+        teamCreateModal.classList.add('hidden');
+        teamCreateModal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('overflow-hidden');
+        teamCreateForm?.reset();
+
+        if (teamCreateSubmit) {
+            teamCreateSubmit.disabled = false;
+            teamCreateSubmit.setAttribute('aria-busy', 'false');
+        }
+
+        teamCreateLabel?.classList.remove('hidden');
+        teamCreateLoading?.classList.add('hidden');
+        teamCreateLastTrigger?.focus();
+        teamCreateLastTrigger = null;
+    };
+
+    const openTeamCreateModal = (trigger) => {
+        teamCreateLastTrigger = trigger;
+        teamCreateModal.classList.remove('hidden');
+        teamCreateModal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('overflow-hidden');
+        window.requestAnimationFrame(() => teamCreateInput?.focus());
+    };
+
+    teamCreateButtons.forEach((button) => {
+        button.setAttribute('aria-haspopup', 'dialog');
+        button.setAttribute('aria-controls', 'team-create-modal');
+        button.addEventListener('click', () => openTeamCreateModal(button));
+    });
+
+    teamCreateModal.querySelectorAll('[data-team-create-close]').forEach((closeButton) => {
+        closeButton.addEventListener('click', closeTeamCreateModal);
+    });
+
+    teamCreateModal.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            closeTeamCreateModal();
+
+            return;
+        }
+
+        if (event.key !== 'Tab') {
+            return;
+        }
+
+        const focusableElements = getTeamCreateFocusableElements();
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (!firstElement || !lastElement) {
+            return;
+        }
+
+        if (event.shiftKey && document.activeElement === firstElement) {
+            event.preventDefault();
+            lastElement.focus();
+        } else if (!event.shiftKey && document.activeElement === lastElement) {
+            event.preventDefault();
+            firstElement.focus();
+        }
+    });
+
+    teamCreateForm?.addEventListener('submit', () => {
+        if (!teamCreateSubmit) {
+            return;
+        }
+
+        teamCreateSubmit.disabled = true;
+        teamCreateSubmit.setAttribute('aria-busy', 'true');
+        teamCreateLabel?.classList.add('hidden');
+        teamCreateLoading?.classList.remove('hidden');
+    });
+
+    if (teamCreateModal.dataset.autoOpen === 'true' && teamCreateButtons[0]) {
+        openTeamCreateModal(teamCreateButtons[0]);
+    }
+}
+
+const teamAccordions = document.querySelectorAll('[data-team-accordion]');
+
+teamAccordions.forEach((accordion) => {
+    const summary = accordion.querySelector(':scope > summary');
+    const panel = accordion.querySelector(':scope > [data-team-accordion-panel]');
+
+    if (!summary || !panel) {
+        return;
+    }
+
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    let isAnimating = false;
+    let transitionTimer = null;
+
+    const finishOpen = () => {
+        panel.hidden = false;
+        panel.style.height = 'auto';
+        panel.style.opacity = '1';
+        isAnimating = false;
+    };
+
+    const finishClose = () => {
+        accordion.open = false;
+        panel.hidden = true;
+        panel.style.height = '0px';
+        panel.style.opacity = '0';
+        isAnimating = false;
+    };
+
+    const waitForTransition = (callback) => {
+        let finished = false;
+        const complete = () => {
+            if (finished) {
+                return;
+            }
+
+            finished = true;
+            panel.removeEventListener('transitionend', handleTransitionEnd);
+            window.clearTimeout(transitionTimer);
+            callback();
+        };
+        const handleTransitionEnd = (event) => {
+            if (event.target === panel && event.propertyName === 'height') {
+                complete();
+            }
+        };
+
+        panel.addEventListener('transitionend', handleTransitionEnd);
+            transitionTimer = window.setTimeout(complete, 560);
+    };
+
+    const openAccordion = () => {
+        if (isAnimating) {
+            return;
+        }
+
+        accordion.open = true;
+        panel.hidden = false;
+
+        if (reduceMotion) {
+            finishOpen();
+
+            return;
+        }
+
+        isAnimating = true;
+        panel.style.height = '0px';
+        panel.style.opacity = '0';
+        window.requestAnimationFrame(() => {
+            panel.style.height = `${panel.scrollHeight}px`;
+            panel.style.opacity = '1';
+        });
+        waitForTransition(finishOpen);
+    };
+
+    const closeAccordion = () => {
+        if (isAnimating) {
+            return;
+        }
+
+        if (reduceMotion) {
+            finishClose();
+
+            return;
+        }
+
+        isAnimating = true;
+        panel.style.height = `${panel.scrollHeight}px`;
+        panel.style.opacity = '1';
+        window.requestAnimationFrame(() => {
+            panel.style.height = '0px';
+            panel.style.opacity = '0';
+        });
+        waitForTransition(finishClose);
+    };
+
+    summary.addEventListener('click', (event) => {
+        event.preventDefault();
+
+        if (accordion.open) {
+            closeAccordion();
+        } else {
+            openAccordion();
+        }
+    });
+
+    if (accordion.open) {
+        finishOpen();
+    } else {
+        panel.hidden = true;
+        panel.style.height = '0px';
+        panel.style.opacity = '0';
+    }
+});
 
 const ticketForms = document.querySelectorAll('[data-ticket-form]');
 
