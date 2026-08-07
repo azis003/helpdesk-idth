@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Persetujuan — SIHATI')
+@section('title', 'Persetujuan — '.$branding['application_name'])
 @section('header_kicker', 'Ruang kerja')
 @section('header_title', 'Persetujuan')
 

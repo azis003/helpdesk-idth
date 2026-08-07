@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\AttachmentPolicyController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\BrandingController;
 use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\Admin\OperationalPolicyController;
 use App\Http\Controllers\Admin\ServiceCatalogController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Admin\WorkTeamController;
 use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BrandingAssetController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\HomeController;
@@ -23,6 +25,7 @@ use App\Http\Controllers\TicketController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health/ready', [HealthController::class, 'ready'])->name('health.ready');
+Route::get('/branding/logo', [BrandingAssetController::class, 'logo'])->name('branding.logo');
 
 Route::get('/', HomeController::class);
 
@@ -124,6 +127,9 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::put('/categories/{problemCategory}/skills', [SkillController::class, 'updateCategorySkills'])->name('categories.skills.update');
 
             Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+
+            Route::get('/branding', [BrandingController::class, 'index'])->name('branding.index');
+            Route::put('/branding', [BrandingController::class, 'update'])->name('branding.update');
 
             Route::get('/operational-policies', [OperationalPolicyController::class, 'index'])->name('operational-policies.index');
             Route::put('/operational-policies/sla', [OperationalPolicyController::class, 'updateSla'])->name('operational-policies.sla.update');

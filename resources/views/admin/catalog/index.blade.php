@@ -13,7 +13,7 @@
     };
 @endphp
 
-@section('title', 'Katalog layanan — SIHATI')
+@section('title', 'Katalog layanan — '.$branding['application_name'])
 @section('header_kicker', 'Administrasi master data')
 @section('header_title', 'Katalog layanan')
 

@@ -439,3 +439,49 @@ reportExportForms.forEach((form) => {
         loading?.classList.remove('hidden');
     });
 });
+
+const brandingForm = document.querySelector('[data-branding-form]');
+
+if (brandingForm) {
+    const logoInput = brandingForm.querySelector('[data-branding-logo-input]') || brandingForm.querySelector('#branding-logo');
+    const previewImage = brandingForm.querySelector('[data-branding-preview-image]');
+    const previewFallback = brandingForm.querySelector('[data-branding-preview-fallback]');
+    const fileName = brandingForm.querySelector('[data-branding-file-name]');
+    const submitButton = brandingForm.querySelector('[data-branding-submit]');
+    const submitLabel = brandingForm.querySelector('[data-branding-submit-label]');
+    const submitLoading = brandingForm.querySelector('[data-branding-submit-loading]');
+
+    logoInput?.addEventListener('change', () => {
+        const file = logoInput.files?.[0];
+
+        if (!file) {
+            if (fileName) {
+                fileName.textContent = 'Belum ada file baru yang dipilih.';
+            }
+
+            return;
+        }
+
+        if (fileName) {
+            fileName.textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(2)} MB`;
+        }
+
+        if (previewImage) {
+            previewImage.src = URL.createObjectURL(file);
+            previewImage.alt = `Pratinjau ${file.name}`;
+            previewImage.classList.remove('hidden');
+            previewFallback?.classList.add('hidden');
+        }
+    });
+
+    brandingForm.addEventListener('submit', () => {
+        if (!submitButton) {
+            return;
+        }
+
+        submitButton.disabled = true;
+        submitButton.setAttribute('aria-busy', 'true');
+        submitLabel?.classList.add('hidden');
+        submitLoading?.classList.remove('hidden');
+    });
+}

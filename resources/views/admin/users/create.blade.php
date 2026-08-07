@@ -5,7 +5,7 @@
     $selectedSkillIds = collect(old('skill_ids', []))->map(fn ($id) => (string) $id)->all();
 @endphp
 
-@section('title', 'Buat Pengguna — SIHATI')
+@section('title', 'Buat Pengguna — '.$branding['application_name'])
 
 @section('header_kicker', 'Administrasi identitas')
 @section('header_title', 'Buat pengguna')

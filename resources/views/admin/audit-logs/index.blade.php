@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Audit Log — SIHATI')
+@section('title', 'Audit Log — '.$branding['application_name'])
 @section('header_kicker', 'Administrasi')
 @section('header_title', 'Jejak perubahan')
 

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Kebijakan operasional — SIHATI')
+@section('title', 'Kebijakan operasional — '.$branding['application_name'])
 @section('header_kicker', 'Administrasi')
 @section('header_title', 'Kebijakan operasional')
 
@@ -91,7 +91,7 @@
                     <div>
                         <label for="calendar-timezone" class="ui-field-label">Zona waktu</label>
                         <input id="calendar-timezone" name="timezone" value="Asia/Jakarta" readonly class="ui-input mt-2 bg-[#f1f6f7]" aria-describedby="calendar-timezone-help">
-                        <p id="calendar-timezone-help" class="mt-2 text-xs leading-5 text-[#78909a]">Zona waktu SIHATI ditetapkan Asia/Jakarta.</p>
+                        <p id="calendar-timezone-help" class="mt-2 text-xs leading-5 text-[#78909a]">Zona waktu {{ $branding['application_name'] }} ditetapkan Asia/Jakarta.</p>
                     </div>
                     <div>
                         <label for="calendar-opens" class="ui-field-label">Jam mulai layanan <span class="text-rose-600">*</span></label>

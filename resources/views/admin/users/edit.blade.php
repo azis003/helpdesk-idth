@@ -5,7 +5,7 @@
     $selectedSkillIds = collect(old('skill_ids', $user->skills->pluck('id')->all()))->map(fn ($id) => (string) $id)->all();
 @endphp
 
-@section('title', 'Edit Pengguna — SIHATI')
+@section('title', 'Edit Pengguna — '.$branding['application_name'])
 
 @section('header_kicker', 'Administrasi identitas')
 @section('header_title', 'Detail pengguna')

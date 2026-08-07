@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Dasbor — SIHATI')
+@section('title', 'Dasbor — '.$branding['application_name'])
 @section('header_kicker', 'Ruang kerja')
 @section('header_title', 'Dasbor')
 
@@ -36,7 +36,7 @@
     <section class="ui-portal-hero" aria-labelledby="dashboard-title">
         <div class="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
             <div>
-                <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.16em] text-[#ffe98f]">Portal layanan SIHATI</p>
+                <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.16em] text-[#ffe98f]">{{ $branding['tagline'] ?: 'Portal layanan' }} · {{ $branding['application_name'] }}</p>
                 <h1 id="dashboard-title" class="mt-2 text-2xl font-extrabold tracking-[-0.04em] sm:text-3xl">Selamat datang, {{ $user->name }}</h1>
                 <p class="mt-2 max-w-2xl text-sm leading-6 text-[#d7e8ed]">Pantau pekerjaan yang menjadi cakupan peran Anda dalam satu tampilan.</p>
             </div>
@@ -284,7 +284,7 @@
 
     @if ($overallDashboard['visible'])
         <section class="mt-7" aria-labelledby="overall-dashboard-heading">
-            <div class="flex flex-wrap items-end justify-between gap-4"><div><p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#eb3349] !shadow-[0_0_0_4px_#ffe1e6]" aria-hidden="true"></span>Dasbor menyeluruh</p><h2 id="overall-dashboard-heading" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">Gambaran operasional SIHATI</h2><p class="mt-2 max-w-2xl text-sm leading-6 text-[#6a8089]">Agregasi ini hanya tersedia untuk role yang berwenang dan mengikuti periode terpilih.</p></div><span class="rounded-full bg-[#f1fbfe] px-3 py-1.5 text-xs font-extrabold text-[#147a79]">{{ $overallDashboard['ticket_count'] }} tiket</span></div>
+            <div class="flex flex-wrap items-end justify-between gap-4"><div><p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#eb3349] !shadow-[0_0_0_4px_#ffe1e6]" aria-hidden="true"></span>Dasbor menyeluruh</p><h2 id="overall-dashboard-heading" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">Gambaran operasional {{ $branding['application_name'] }}</h2><p class="mt-2 max-w-2xl text-sm leading-6 text-[#6a8089]">Agregasi ini hanya tersedia untuk role yang berwenang dan mengikuti periode terpilih.</p></div><span class="rounded-full bg-[#f1fbfe] px-3 py-1.5 text-xs font-extrabold text-[#147a79]">{{ $overallDashboard['ticket_count'] }} tiket</span></div>
             <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7"><article class="ui-stat-card items-start"><span class="ui-stat-icon" aria-hidden="true">▣</span><div><p class="ui-stat-label">Jumlah tiket</p><p class="ui-stat-value">{{ $overallDashboard['ticket_count'] }}</p></div></article><article class="ui-stat-card items-start"><span class="ui-stat-icon !bg-[#e8faf4] !text-[#087f5b]" aria-hidden="true">✓</span><div><p class="ui-stat-label">SLA sesuai</p><p class="ui-stat-value">{{ $overallDashboard['sla']['compliant'] }}</p><p class="mt-1 text-xs text-[#78909a]">{{ $overallDashboard['sla']['tracked'] }} terukur.</p></div></article><article class="ui-stat-card items-start"><span class="ui-stat-icon !bg-[#fff4d7] !text-[#9a6700]" aria-hidden="true">!</span><div><p class="ui-stat-label">Mendekati SLA</p><p class="ui-stat-value">{{ $overallDashboard['sla']['near_limit'] }}</p></div></article><article class="ui-stat-card items-start"><span class="ui-stat-icon !bg-[#fff1f2] !text-[#be123c]" aria-hidden="true">!</span><div><p class="ui-stat-label">Terlewat SLA</p><p class="ui-stat-value">{{ $overallDashboard['sla']['overdue'] }}</p></div></article><article class="ui-stat-card items-start"><span class="ui-stat-icon !bg-[#eef3ff] !text-[#4f63a6]" aria-hidden="true">↻</span><div><p class="ui-stat-label">Dibuka kembali</p><p class="ui-stat-value">{{ $overallDashboard['reopened_count'] }}</p></div></article><article class="ui-stat-card items-start"><span class="ui-stat-icon !bg-[#fff8e8] !text-[#a16207]" aria-hidden="true">↕</span><div><p class="ui-stat-label">Perubahan prioritas</p><p class="ui-stat-value">{{ $overallDashboard['priority_change_count'] }}</p></div></article><article class="ui-stat-card items-start"><span class="ui-stat-icon !bg-[#f2efff] !text-[#6254a4]" aria-hidden="true">◎</span><div><p class="ui-stat-label">Persetujuan mandiri</p><p class="ui-stat-value">{{ $overallDashboard['approval_self_count'] }}</p></div></article></div>
 
             <div class="mt-5 grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
@@ -317,6 +317,32 @@
     </section>
 
     @if ($requiresPasswordChange)
-        <div data-mandatory-password-modal class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="mandatory-password-title" aria-describedby="mandatory-password-description" tabindex="-1"><div class="flex min-h-full items-center justify-center px-4 py-8 sm:px-6"><div class="fixed inset-0 bg-[#243c48]/75" aria-hidden="true"></div><div class="relative w-full max-w-lg overflow-hidden rounded-xl border border-[#dce7eb] bg-white shadow-2xl"><div class="border-b border-[#e5ebee] bg-[#f8fafb] px-6 py-5 sm:px-8"><p class="text-[0.68rem] font-extrabold uppercase tracking-[0.16em] text-[#346478]">Keamanan akun</p><h2 id="mandatory-password-title" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">Ganti password untuk melanjutkan</h2><p id="mandatory-password-description" class="mt-2 text-sm leading-6 text-[#6a8089]">Password awal wajib diganti sebelum Anda dapat menggunakan fitur SIHATI.</p></div><form method="POST" action="{{ route('password.update') }}" class="space-y-5 p-6 sm:p-8">@csrf @method('PUT')<x-form-field name="current_password" label="Password saat ini" type="password" autocomplete="current-password" autofocus required /><x-form-field name="password" label="Password baru" type="password" autocomplete="new-password" help="Minimal 12 karakter, mengandung huruf besar, huruf kecil, angka, dan simbol." required /><x-form-field name="password_confirmation" label="Konfirmasi password baru" type="password" autocomplete="new-password" required /><button type="submit" class="ui-btn ui-btn-primary w-full !py-3.5">Simpan password baru</button></form><div class="flex items-center justify-between gap-4 border-t border-[#e7eef1] px-6 py-4 sm:px-8"><p class="text-xs leading-5 text-[#78909a]">Modal ini tidak dapat ditutup sebelum password diganti.</p><form method="POST" action="{{ route('logout') }}" class="shrink-0">@csrf<button type="submit" class="ui-action-link">Keluar</button></form></div></div></div></div>
+        <div data-mandatory-password-modal class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="mandatory-password-title" aria-describedby="mandatory-password-description" tabindex="-1">
+            <div class="flex min-h-full items-center justify-center px-4 py-8 sm:px-6">
+                <div class="fixed inset-0 bg-[#243c48]/75" aria-hidden="true"></div>
+                <div class="relative w-full max-w-lg overflow-hidden rounded-xl border border-[#dce7eb] bg-white shadow-2xl">
+                    <div class="border-b border-[#e5ebee] bg-[#f8fafb] px-6 py-5 sm:px-8">
+                        <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.16em] text-[#346478]">Keamanan akun</p>
+                        <h2 id="mandatory-password-title" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">Ganti password untuk melanjutkan</h2>
+                        <p id="mandatory-password-description" class="mt-2 text-sm leading-6 text-[#6a8089]">Password awal wajib diganti sebelum Anda dapat menggunakan fitur {{ $branding['application_name'] }}.</p>
+                    </div>
+                    <form method="POST" action="{{ route('password.update') }}" class="space-y-5 p-6 sm:p-8">
+                        @csrf
+                        @method('PUT')
+                        <x-form-field name="current_password" label="Password saat ini" type="password" autocomplete="current-password" autofocus required />
+                        <x-form-field name="password" label="Password baru" type="password" autocomplete="new-password" help="Minimal 12 karakter, mengandung huruf besar, huruf kecil, angka, dan simbol." required />
+                        <x-form-field name="password_confirmation" label="Konfirmasi password baru" type="password" autocomplete="new-password" required />
+                        <button type="submit" class="ui-btn ui-btn-primary w-full !py-3.5">Simpan password baru</button>
+                    </form>
+                    <div class="flex items-center justify-between gap-4 border-t border-[#e7eef1] px-6 py-4 sm:px-8">
+                        <p class="text-xs leading-5 text-[#78909a]">Modal ini tidak dapat ditutup sebelum password diganti.</p>
+                        <form method="POST" action="{{ route('logout') }}" class="shrink-0">
+                            @csrf
+                            <button type="submit" class="ui-action-link">Keluar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
     @endif
 @endsection

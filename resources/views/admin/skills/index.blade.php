@@ -6,7 +6,7 @@
     $mappedCategories = $categories->filter(fn ($category) => $category->skills->isNotEmpty())->count();
 @endphp
 
-@section('title', 'Data Keahlian — SIHATI')
+@section('title', 'Data Keahlian — '.$branding['application_name'])
 @section('header_kicker', 'Administrasi master data')
 @section('header_title', 'Keahlian dan kategori')
 

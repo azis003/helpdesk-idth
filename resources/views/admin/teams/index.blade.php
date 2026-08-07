@@ -5,7 +5,7 @@
     $memberCount = $teams->sum(fn ($team) => $team->currentMembers->count());
 @endphp
 
-@section('title', 'Tim Kerja — SIHATI')
+@section('title', 'Tim Kerja — '.$branding['application_name'])
 @section('header_kicker', 'Administrasi organisasi')
 @section('header_title', 'Struktur tim kerja')
 

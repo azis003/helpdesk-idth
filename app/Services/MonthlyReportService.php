@@ -40,7 +40,10 @@ class MonthlyReportService
         'is_self_created' => 'Flag Tiket Mandiri',
     ];
 
-    public function __construct(private readonly AuditLogger $auditLogger) {}
+    public function __construct(
+        private readonly AuditLogger $auditLogger,
+        private readonly BrandingService $branding,
+    ) {}
 
     /**
      * @return array{columns:array<string,string>,headers:list<string>,rows:Collection<int,array<string,string>>,row_count:int}
@@ -88,11 +91,12 @@ class MonthlyReportService
      */
     public function toExcel(array $report): string
     {
+        $branding = $this->branding->current();
         $spreadsheet = new Spreadsheet;
         $spreadsheet->getProperties()
-            ->setCreator('SIHATI')
-            ->setTitle('Laporan Tiket Bulanan')
-            ->setSubject('Laporan tiket bulanan SIHATI');
+            ->setCreator($branding['organization_name'])
+            ->setTitle('Laporan Tiket Bulanan - '.$branding['application_name'])
+            ->setSubject('Laporan tiket bulanan '.$branding['organization_name']);
 
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Laporan Bulanan');
@@ -165,6 +169,7 @@ class MonthlyReportService
                 'columns' => $report['columns'],
                 'rows' => $report['rows'],
                 'periodLabel' => $periodLabel,
+                'branding' => $this->branding->current(),
             ])->render(),
             'UTF-8',
         );

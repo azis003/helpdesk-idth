@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $ticket->ticketLabel().' &mdash; SIHATI')
+@section('title', $ticket->ticketLabel().' &mdash; '.$branding['application_name'])
 @section('header_kicker', 'Pemantauan tim')
 @section('header_title', 'Detail tiket')
 

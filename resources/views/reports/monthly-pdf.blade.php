@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="utf-8">
-    <title>Laporan Tiket Bulanan — SIHATI</title>
+    <title>Laporan Tiket Bulanan — {{ $branding['application_name'] }}</title>
     <style>
         @page { size: A3 landscape; margin: 8mm; }
         * { box-sizing: border-box; }
@@ -19,7 +19,7 @@
 </head>
 <body>
     <h1>Laporan Tiket Bulanan</h1>
-    <p>Periode {{ $periodLabel }} · SIHATI · Zona waktu Asia/Jakarta</p>
+    <p>Periode {{ $periodLabel }} · {{ $branding['organization_name'] }} · {{ $branding['application_name'] }} · Zona waktu Asia/Jakarta</p>
     <table>
         <thead>
             <tr>
@@ -40,6 +40,6 @@
             @endforelse
         </tbody>
     </table>
-    <p class="footer">Laporan dibuat dari histori transaksi aplikasi. Nilai kosong berarti data belum tercatat pada tiket.</p>
+    <p class="footer">{{ $branding['footer_text'] ?: 'Laporan dibuat dari histori transaksi aplikasi.' }} Nilai kosong berarti data belum tercatat pada tiket.</p>
 </body>
 </html>

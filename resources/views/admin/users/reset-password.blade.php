@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Reset Password — SIHATI')
+@section('title', 'Reset Password — '.$branding['application_name'])
 
 @section('header_kicker', 'Administrasi akses')
 @section('header_title', 'Atur ulang password')

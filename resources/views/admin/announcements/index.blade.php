@@ -6,7 +6,7 @@
     $scheduledCount = $announcements->filter(fn ($announcement) => $announcement->is_active && $announcement->starts_at > $now)->count();
 @endphp
 
-@section('title', 'Pengumuman — SIHATI')
+@section('title', 'Pengumuman — '.$branding['application_name'])
 @section('header_kicker', 'Komunikasi layanan')
 @section('header_title', 'Pengumuman')
 

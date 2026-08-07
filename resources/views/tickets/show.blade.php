@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', ($ticket->ticket_number ?? 'Detail tiket').' — SIHATI')
+@section('title', ($ticket->ticket_number ?? 'Detail tiket').' — '.$branding['application_name'])
 @section('header_kicker', 'Tiket')
 @section('header_title', 'Detail tiket')
 

@@ -8,7 +8,7 @@
         : ($isTeamChair ? 'Tiket tim' : 'Tiket saya');
 @endphp
 
-@section('title', $ticketListLabel.' — SIHATI')
+@section('title', $ticketListLabel.' — '.$branding['application_name'])
 @section('header_kicker', 'Tiket')
 @section('header_title', $ticketListLabel)
 

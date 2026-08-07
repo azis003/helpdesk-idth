@@ -1,6 +1,6 @@
 @extends('layouts.guest')
 
-@section('title', 'Ganti kata sandi - SIHATI')
+@section('title', 'Ganti kata sandi - '.$branding['application_name'])
 
 @section('content')
     <h1 class="ui-login-title">Ganti kata sandi</h1>
