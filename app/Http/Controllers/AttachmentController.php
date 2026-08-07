@@ -35,7 +35,22 @@ class AttachmentController extends Controller
 
         $this->authorization->authorize($actor, 'view', $attachment, 'attachment.download');
 
-        $disk = Storage::disk($attachment->storage_disk);
+        if ($attachment->storage_disk !== config('filesystems.attachment_disk', 'local')) {
+            $this->auditLogger->denied(
+                $actor,
+                'attachment.download',
+                $attachment,
+                'Lampiran tidak berada pada private storage yang dikonfigurasi.',
+            );
+            abort(404, 'Lampiran tidak ditemukan.');
+        }
+
+        try {
+            $disk = Storage::disk($attachment->storage_disk);
+        } catch (Throwable) {
+            $this->auditLogger->denied($actor, 'attachment.download', $attachment, 'Berkas lampiran gagal disiapkan.');
+            abort(404, 'Lampiran tidak ditemukan.');
+        }
 
         if (! $disk->exists($attachment->storage_path)) {
             $this->auditLogger->denied($actor, 'attachment.download', $attachment, 'Berkas lampiran tidak ditemukan.');

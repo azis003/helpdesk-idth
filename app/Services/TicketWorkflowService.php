@@ -152,6 +152,8 @@ class TicketWorkflowService
         $priority = Priority::tryFrom((string) ($data['priority'] ?? ''));
 
         if ($outcome === null || $priority === null) {
+            $this->auditLogger->denied($actor, 'ticket.triage', $ticket, 'Data triase tidak lengkap atau tidak valid.');
+
             throw ValidationException::withMessages([
                 'ticket' => 'Data triase tidak lengkap atau tidak valid.',
             ]);

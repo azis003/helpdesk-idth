@@ -162,6 +162,13 @@ class TicketApprovalService
         $note = filled($note) ? trim($note) : null;
 
         if ($decision === ApprovalRequest::STATUS_REJECTED && $note === null) {
+            $this->auditLogger->denied(
+                $actor,
+                $action,
+                $approvalRequest,
+                'Catatan wajib diisi untuk keputusan Tidak Setuju.',
+            );
+
             throw ValidationException::withMessages([
                 'decision_note' => 'Catatan wajib diisi untuk keputusan Tidak Setuju.',
             ]);

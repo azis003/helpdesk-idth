@@ -28,6 +28,8 @@ class TicketResolutionService
         $solution = trim($solution);
 
         if ($solution === '') {
+            $this->auditLogger->denied($actor, 'ticket.complete', $ticket, 'Solusi wajib diisi sebelum tiket menunggu konfirmasi.');
+
             throw ValidationException::withMessages([
                 'solution' => 'Solusi wajib diisi sebelum tiket menunggu konfirmasi.',
             ]);
@@ -40,7 +42,7 @@ class TicketResolutionService
         $failure = null;
 
         $result = $this->database->transaction(function () use ($actor, $ticket, $solution, $now, $confirmationDueAt, $waitDays, $calendar, &$failure): ?Ticket {
-            $lockedTicket = $this->lockTicket($ticket);
+            $lockedTicket = $this->lockTicket($ticket, $actor, 'ticket.resolution');
             $this->authorization->authorize($actor, 'complete', $lockedTicket, 'ticket.complete');
 
             if ($lockedTicket->status !== TicketStatus::Dikerjakan
@@ -123,7 +125,7 @@ class TicketResolutionService
         $now = Carbon::now(config('app.timezone'));
 
         [$result, $recipientIds] = $this->database->transaction(function () use ($actor, $ticket, $now): array {
-            $lockedTicket = $this->lockTicket($ticket);
+            $lockedTicket = $this->lockTicket($ticket, $actor, 'ticket.confirm');
             $this->authorization->authorize($actor, 'confirm', $lockedTicket, 'ticket.confirm');
 
             if ($lockedTicket->status !== TicketStatus::MenungguKonfirmasi
@@ -180,6 +182,8 @@ class TicketResolutionService
         $reason = trim($reason);
 
         if ($reason === '') {
+            $this->auditLogger->denied($actor, 'ticket.confirm.not_satisfied', $ticket, 'Alasan hasil belum sesuai wajib diisi.');
+
             throw ValidationException::withMessages([
                 'reason' => 'Alasan hasil belum sesuai wajib diisi.',
             ]);
@@ -187,7 +191,7 @@ class TicketResolutionService
 
         $now = Carbon::now(config('app.timezone'));
         [$result, $assigneeId] = $this->database->transaction(function () use ($actor, $ticket, $reason, $now): array {
-            $lockedTicket = $this->lockTicket($ticket);
+            $lockedTicket = $this->lockTicket($ticket, $actor, 'ticket.confirm.not_satisfied');
             $this->authorization->authorize($actor, 'notSatisfied', $lockedTicket, 'ticket.confirm.not_satisfied');
 
             if ($lockedTicket->status !== TicketStatus::MenungguKonfirmasi
@@ -249,7 +253,7 @@ class TicketResolutionService
         $now = Carbon::now(config('app.timezone'));
 
         [$result, $assigneeId] = $this->database->transaction(function () use ($actor, $ticket, $reason, $now): array {
-            $lockedTicket = $this->lockTicket($ticket);
+            $lockedTicket = $this->lockTicket($ticket, $actor, 'ticket.reopen');
             $this->authorization->authorize($actor, 'reopen', $lockedTicket, 'ticket.reopen');
 
             if ($lockedTicket->status !== TicketStatus::Ditutup || $lockedTicket->closed_at === null) {
@@ -407,7 +411,7 @@ class TicketResolutionService
         });
     }
 
-    private function lockTicket(Ticket $ticket): Ticket
+    private function lockTicket(Ticket $ticket, User $actor, string $action): Ticket
     {
         $lockedTicket = Ticket::query()
             ->with('serviceType')
@@ -416,6 +420,8 @@ class TicketResolutionService
             ->first();
 
         if ($lockedTicket === null) {
+            $this->auditLogger->denied($actor, $action, $ticket, 'Tiket tidak ditemukan.');
+
             throw ValidationException::withMessages(['ticket' => 'Tiket tidak ditemukan.']);
         }
 

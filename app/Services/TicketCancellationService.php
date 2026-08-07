@@ -22,7 +22,15 @@ class TicketCancellationService
         $this->authorization->authorize($actor, 'cancel', $ticket, 'ticket.cancel');
 
         $this->database->transaction(function () use ($actor, $ticket): void {
-            $lockedTicket = Ticket::query()->whereKey($ticket->getKey())->lockForUpdate()->firstOrFail();
+            $lockedTicket = Ticket::query()->whereKey($ticket->getKey())->lockForUpdate()->first();
+
+            if ($lockedTicket === null) {
+                $this->auditLogger->denied($actor, 'ticket.cancel', $ticket, 'Tiket tidak ditemukan.');
+
+                throw ValidationException::withMessages([
+                    'ticket' => 'Tiket tidak ditemukan.',
+                ]);
+            }
 
             if ($lockedTicket->status !== TicketStatus::Baru
                 || (int) $lockedTicket->requester_id !== (int) $actor->getKey()) {

@@ -38,13 +38,13 @@ class TicketWaitingService
         $dueAt = $this->calendar->deadlineAfterWorkingDays($now, $waitDays, $calendar);
 
         $result = $this->database->transaction(function () use ($actor, $ticket, $question, $fileGroups, $now, $dueAt, $waitDays, $calendar): Ticket {
-            $lockedTicket = $this->lockTicket($ticket);
+            $lockedTicket = $this->lockTicket($ticket, $actor, 'ticket.wait.requester');
             $this->authorization->authorize($actor, 'requestInformation', $lockedTicket, 'ticket.wait.requester');
-            $this->assertNoActiveWait($lockedTicket);
+            $this->assertNoActiveWait($lockedTicket, $actor, 'ticket.wait.requester');
 
             if (! in_array($lockedTicket->status, [TicketStatus::Diproses, TicketStatus::Dikerjakan], true)
                 || (int) $lockedTicket->assigned_to_id !== (int) $actor->getKey()) {
-                throw ValidationException::withMessages(['ticket' => 'Tiket tidak tersedia untuk meminta informasi.']);
+                $this->deny($actor, $lockedTicket, 'ticket.wait.requester', 'Tiket tidak tersedia untuk meminta informasi.');
             }
 
             $fromStatus = $lockedTicket->status;
@@ -110,12 +110,12 @@ class TicketWaitingService
         $now = Carbon::now(config('app.timezone'));
 
         [$result, $assignee] = $this->database->transaction(function () use ($actor, $ticket, $body, $fileGroups, $now): array {
-            $lockedTicket = $this->lockTicket($ticket);
+            $lockedTicket = $this->lockTicket($ticket, $actor, 'ticket.reply.requester');
             $this->authorization->authorize($actor, 'replyRequester', $lockedTicket, 'ticket.reply.requester');
             $wait = $lockedTicket->waits()->active()->requester()->latest('started_at')->lockForUpdate()->first();
 
             if ($wait === null || $lockedTicket->status !== TicketStatus::MenungguPemohon) {
-                throw ValidationException::withMessages(['ticket' => 'Tiket tidak lagi menunggu balasan Pemohon.']);
+                $this->deny($actor, $lockedTicket, 'ticket.reply.requester', 'Tiket tidak lagi menunggu balasan Pemohon.');
             }
 
             $comment = $this->comments->create(
@@ -178,13 +178,13 @@ class TicketWaitingService
         $now = Carbon::now(config('app.timezone'));
 
         $result = $this->database->transaction(function () use ($actor, $ticket, $thirdPartyName, $followUpDate, $note, $now): Ticket {
-            $lockedTicket = $this->lockTicket($ticket);
+            $lockedTicket = $this->lockTicket($ticket, $actor, 'ticket.wait.third_party');
             $this->authorization->authorize($actor, 'startThirdPartyWait', $lockedTicket, 'ticket.wait.third_party');
-            $this->assertNoActiveWait($lockedTicket);
+            $this->assertNoActiveWait($lockedTicket, $actor, 'ticket.wait.third_party');
 
             if (! in_array($lockedTicket->status, [TicketStatus::Diproses, TicketStatus::Dikerjakan], true)
                 || (int) $lockedTicket->assigned_to_id !== (int) $actor->getKey()) {
-                throw ValidationException::withMessages(['ticket' => 'Tiket tidak tersedia untuk menunggu pihak ketiga.']);
+                $this->deny($actor, $lockedTicket, 'ticket.wait.third_party', 'Tiket tidak tersedia untuk menunggu pihak ketiga.');
             }
 
             $fromStatus = $lockedTicket->status;
@@ -237,12 +237,12 @@ class TicketWaitingService
         $now = Carbon::now(config('app.timezone'));
 
         $result = $this->database->transaction(function () use ($actor, $ticket, $reason, $now): Ticket {
-            $lockedTicket = $this->lockTicket($ticket);
+            $lockedTicket = $this->lockTicket($ticket, $actor, 'ticket.resume.third_party');
             $this->authorization->authorize($actor, 'resumeThirdPartyWait', $lockedTicket, 'ticket.resume.third_party');
             $wait = $lockedTicket->waits()->active()->where('kind', TicketWaitType::ThirdParty->value)->latest('started_at')->lockForUpdate()->first();
 
             if ($wait === null || $lockedTicket->status !== TicketStatus::MenungguPihakKetiga) {
-                throw ValidationException::withMessages(['ticket' => 'Tiket tidak sedang menunggu pihak ketiga.']);
+                $this->deny($actor, $lockedTicket, 'ticket.resume.third_party', 'Tiket tidak sedang menunggu pihak ketiga.');
             }
 
             $wait->forceFill([
@@ -365,7 +365,7 @@ class TicketWaitingService
         });
     }
 
-    private function lockTicket(Ticket $ticket): Ticket
+    private function lockTicket(Ticket $ticket, User $actor, string $action): Ticket
     {
         $lockedTicket = Ticket::query()
             ->with('serviceType')
@@ -374,17 +374,24 @@ class TicketWaitingService
             ->first();
 
         if ($lockedTicket === null) {
-            throw ValidationException::withMessages(['ticket' => 'Tiket tidak ditemukan.']);
+            $this->deny($actor, $ticket, $action, 'Tiket tidak ditemukan.');
         }
 
         return $lockedTicket;
     }
 
-    private function assertNoActiveWait(Ticket $ticket): void
+    private function assertNoActiveWait(Ticket $ticket, User $actor, string $action): void
     {
         if ($ticket->waits()->active()->exists()) {
-            throw ValidationException::withMessages(['ticket' => 'Tiket sudah memiliki waktu tunggu aktif.']);
+            $this->deny($actor, $ticket, $action, 'Tiket sudah memiliki waktu tunggu aktif.');
         }
+    }
+
+    private function deny(User $actor, Ticket $ticket, string $action, string $reason): never
+    {
+        $this->auditLogger->denied($actor, $action, $ticket, $reason);
+
+        throw ValidationException::withMessages(['ticket' => $reason]);
     }
 
     /** @param array<string, mixed>|null $metadata */

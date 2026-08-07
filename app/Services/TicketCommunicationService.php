@@ -29,9 +29,12 @@ class TicketCommunicationService
 
         if ($actor->hasRole(Role::Pemohon)
             && ! $actor->hasAnyRole([Role::AgenTier1, Role::AgenTier2])) {
-            throw ValidationException::withMessages([
-                'ticket' => 'Balasan Pemohon harus dikirim melalui alur Menunggu Pemohon.',
-            ]);
+            $this->deny(
+                $actor,
+                $ticket,
+                'ticket.comment.public',
+                'Balasan Pemohon harus dikirim melalui alur Menunggu Pemohon.',
+            );
         }
 
         $comment = $this->database->transaction(function () use ($actor, $ticket, $body, $fileGroups): TicketComment {
@@ -42,20 +45,31 @@ class TicketCommunicationService
                 ->first();
 
             if ($lockedTicket === null) {
-                throw ValidationException::withMessages(['ticket' => 'Tiket tidak ditemukan.']);
+                $this->deny($actor, $ticket, 'ticket.comment.public', 'Tiket tidak ditemukan.');
             }
 
             // Re-check authorization after acquiring the row lock so a status
             // or assignee change cannot make a stale request write a comment.
             $this->authorization->authorize($actor, 'commentPublic', $lockedTicket, 'ticket.comment.public');
 
-            $comment = $this->comments->create(
-                $lockedTicket,
-                $actor,
-                TicketCommentVisibility::Public,
-                $body,
-                $fileGroups,
-            );
+            try {
+                $comment = $this->comments->create(
+                    $lockedTicket,
+                    $actor,
+                    TicketCommentVisibility::Public,
+                    $body,
+                    $fileGroups,
+                );
+            } catch (ValidationException $exception) {
+                $this->auditLogger->denied(
+                    $actor,
+                    'ticket.comment.public',
+                    $lockedTicket,
+                    $this->validationReason($exception),
+                );
+
+                throw $exception;
+            }
 
             $this->auditLogger->succeeded(
                 $actor,
@@ -98,18 +112,29 @@ class TicketCommunicationService
                 ->first();
 
             if ($lockedTicket === null) {
-                throw ValidationException::withMessages(['ticket' => 'Tiket tidak ditemukan.']);
+                $this->deny($actor, $ticket, 'ticket.comment.internal', 'Tiket tidak ditemukan.');
             }
 
             $this->authorization->authorize($actor, 'commentInternal', $lockedTicket, 'ticket.comment.internal');
 
-            $comment = $this->comments->create(
-                $lockedTicket,
-                $actor,
-                TicketCommentVisibility::Internal,
-                $body,
-                $fileGroups,
-            );
+            try {
+                $comment = $this->comments->create(
+                    $lockedTicket,
+                    $actor,
+                    TicketCommentVisibility::Internal,
+                    $body,
+                    $fileGroups,
+                );
+            } catch (ValidationException $exception) {
+                $this->auditLogger->denied(
+                    $actor,
+                    'ticket.comment.internal',
+                    $lockedTicket,
+                    $this->validationReason($exception),
+                );
+
+                throw $exception;
+            }
 
             $this->auditLogger->succeeded(
                 $actor,
@@ -135,5 +160,17 @@ class TicketCommunicationService
         }
 
         return $comment;
+    }
+
+    private function deny(User $actor, Ticket $ticket, string $action, string $reason): never
+    {
+        $this->auditLogger->denied($actor, $action, $ticket, $reason);
+
+        throw ValidationException::withMessages(['ticket' => $reason]);
+    }
+
+    private function validationReason(ValidationException $exception): string
+    {
+        return (string) (collect($exception->errors())->flatten()->first() ?: 'Validasi aksi komunikasi gagal.');
     }
 }

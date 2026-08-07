@@ -202,7 +202,7 @@ class TicketAttachmentService
      */
     private function storeItems(Ticket $ticket, User $actor, array $files, ?TicketComment $comment = null): array
     {
-        $disk = 'local';
+        $disk = (string) config('filesystems.attachment_disk', 'local');
         $storedPaths = [];
         $attachments = [];
 

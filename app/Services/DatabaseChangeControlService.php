@@ -377,7 +377,8 @@ class DatabaseChangeControlService
         if ($attachment->trashed()
             || ! filled($attachment->storage_disk)
             || ! filled($attachment->storage_path)
-            || (int) $attachment->size_bytes <= 0) {
+            || (int) $attachment->size_bytes <= 0
+            || $attachment->storage_disk !== config('filesystems.attachment_disk', 'local')) {
             return false;
         }
 

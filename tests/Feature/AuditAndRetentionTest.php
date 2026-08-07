@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\Role;
 use App\Enums\TicketStatus;
 use App\Models\Attachment;
+use App\Models\AuditLog;
 use App\Models\Ticket;
 use App\Services\ApplicationLogRetentionService;
 use App\Services\AuditLogger;
@@ -13,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use LogicException;
 use RuntimeException;
 use Tests\TestCase;
 
@@ -38,11 +40,88 @@ class AuditAndRetentionTest extends TestCase
 
         $this->assertSame('request-test-13', $log->request_id);
         $this->assertSame('Asia/Jakarta', $log->context['timezone']);
+        $this->assertSame('user', $log->context['actor_type']);
         $this->assertSame('[REDACTED]', $log->before['password']);
         $this->assertSame('[REDACTED]', $log->after['api_token']);
         $this->assertSame('[REDACTED]', $log->context['secret_value']);
         $this->assertSame('test', $log->context['source']);
         $this->assertInstanceOf(Carbon::class, $log->created_at);
+    }
+
+    public function test_audit_sanitizes_sensitive_free_text_and_personal_data(): void
+    {
+        $actor = $this->createUser([Role::SuperAdmin]);
+
+        $log = app(AuditLogger::class)->succeeded(
+            $actor,
+            'test.sensitive',
+            null,
+            'password=super-secret contact jane@example.test NIP=1234567890',
+            ['requester_email' => 'jane@example.test', 'requester_nip' => '1234567890'],
+            ['username' => 'jane.doe', 'status' => 'diproses'],
+        );
+
+        $this->assertStringContainsString('password=[REDACTED]', $log->reason);
+        $this->assertStringNotContainsString('super-secret', $log->reason);
+        $this->assertStringNotContainsString('jane@example.test', $log->reason);
+        $this->assertSame('[REDACTED]', $log->before['requester_email']);
+        $this->assertSame('[REDACTED]', $log->before['requester_nip']);
+        $this->assertSame('[REDACTED]', $log->after['username']);
+    }
+
+    public function test_audit_query_cannot_mass_update_or_delete(): void
+    {
+        $log = AuditLog::query()->create([
+            'action' => 'test.append_only.mass_update',
+            'outcome' => 'succeeded',
+        ]);
+
+        try {
+            AuditLog::query()->whereKey($log->getKey())->update(['reason' => 'ubah']);
+            $this->fail('Mass update audit seharusnya ditolak.');
+        } catch (LogicException $exception) {
+            $this->assertSame('Audit log bersifat append-only.', $exception->getMessage());
+        }
+
+        try {
+            AuditLog::query()->whereKey($log->getKey())->delete();
+            $this->fail('Mass delete audit seharusnya ditolak.');
+        } catch (LogicException $exception) {
+            $this->assertSame('Audit log bersifat append-only.', $exception->getMessage());
+        }
+
+        $this->assertDatabaseHas('audit_logs', ['id' => $log->getKey()]);
+    }
+
+    public function test_download_rejects_attachment_on_public_disk_and_audits_denial(): void
+    {
+        Storage::fake('public');
+        $admin = $this->createUser([Role::SuperAdmin]);
+        $ticket = Ticket::factory()->create();
+        $path = "tickets/{$ticket->id}/public.pdf";
+        Storage::disk('public')->put($path, 'must stay private');
+        $attachment = Attachment::query()->create([
+            'ticket_id' => $ticket->id,
+            'type_key' => 'supporting',
+            'type_label_snapshot' => 'Dokumen pendukung',
+            'original_name' => 'public.pdf',
+            'storage_disk' => 'public',
+            'storage_path' => $path,
+            'size_bytes' => 16,
+            'mime_type' => 'application/pdf',
+            'extension' => 'pdf',
+            'visibility' => 'both',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('attachments.download', $attachment))
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'attachment.download',
+            'outcome' => 'denied',
+            'auditable_id' => $attachment->id,
+        ]);
     }
 
     public function test_denied_audit_is_kept_when_domain_transaction_rolls_back(): void

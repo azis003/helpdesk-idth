@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AuditDeniedRequest;
 use App\Http\Middleware\EnsureActiveUser;
 use App\Http\Middleware\EnsurePasswordChanged;
 use App\Http\Middleware\RequireRole;
@@ -14,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->append(AuditDeniedRequest::class);
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->alias([
             'active' => EnsureActiveUser::class,
