@@ -76,6 +76,15 @@ return [
             'processors' => [SensitiveDataProcessor::class],
         ],
 
+        'ops' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/ops.log'),
+            'level' => env('OPS_LOG_LEVEL', 'info'),
+            'days' => env('OPS_LOG_DAYS', 30),
+            'replace_placeholders' => true,
+            'processors' => [SensitiveDataProcessor::class],
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),

@@ -19,6 +19,11 @@ class PasswordController extends Controller
         ]);
     }
 
+    public function redirectToDashboard(): RedirectResponse
+    {
+        return redirect()->route('dashboard');
+    }
+
     public function update(ChangePasswordRequest $request): RedirectResponse
     {
         $user = $request->user();

@@ -1,0 +1,7 @@
+# Apply these settings through the managed PostgreSQL parameter group or the
+# postgres service command. archive_command must write to durable storage
+# that is copied off-host by the backup job.
+wal_level = replica
+archive_mode = on
+archive_timeout = 3600s
+archive_command = 'test ! -f /var/lib/postgresql/wal-archive/%f && cp %p /var/lib/postgresql/wal-archive/%f'

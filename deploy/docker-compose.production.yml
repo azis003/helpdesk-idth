@@ -1,0 +1,172 @@
+name: sihati
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      target: app
+    env_file:
+      - ../.env.production
+    command: ["php-fpm", "-F"]
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - sihati_private:/var/www/html/storage/app/private
+      - sihati_framework:/var/www/html/storage/framework
+      - ${BACKUP_STATUS_HOST_PATH:-./runtime/backups}:/var/lib/sihati/backups:ro
+    networks: [sihati]
+    healthcheck:
+      test: ["CMD-SHELL", "php artisan migrate:status --no-ansi >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  worker:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      target: app
+    env_file:
+      - ../.env.production
+    command: ["php", "artisan", "queue:work", "redis", "--sleep=1", "--tries=3", "--timeout=120", "--max-time=3600", "--max-jobs=1000"]
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - sihati_private:/var/www/html/storage/app/private
+      - sihati_framework:/var/www/html/storage/framework
+      - ${BACKUP_STATUS_HOST_PATH:-./runtime/backups}:/var/lib/sihati/backups:ro
+    networks: [sihati]
+
+  scheduler:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      target: app
+    env_file:
+      - ../.env.production
+    command: ["php", "artisan", "schedule:work", "--verbose"]
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - sihati_private:/var/www/html/storage/app/private
+      - sihati_framework:/var/www/html/storage/framework
+      - ${BACKUP_STATUS_HOST_PATH:-./runtime/backups}:/var/lib/sihati/backups:ro
+    networks: [sihati]
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      target: web
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    networks: [sihati]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1/up >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  https:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?set APP_DOMAIN in .env.production}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+    networks: [sihati]
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sihati}
+      POSTGRES_USER: ${POSTGRES_SUPERUSER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERPASSWORD:?set POSTGRES_SUPERPASSWORD}
+      APP_DB_ROLE: ${DB_USERNAME:-sihati_app}
+      APP_DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD}
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_timeout=3600s
+      - -c
+      - archive_command=test ! -f /var/lib/postgresql/wal-archive/%f && cp %p /var/lib/postgresql/wal-archive/%f
+    volumes:
+      - sihati_pgdata:/var/lib/postgresql/data
+      - sihati_wal_archive:/var/lib/postgresql/wal-archive
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    networks: [sihati]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.4-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    command:
+      - sh
+      - -c
+      - >-
+        if [ -n "$${REDIS_PASSWORD}" ] && [ "$${REDIS_PASSWORD}" != "null" ]; then
+          exec redis-server --appendonly yes --save 60 1000 --requirepass "$${REDIS_PASSWORD}";
+        else
+          exec redis-server --appendonly yes --save 60 1000;
+        fi
+    restart: unless-stopped
+    volumes:
+      - sihati_redis:/data
+    networks: [sihati]
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          if [ -n "$${REDIS_PASSWORD}" ] && [ "$${REDIS_PASSWORD}" != "null" ]; then
+            redis-cli -a "$${REDIS_PASSWORD}" ping | grep -q PONG;
+          else
+            redis-cli ping | grep -q PONG;
+          fi
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+networks:
+  sihati:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
+  sihati_framework:
+  sihati_private:
+  sihati_pgdata:
+  sihati_redis:
+  sihati_wal_archive:

@@ -13,6 +13,8 @@ use App\Http\Controllers\ApprovalController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HealthController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\ReportController;
@@ -20,9 +22,9 @@ use App\Http\Controllers\TicketCommunicationController;
 use App\Http\Controllers\TicketController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
-});
+Route::get('/health/ready', [HealthController::class, 'ready'])->name('health.ready');
+
+Route::get('/', HomeController::class);
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'create'])->name('login');
@@ -36,7 +38,7 @@ Route::post('/logout', [AuthController::class, 'destroy'])
 Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
-    Route::get('/password/change', fn () => redirect()->route('dashboard'))->name('password.change');
+    Route::get('/password/change', [PasswordController::class, 'redirectToDashboard'])->name('password.change');
     Route::put('/password/change', [PasswordController::class, 'update'])->name('password.update');
 
     Route::middleware('password.changed')->group(function () {

@@ -36,6 +36,14 @@ Buat akun lain melalui provisioning yang disetujui lingkungan deployment atau fa
 
 Untuk development dengan Vite, jalankan `npm run dev` pada terminal terpisah.
 
+## Deployment dan operasi produksi
+
+Baseline deployment PostgreSQL + Redis + queue worker + scheduler + private storage + HTTPS tersedia pada [`deploy/docker-compose.production.yml`](deploy/docker-compose.production.yml). Salin `.env.production.example` ke `.env.production`, isi secret melalui secret manager, lalu ikuti [runbook deployment dan go-live](docs/operations/runbook.md).
+
+Readiness dapat diperiksa tanpa login melalui `GET /health/ready` atau dari CLI melalui `php artisan sihati:ops:health --json`. Pemeriksaan kapasitas private storage tersedia melalui `php artisan sihati:ops:check-storage --json`; ambang warning default adalah 80% dan notifikasi dikirim ke Super Admin aktif.
+
+Backup physical PostgreSQL, WAL age check, backup private storage, dan restore drill berada di [`deploy/backup`](deploy/backup). Matriks UAT AC-01 sampai AC-28 dan prosedur pilot ada di [staging-uat.md](docs/operations/staging-uat.md); performance test P95 ada di [performance.md](docs/operations/performance.md).
+
 ## Scheduler tiket
 
 Pembersihan waktu tunggu Pemohon dijadwalkan setiap lima menit melalui `routes/console.php`. Pada deployment Linux, jalankan scheduler Laravel setiap menit:

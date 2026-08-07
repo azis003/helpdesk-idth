@@ -38,7 +38,10 @@ use App\Policies\UserPolicy;
 use App\Policies\WorkTeamPolicy;
 use App\Services\AuditLogger;
 use App\Services\DomainAuthorization;
+use Illuminate\Queue\Events\QueueBusy;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -74,5 +77,16 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Skill::class, SkillPolicy::class);
         Gate::policy(ProblemCategory::class, ProblemCategoryPolicy::class);
         Gate::policy(ReportExport::class, ReportExportPolicy::class);
+
+        Event::listen(QueueBusy::class, function (QueueBusy $event): void {
+            Log::channel((string) config('ops.log_channel', 'ops'))->warning(
+                'Queue SIHATI melewati ambang monitoring.',
+                [
+                    'connection' => $event->connection,
+                    'queue' => $event->queue,
+                    'size' => $event->size,
+                ],
+            );
+        });
     }
 }

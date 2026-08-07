@@ -2,6 +2,31 @@
 
 use Illuminate\Support\Facades\Schedule;
 
+Schedule::command('sihati:ops:heartbeat')
+    ->everyMinute()
+    ->withoutOverlapping(2)
+    ->onOneServer();
+
+Schedule::command('sihati:ops:check-storage')
+    ->hourly()
+    ->withoutOverlapping(10)
+    ->onOneServer();
+
+$queueConnection = (string) config('queue.default', 'sync');
+$queueName = (string) config("queue.connections.{$queueConnection}.queue", 'default');
+
+if ($queueConnection !== 'sync') {
+    Schedule::command(sprintf(
+        'queue:monitor %s:%s --max=%d',
+        $queueConnection,
+        $queueName,
+        (int) config('ops.health.queue_max_depth', 100),
+    ))
+        ->everyMinute()
+        ->withoutOverlapping(2)
+        ->onOneServer();
+}
+
 Schedule::command('sihati:tickets:expire-requester-waits')
     ->everyFiveMinutes()
     ->withoutOverlapping(10);

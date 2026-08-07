@@ -19,7 +19,7 @@ class ApplicationLogRetentionService
             return 0;
         }
 
-        foreach (glob(rtrim($directory, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'laravel-*.log') ?: [] as $path) {
+        foreach (glob(rtrim($directory, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'*.log') ?: [] as $path) {
             $date = $this->dateFromPath($path);
 
             if ($date === null || $date->greaterThanOrEqualTo($cutoff)) {
