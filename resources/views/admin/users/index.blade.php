@@ -43,34 +43,31 @@
             </form>
 
             <div class="mt-4 hidden overflow-x-auto rounded-lg border border-[#cfd6da] md:block">
-                <table class="min-w-[850px] w-full border-collapse text-left text-sm">
-                    <caption class="sr-only">Daftar pengguna beserta email, role, tim kerja, dan aksi</caption>
+                <table class="min-w-[780px] w-full border-collapse text-left text-sm">
+                    <caption class="sr-only">Daftar pengguna beserta nama, email, role, status, dan aksi</caption>
                     <thead class="bg-[#fbfcfd] text-[#34495a]">
                         <tr>
                             <th scope="col" class="w-16 border-b border-[#cfd6da] px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide">No</th>
-                            <th scope="col" class="border-b border-[#cfd6da] px-4 py-3 text-xs font-extrabold uppercase tracking-wide">Nama Pegawai</th>
+                            <th scope="col" class="border-b border-[#cfd6da] px-4 py-3 text-xs font-extrabold uppercase tracking-wide">Nama Pengguna</th>
                             <th scope="col" class="border-b border-[#cfd6da] px-4 py-3 text-xs font-extrabold uppercase tracking-wide">Email</th>
                             <th scope="col" class="border-b border-[#cfd6da] px-4 py-3 text-xs font-extrabold uppercase tracking-wide">Role</th>
-                            <th scope="col" class="border-b border-[#cfd6da] px-4 py-3 text-xs font-extrabold uppercase tracking-wide">Tim Kerja</th>
-                            <th scope="col" class="w-36 border-b border-[#cfd6da] px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide">Aksi</th>
+                            <th scope="col" class="w-28 border-b border-[#cfd6da] px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide">Status</th>
+                            <th scope="col" class="w-48 border-b border-[#cfd6da] px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($users as $listedUser)
+                            @php
+                                $displayRoles = $listedUser->roles->reject(fn ($role): bool => $role->slug === \App\Enums\Role::KetuaTimKerja->value);
+                            @endphp
                             <tr class="odd:bg-[#f8fafb] even:bg-white hover:bg-[#eef7fc]">
                                 <td class="border-b border-[#e5eaed] px-4 py-5 text-center font-semibold text-[#172d45]">{{ ($users->firstItem() ?? 1) + $loop->index }}</td>
-                                <td class="border-b border-[#e5eaed] px-4 py-5">
-                                    <p class="font-semibold text-[#112b49]">{{ $listedUser->name }}</p>
-                                    <p class="mt-1 text-xs text-[#78909a]">{{ '@'.$listedUser->username }}</p>
-                                    <span class="mt-2 inline-flex items-center rounded-full px-2 py-1 text-[0.65rem] font-bold {{ $listedUser->is_active ? 'bg-[#e8faf4] text-[#087f5b]' : 'bg-[#eef2f4] text-[#657984]' }}">
-                                        {{ $listedUser->is_active ? 'Aktif' : 'Nonaktif' }}
-                                    </span>
-                                </td>
+                                <td class="border-b border-[#e5eaed] px-4 py-5 font-semibold text-[#112b49]">{{ $listedUser->name }}</td>
                                 <td class="border-b border-[#e5eaed] px-4 py-5 text-[#172d45]">{{ $listedUser->email ?: '—' }}</td>
                                 <td class="border-b border-[#e5eaed] px-4 py-5">
-                                    @if ($listedUser->roles->isNotEmpty())
+                                    @if ($displayRoles->isNotEmpty())
                                         <ul class="list-disc space-y-1 pl-4 text-[#172d45]">
-                                            @foreach ($listedUser->roles as $role)
+                                            @foreach ($displayRoles as $role)
                                                 <li>{{ $role->managementLabel() }}</li>
                                             @endforeach
                                         </ul>
@@ -78,15 +75,39 @@
                                         <span class="text-[#78909a]">Belum ada role</span>
                                     @endif
                                 </td>
-                                <td class="border-b border-[#e5eaed] px-4 py-5 text-[#172d45]">{{ $listedUser->currentTeamMembership?->workTeam?->name ?? '—' }}</td>
+                                <td class="border-b border-[#e5eaed] px-4 py-5 text-center">
+                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold {{ $listedUser->is_active ? 'bg-[#e8faf4] text-[#087f5b]' : 'bg-[#eef2f4] text-[#657984]' }}">
+                                        {{ $listedUser->is_active ? 'Aktif' : 'Nonaktif' }}
+                                    </span>
+                                </td>
                                 <td class="border-b border-[#e5eaed] px-4 py-5">
                                     <div class="flex justify-center gap-2">
-                                        <button type="button" data-ui-modal-open="user-edit-modal-{{ $listedUser->id }}" class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#0b98e5] text-white transition hover:bg-[#087fc1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0b98e5] focus-visible:ring-offset-2" aria-label="Edit pengguna {{ $listedUser->name }}" title="Edit pengguna">
+                                        <button type="button" data-ui-modal-open="user-view-modal-{{ $listedUser->id }}" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#0b98e5] text-white transition hover:bg-[#087fc1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0b98e5] focus-visible:ring-offset-2" aria-label="Lihat pengguna {{ $listedUser->name }}" title="Lihat pengguna">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.2-5 9.5-5 9.5 5 9.5 5-3.2 5-9.5 5-9.5-5-9.5-5Z" /><circle cx="12" cy="12" r="2.5" /></svg>
+                                        </button>
+                                        <button type="button" data-ui-modal-open="user-edit-modal-{{ $listedUser->id }}" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#f1b900] text-white transition hover:bg-[#d49f00] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f1b900] focus-visible:ring-offset-2" aria-label="Edit pengguna {{ $listedUser->name }}" title="Edit pengguna">
                                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 2.651 2.651M4.5 19.5l4.04-.808a2 2 0 0 0 1.02-.55l8.95-8.95a2 2 0 0 0 0-2.828l-.884-.884a2 2 0 0 0-2.828 0l-8.95 8.95a2 2 0 0 0-.55 1.02L4.5 19.5Z" /></svg>
                                         </button>
                                         @if ($listedUser->isNot(auth()->user()))
-                                            <button type="button" data-password-reset-open data-user-id="{{ $listedUser->id }}" data-user-name="{{ $listedUser->name }}" data-action="{{ route('admin.users.reset-password', $listedUser) }}" class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#f1b900] text-white transition hover:bg-[#d49f00] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f1b900] focus-visible:ring-offset-2" aria-label="Ganti password {{ $listedUser->name }}" title="Ganti password">
+                                            <button type="button" data-password-reset-open data-user-id="{{ $listedUser->id }}" data-user-name="{{ $listedUser->name }}" data-action="{{ route('admin.users.reset-password', $listedUser) }}" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#6d46db] text-white transition hover:bg-[#5b35c6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6d46db] focus-visible:ring-offset-2" aria-label="Ganti password {{ $listedUser->name }}" title="Ganti password">
                                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.5 8.5a4 4 0 1 1-1.17 2.83L8 17.66V20H5.5v-2.5H3v-2.5h3.34l4.83-4.83A4 4 0 0 1 15.5 8.5Z" /><path stroke-linecap="round" d="M15.5 8.5h.01" /></svg>
+                                            </button>
+                                        @else
+                                            <button type="button" disabled class="inline-flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-lg bg-[#6d46db] text-white opacity-45" aria-label="Akun sendiri tidak dapat diganti password dari sini" title="Akun sendiri tidak dapat diganti password dari sini">
+                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.5 8.5a4 4 0 1 1-1.17 2.83L8 17.66V20H5.5v-2.5H3v-2.5h3.34l4.83-4.83A4 4 0 0 1 15.5 8.5Z" /><path stroke-linecap="round" d="M15.5 8.5h.01" /></svg>
+                                            </button>
+                                        @endif
+                                        @if ($listedUser->isNot(auth()->user()))
+                                            <form method="POST" action="{{ route('admin.users.destroy', $listedUser) }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus user ini?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#e94f70] text-white transition hover:bg-[#d63d5e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e94f70] focus-visible:ring-offset-2" aria-label="Hapus pengguna {{ $listedUser->name }}" title="Hapus pengguna">
+                                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
+                                                </button>
+                                            </form>
+                                        @else
+                                            <button type="button" disabled class="inline-flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-lg bg-[#e94f70] text-white opacity-45" aria-label="Akun sendiri tidak dapat dihapus" title="Akun sendiri tidak dapat dihapus">
+                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
                                             </button>
                                         @endif
                                     </div>
@@ -119,24 +140,48 @@
 
         <div class="divide-y divide-[#e5eaed] md:hidden">
             @forelse ($users as $listedUser)
+                @php
+                    $displayRoles = $listedUser->roles->reject(fn ($role): bool => $role->slug === \App\Enums\Role::KetuaTimKerja->value);
+                @endphp
                 <article class="p-5">
                     <div class="flex items-start justify-between gap-3">
                         <div>
-                            <h3 class="font-bold text-[#112b49]">{{ $listedUser->name }}</h3>
-                            <p class="mt-1 text-xs text-[#78909a]">{{ '@'.$listedUser->username }}</p>
+                            <p class="text-xs font-bold uppercase tracking-wide text-[#78909a]">No. {{ ($users->firstItem() ?? 1) + $loop->index }}</p>
+                            <h3 class="mt-1 font-bold text-[#112b49]">{{ $listedUser->name }}</h3>
                         </div>
                         <span class="rounded-full px-2 py-1 text-[0.65rem] font-bold {{ $listedUser->is_active ? 'bg-[#e8faf4] text-[#087f5b]' : 'bg-[#eef2f4] text-[#657984]' }}">{{ $listedUser->is_active ? 'Aktif' : 'Nonaktif' }}</span>
                     </div>
                     <dl class="mt-4 grid gap-3 rounded-lg bg-[#f8fafb] p-4 text-sm">
                         <div><dt class="text-xs font-bold uppercase tracking-wide text-[#78909a]">Email</dt><dd class="mt-1 break-all text-[#172d45]">{{ $listedUser->email ?: '—' }}</dd></div>
-                        <div><dt class="text-xs font-bold uppercase tracking-wide text-[#78909a]">Role</dt><dd class="mt-1 text-[#172d45]">{{ $listedUser->roles->map(fn ($role) => $role->managementLabel())->join(', ') ?: 'Belum ada role' }}</dd></div>
-                        <div><dt class="text-xs font-bold uppercase tracking-wide text-[#78909a]">Tim Kerja</dt><dd class="mt-1 text-[#172d45]">{{ $listedUser->currentTeamMembership?->workTeam?->name ?? '—' }}</dd></div>
+                        <div><dt class="text-xs font-bold uppercase tracking-wide text-[#78909a]">Role</dt><dd class="mt-1 text-[#172d45]">{{ $displayRoles->map(fn ($role) => $role->managementLabel())->join(', ') ?: 'Belum ada role' }}</dd></div>
                     </dl>
-                    <div class="mt-4 flex gap-2">
-                        <button type="button" data-ui-modal-open="user-edit-modal-{{ $listedUser->id }}" class="ui-btn ui-btn-primary min-w-0 flex-1">Edit pengguna</button>
+                    <div class="mt-4 flex justify-end gap-2">
+                        <button type="button" data-ui-modal-open="user-view-modal-{{ $listedUser->id }}" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#0b98e5] text-white transition hover:bg-[#087fc1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0b98e5] focus-visible:ring-offset-2" aria-label="Lihat pengguna {{ $listedUser->name }}" title="Lihat pengguna">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.2-5 9.5-5 9.5 5 9.5 5-3.2 5-9.5 5-9.5-5-9.5-5Z" /><circle cx="12" cy="12" r="2.5" /></svg>
+                        </button>
+                        <button type="button" data-ui-modal-open="user-edit-modal-{{ $listedUser->id }}" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#f1b900] text-white transition hover:bg-[#d49f00] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f1b900] focus-visible:ring-offset-2" aria-label="Edit pengguna {{ $listedUser->name }}" title="Edit pengguna">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 2.651 2.651M4.5 19.5l4.04-.808a2 2 0 0 0 1.02-.55l8.95-8.95a2 2 0 0 0 0-2.828l-.884-.884a2 2 0 0 0-2.828 0l-8.95 8.95a2 2 0 0 0-.55 1.02L4.5 19.5Z" /></svg>
+                        </button>
                         @if ($listedUser->isNot(auth()->user()))
-                            <button type="button" data-password-reset-open data-user-id="{{ $listedUser->id }}" data-user-name="{{ $listedUser->name }}" data-action="{{ route('admin.users.reset-password', $listedUser) }}" class="ui-btn ui-btn-warning w-12 shrink-0 px-0" aria-label="Ganti password {{ $listedUser->name }}" title="Ganti password">
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.5 8.5a4 4 0 1 1-1.17 2.83L8 17.66V20H5.5v-2.5H3v-2.5h3.34l4.83-4.83A4 4 0 0 1 15.5 8.5Z" /></svg>
+                            <button type="button" data-password-reset-open data-user-id="{{ $listedUser->id }}" data-user-name="{{ $listedUser->name }}" data-action="{{ route('admin.users.reset-password', $listedUser) }}" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#6d46db] text-white transition hover:bg-[#5b35c6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6d46db] focus-visible:ring-offset-2" aria-label="Ganti password {{ $listedUser->name }}" title="Ganti password">
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.5 8.5a4 4 0 1 1-1.17 2.83L8 17.66V20H5.5v-2.5H3v-2.5h3.34l4.83-4.83A4 4 0 0 1 15.5 8.5Z" /><path stroke-linecap="round" d="M15.5 8.5h.01" /></svg>
+                            </button>
+                        @else
+                            <button type="button" disabled class="inline-flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-lg bg-[#6d46db] text-white opacity-45" aria-label="Akun sendiri tidak dapat diganti password dari sini" title="Akun sendiri tidak dapat diganti password dari sini">
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.5 8.5a4 4 0 1 1-1.17 2.83L8 17.66V20H5.5v-2.5H3v-2.5h3.34l4.83-4.83A4 4 0 0 1 15.5 8.5Z" /><path stroke-linecap="round" d="M15.5 8.5h.01" /></svg>
+                            </button>
+                        @endif
+                        @if ($listedUser->isNot(auth()->user()))
+                            <form method="POST" action="{{ route('admin.users.destroy', $listedUser) }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus user ini?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#e94f70] text-white transition hover:bg-[#d63d5e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e94f70] focus-visible:ring-offset-2" aria-label="Hapus pengguna {{ $listedUser->name }}" title="Hapus pengguna">
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
+                                </button>
+                            </form>
+                        @else
+                            <button type="button" disabled class="inline-flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-lg bg-[#e94f70] text-white opacity-45" aria-label="Akun sendiri tidak dapat dihapus" title="Akun sendiri tidak dapat dihapus">
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
                             </button>
                         @endif
                     </div>
@@ -147,7 +192,7 @@
         </div>
     </section>
 
-    <div id="user-create-modal" data-ui-modal data-auto-open="{{ $autoOpenForm === 'create' && $errors->any() ? 'true' : 'false' }}" data-reset-on-close="true" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+    <div id="user-create-modal" data-ui-modal data-auto-open="{{ $autoOpenForm === 'create' && $errors->any() ? 'true' : 'false' }}" data-reset-on-close="true" data-clear-on-close="true" class="fixed inset-0 z-50 hidden" aria-hidden="true">
         <div class="absolute inset-0 bg-slate-950/45" data-ui-modal-close></div>
         <div class="relative flex min-h-full items-start justify-center overflow-y-auto p-4 sm:items-center sm:p-8">
             <section role="dialog" aria-modal="true" aria-labelledby="user-create-title" class="relative max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-xl border border-[#dfe8ec] bg-white shadow-[0_20px_55px_rgba(38,58,67,0.2)]">
@@ -163,13 +208,33 @@
     </div>
 
     @foreach ($users as $listedUser)
+        <div id="user-view-modal-{{ $listedUser->id }}" data-ui-modal class="fixed inset-0 z-50 hidden" aria-hidden="true">
+            <div class="absolute inset-0 bg-slate-950/45" data-ui-modal-close></div>
+            <div class="relative flex min-h-full items-start justify-center overflow-y-auto p-4 sm:items-center sm:p-8">
+                <section role="dialog" aria-modal="true" aria-labelledby="user-view-title-{{ $listedUser->id }}" class="relative max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-xl border border-[#dfe8ec] bg-white shadow-[0_20px_55px_rgba(38,58,67,0.2)]">
+                    <div class="sticky top-0 z-10 flex items-center justify-between gap-4 bg-[#6098c6] px-5 py-4 text-white sm:px-6">
+                        <h2 id="user-view-title-{{ $listedUser->id }}" class="text-lg font-extrabold">Detail Pengguna</h2>
+                        <button type="button" data-ui-modal-close class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-white transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label="Tutup detail pengguna {{ $listedUser->name }}">
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" d="m7 7 10 10M17 7 7 17" /></svg>
+                        </button>
+                    </div>
+                    @include('admin.users._detail', ['user' => $listedUser])
+                    <div class="flex justify-end border-t border-[#edf2f4] px-5 py-4 sm:px-6">
+                        <button type="button" data-ui-modal-close class="ui-btn ui-btn-ghost">Tutup</button>
+                    </div>
+                </section>
+            </div>
+        </div>
+    @endforeach
+
+    @foreach ($users as $listedUser)
         <div id="user-edit-modal-{{ $listedUser->id }}" data-ui-modal data-auto-open="{{ $autoOpenForm === 'edit-'.$listedUser->id && $errors->any() ? 'true' : 'false' }}" class="fixed inset-0 z-50 hidden" aria-hidden="true">
             <div class="absolute inset-0 bg-slate-950/45" data-ui-modal-close></div>
             <div class="relative flex min-h-full items-start justify-center overflow-y-auto p-4 sm:items-center sm:p-8">
                 <section role="dialog" aria-modal="true" aria-labelledby="user-edit-title-{{ $listedUser->id }}" class="relative max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-xl border border-[#dfe8ec] bg-white shadow-[0_20px_55px_rgba(38,58,67,0.2)]">
                     <div class="sticky top-0 z-10 flex items-center justify-between gap-4 bg-[#6098c6] px-5 py-4 text-white sm:px-6">
                         <h2 id="user-edit-title-{{ $listedUser->id }}" class="text-lg font-extrabold">Edit Pengguna</h2>
-                        <button type="button" data-ui-modal-close class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-white transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label="Tutup dialog edit pengguna">
+                        <button type="button" data-ui-modal-close class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-white transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label="Tutup dialog edit pengguna {{ $listedUser->name }}">
                             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" d="m7 7 10 10M17 7 7 17" /></svg>
                         </button>
                     </div>

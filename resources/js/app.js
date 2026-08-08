@@ -389,6 +389,47 @@ uiModals.forEach((modal) => {
 
         form.reset();
 
+        if (modal.dataset.clearOnClose === 'true') {
+            const validationErrorIds = new Set(
+                [...form.querySelectorAll('[data-ui-validation-error]')]
+                    .map((error) => error.id)
+                    .filter(Boolean),
+            );
+
+            form.querySelectorAll('input, select, textarea').forEach((control) => {
+                if (control.type === 'hidden') {
+                    return;
+                }
+
+                if (control.type === 'checkbox' || control.type === 'radio') {
+                    control.checked = false;
+                } else if (control.tagName === 'SELECT') {
+                    control.selectedIndex = 0;
+                } else {
+                    control.value = '';
+                }
+            });
+
+            form.querySelectorAll('[aria-invalid="true"]').forEach((field) => {
+                field.removeAttribute('aria-invalid');
+                const describedBy = field.getAttribute('aria-describedby');
+
+                if (describedBy) {
+                    const remainingIds = describedBy
+                        .split(/\s+/)
+                        .filter((id) => id && !validationErrorIds.has(id));
+
+                    if (remainingIds.length > 0) {
+                        field.setAttribute('aria-describedby', remainingIds.join(' '));
+                    } else {
+                        field.removeAttribute('aria-describedby');
+                    }
+                }
+            });
+
+            form.querySelectorAll('[data-ui-validation-error]').forEach((error) => error.remove());
+        }
+
         const submit = form.querySelector('[data-ui-modal-submit]');
         const label = form.querySelector('[data-ui-modal-label]');
         const loading = form.querySelector('[data-ui-modal-loading]');
@@ -494,12 +535,16 @@ userForms.forEach((form) => {
     const roleInputs = [...form.querySelectorAll('[data-user-role]')];
     const skillsPanel = form.querySelector('[data-user-skills]');
     const skillInputs = [...form.querySelectorAll('[data-user-skill]')];
+    const teamInput = form.querySelector('[data-user-team-input]');
+    const teamPositionPanel = form.querySelector('[data-user-team-position]');
+    const teamPositionInput = form.querySelector('[data-user-team-position-input]');
 
     if (roleInputs.length === 0 || !skillsPanel) {
         return;
     }
 
     const updateUserRoleFields = () => {
+        const hasSelectedTeam = Boolean(teamInput?.value);
         const hasSelectedRole = roleInputs.some((input) => input.checked);
         const hasTechnicianRole = roleInputs
             .some((input) => input.checked && input.dataset.roleSlug === 'agen_tier_2');
@@ -516,6 +561,16 @@ userForms.forEach((form) => {
             input.required = hasTechnicianRole && index === 0 && !hasSelectedSkill;
         });
 
+        teamPositionPanel?.classList.toggle('hidden', !hasSelectedTeam);
+        if (teamPositionInput) {
+            teamPositionInput.disabled = !hasSelectedTeam;
+            teamPositionInput.required = hasSelectedTeam;
+
+            if (!hasSelectedTeam) {
+                teamPositionInput.value = '';
+            }
+        }
+
         if (!hasTechnicianRole) {
             skillInputs.forEach((input) => {
                 input.checked = false;
@@ -525,6 +580,7 @@ userForms.forEach((form) => {
 
     roleInputs.forEach((input) => input.addEventListener('change', updateUserRoleFields));
     skillInputs.forEach((input) => input.addEventListener('change', updateUserRoleFields));
+    teamInput?.addEventListener('change', updateUserRoleFields);
     form.addEventListener('reset', () => window.setTimeout(updateUserRoleFields, 0));
     form.addEventListener('submit', () => {
         const submit = form.querySelector('[data-user-form-submit]');
@@ -541,121 +597,6 @@ userForms.forEach((form) => {
         loading?.classList.remove('hidden');
     });
     updateUserRoleFields();
-});
-
-const teamAccordions = document.querySelectorAll('[data-team-accordion]');
-
-teamAccordions.forEach((accordion) => {
-    const summary = accordion.querySelector(':scope > summary');
-    const panel = accordion.querySelector(':scope > [data-team-accordion-panel]');
-
-    if (!summary || !panel) {
-        return;
-    }
-
-    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-    let isAnimating = false;
-    let transitionTimer = null;
-
-    const finishOpen = () => {
-        panel.hidden = false;
-        panel.style.height = 'auto';
-        panel.style.opacity = '1';
-        isAnimating = false;
-    };
-
-    const finishClose = () => {
-        accordion.open = false;
-        panel.hidden = true;
-        panel.style.height = '0px';
-        panel.style.opacity = '0';
-        isAnimating = false;
-    };
-
-    const waitForTransition = (callback) => {
-        let finished = false;
-        const complete = () => {
-            if (finished) {
-                return;
-            }
-
-            finished = true;
-            panel.removeEventListener('transitionend', handleTransitionEnd);
-            window.clearTimeout(transitionTimer);
-            callback();
-        };
-        const handleTransitionEnd = (event) => {
-            if (event.target === panel && event.propertyName === 'height') {
-                complete();
-            }
-        };
-
-        panel.addEventListener('transitionend', handleTransitionEnd);
-            transitionTimer = window.setTimeout(complete, 560);
-    };
-
-    const openAccordion = () => {
-        if (isAnimating) {
-            return;
-        }
-
-        accordion.open = true;
-        panel.hidden = false;
-
-        if (reduceMotion) {
-            finishOpen();
-
-            return;
-        }
-
-        isAnimating = true;
-        panel.style.height = '0px';
-        panel.style.opacity = '0';
-        window.requestAnimationFrame(() => {
-            panel.style.height = `${panel.scrollHeight}px`;
-            panel.style.opacity = '1';
-        });
-        waitForTransition(finishOpen);
-    };
-
-    const closeAccordion = () => {
-        if (isAnimating) {
-            return;
-        }
-
-        if (reduceMotion) {
-            finishClose();
-
-            return;
-        }
-
-        isAnimating = true;
-        panel.style.height = `${panel.scrollHeight}px`;
-        panel.style.opacity = '1';
-        window.requestAnimationFrame(() => {
-            panel.style.height = '0px';
-            panel.style.opacity = '0';
-        });
-        waitForTransition(finishClose);
-    };
-
-    summary.addEventListener('click', (event) => {
-        event.preventDefault();
-
-        if (accordion.open) {
-            closeAccordion();
-        } else {
-            openAccordion();
-        }
-    });
-
-    if (accordion.open) {
-        finishOpen();
-    } else {
-        panel.hidden = true;
-        panel.style.height = '0px';
-        panel.style.opacity = '0';
-    }
 });
 
 const ticketForms = document.querySelectorAll('[data-ticket-form]');

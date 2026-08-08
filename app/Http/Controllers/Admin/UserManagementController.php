@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\Role as RoleEnum;
+use App\Enums\TeamPosition;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AssignTeamRequest;
 use App\Http\Requests\Admin\ResetPasswordRequest;
@@ -19,6 +21,7 @@ use App\Services\OrganizationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class UserManagementController extends Controller
 {
@@ -40,7 +43,12 @@ class UserManagementController extends Controller
         }
 
         $usersQuery = User::query()
-            ->with(['roles', 'skills', 'currentTeamMembership.workTeam'])
+            ->with([
+                'roles',
+                'skills',
+                'currentTeamMembership.workTeam',
+                'teamChairAssignments' => fn ($query) => $query->where('is_active', true),
+            ])
             ->when($search !== '', function ($query) use ($search): void {
                 $query->where(function ($userQuery) use ($search): void {
                     $userQuery
@@ -80,7 +88,7 @@ class UserManagementController extends Controller
         $user = $this->organization->createUser($actor, $request->validated());
 
         return redirect()
-            ->route('admin.users.edit', $user)
+            ->route('admin.users.index')
             ->with('success', "Pengguna {$user->name} berhasil dibuat. Sampaikan password awal melalui prosedur aman.");
     }
 
@@ -110,6 +118,16 @@ class UserManagementController extends Controller
         $actor = $request->user();
         $this->authorization->authorize($actor, 'update', $user, 'admin.user.update');
         $data = $request->validated();
+        $desiredActive = (bool) $data['is_active'];
+
+        if ($desiredActive !== $user->is_active) {
+            $this->authorization->authorize(
+                $actor,
+                $desiredActive ? 'activate' : 'deactivate',
+                $user,
+                $desiredActive ? 'admin.user.activate' : 'admin.user.deactivate',
+            );
+        }
 
         $this->authorization->authorize($actor, 'manageRoles', $user, 'admin.user.roles.update');
         $this->authorization->authorize($actor, 'manageTeam', $user, 'admin.user.team.update');
@@ -119,6 +137,17 @@ class UserManagementController extends Controller
         return redirect()
             ->route('admin.users.index')
             ->with('success', 'Perubahan pengguna berhasil disimpan.');
+    }
+
+    public function destroy(Request $request, User $user): RedirectResponse
+    {
+        $actor = $request->user();
+        $this->authorization->authorize($actor, 'delete', $user, 'admin.user.delete');
+        $this->organization->deleteUser($actor, $user);
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', "Pengguna {$user->name} berhasil dihapus.");
     }
 
     public function activate(Request $request, User $user): RedirectResponse
@@ -143,7 +172,17 @@ class UserManagementController extends Controller
     {
         $actor = $request->user();
         $this->authorization->authorize($actor, 'manageRoles', $user, 'admin.user.roles.update');
-        $this->organization->syncRoles($actor, $user, $request->validated()['role_ids'] ?? []);
+        $roleIds = $request->validated()['role_ids'] ?? [];
+        $chairRoleId = Role::query()->where('slug', RoleEnum::KetuaTimKerja->value)->value('id');
+
+        if ($user->teamChairAssignments()->where('is_active', true)->exists()
+            || ($chairRoleId !== null && collect($roleIds)->contains(fn ($roleId): bool => (int) $roleId === (int) $chairRoleId))) {
+            throw ValidationException::withMessages([
+                'role_ids' => 'Posisi Ketua Tim Kerja ditetapkan melalui field Posisi dalam Tim pada Manajemen Pengguna.',
+            ]);
+        }
+
+        $this->organization->syncRoles($actor, $user, $roleIds);
 
         return back()->with('success', 'Role pengguna berhasil diperbarui.');
     }
@@ -152,7 +191,7 @@ class UserManagementController extends Controller
     {
         $actor = $request->user();
         $this->authorization->authorize($actor, 'manageTeam', $user, 'admin.user.team.update');
-        $this->organization->assignTeam($actor, $user, (int) $request->validated('team_id'));
+        $this->organization->assignTeamPosition($actor, $user, (int) $request->validated('team_id'), TeamPosition::Member);
 
         return back()->with('success', 'Tim utama pengguna berhasil diperbarui.');
     }

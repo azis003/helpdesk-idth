@@ -94,6 +94,7 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::post('/users', [UserManagementController::class, 'store'])->name('users.store');
             Route::get('/users/{user}/edit', [UserManagementController::class, 'edit'])->name('users.edit');
             Route::put('/users/{user}', [UserManagementController::class, 'update'])->name('users.update');
+            Route::delete('/users/{user}', [UserManagementController::class, 'destroy'])->name('users.destroy');
             Route::post('/users/{user}/activate', [UserManagementController::class, 'activate'])->name('users.activate');
             Route::post('/users/{user}/deactivate', [UserManagementController::class, 'deactivate'])->name('users.deactivate');
             Route::put('/users/{user}/roles', [UserManagementController::class, 'updateRoles'])->name('users.roles.update');
@@ -109,9 +110,6 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::post('/teams/{workTeam}/activate', [WorkTeamController::class, 'activate'])->name('teams.activate');
             Route::post('/teams/{workTeam}/deactivate', [WorkTeamController::class, 'deactivate'])->name('teams.deactivate');
             Route::delete('/teams/{workTeam}', [WorkTeamController::class, 'destroy'])->name('teams.destroy');
-            Route::post('/teams/{workTeam}/members', [WorkTeamController::class, 'assignMember'])->name('teams.members.assign');
-            Route::delete('/teams/{workTeam}/members/{user}', [WorkTeamController::class, 'removeMember'])->name('teams.members.remove');
-            Route::put('/teams/{workTeam}/chair', [WorkTeamController::class, 'assignChair'])->name('teams.chair.update');
 
             Route::get('/skills', [SkillController::class, 'index'])->name('skills.index');
             Route::post('/skills', [SkillController::class, 'store'])->name('skills.store');

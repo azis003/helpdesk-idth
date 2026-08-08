@@ -3,10 +3,10 @@
 namespace Tests\Feature\Admin;
 
 use App\Enums\Role;
+use App\Enums\TeamPosition;
 use App\Models\Role as RoleModel;
 use App\Models\ServiceType;
 use App\Models\Skill;
-use App\Models\TeamChairAssignment;
 use App\Models\TeamMembership;
 use App\Models\User;
 use App\Models\WorkTeam;
@@ -32,10 +32,11 @@ class OrganizationManagementTest extends TestCase
             'temporary_password_confirmation' => 'Initial-Password-123!',
             'role_ids' => [$role->id],
             'team_id' => $team->id,
+            'team_position' => TeamPosition::Member->value,
             'skill_ids' => [$skill->id],
         ]);
 
-        $response->assertRedirect();
+        $response->assertRedirectToRoute('admin.users.index');
         $user = User::query()->where('username', 'teknisi-baru')->firstOrFail();
 
         $this->assertTrue(Hash::check('Initial-Password-123!', $user->password));
@@ -55,9 +56,37 @@ class OrganizationManagementTest extends TestCase
         ]);
     }
 
+    public function test_new_user_rejects_duplicate_username_and_nip(): void
+    {
+        $admin = $this->createUser([Role::SuperAdmin], ['username' => 'unique-admin']);
+        $existing = $this->createUser([Role::Pemohon], [
+            'username' => 'username-terpakai',
+            'nip' => '1987654321',
+        ]);
+        $team = WorkTeam::factory()->create(['name' => 'Tim Unik']);
+        $role = RoleModel::query()->where('slug', Role::Pemohon->value)->firstOrFail();
+
+        $response = $this->actingAs($admin)->post(route('admin.users.store'), [
+            'name' => 'Pengguna Duplikat',
+            'username' => $existing->username,
+            'email' => 'duplikat@example.test',
+            'nip' => $existing->nip,
+            'temporary_password' => 'Initial-Password-123!',
+            'temporary_password_confirmation' => 'Initial-Password-123!',
+            'role_ids' => [$role->id],
+            'team_id' => $team->id,
+            'team_position' => TeamPosition::Member->value,
+            'skill_ids' => [],
+        ]);
+
+        $response->assertSessionHasErrors(['username', 'nip']);
+        $this->assertDatabaseMissing('users', ['email' => 'duplikat@example.test']);
+    }
+
     public function test_technician_requires_at_least_one_skill_when_created(): void
     {
         $admin = $this->createUser([Role::SuperAdmin], ['username' => 'skill-required-admin']);
+        $team = WorkTeam::factory()->create(['name' => 'Tim Teknisi']);
         $technicianRole = RoleModel::query()->where('slug', Role::AgenTier2->value)->firstOrFail();
 
         $response = $this->actingAs($admin)->post(route('admin.users.store'), [
@@ -68,6 +97,8 @@ class OrganizationManagementTest extends TestCase
             'temporary_password' => 'Initial-Password-123!',
             'temporary_password_confirmation' => 'Initial-Password-123!',
             'role_ids' => [$technicianRole->id],
+            'team_id' => $team->id,
+            'team_position' => TeamPosition::Member->value,
         ]);
 
         $response->assertSessionHasErrors('skill_ids');
@@ -87,6 +118,7 @@ class OrganizationManagementTest extends TestCase
             'temporary_password' => 'Initial-Password-123!',
             'temporary_password_confirmation' => 'Initial-Password-123!',
             'role_ids' => [$role->id],
+            'team_position' => TeamPosition::Member->value,
         ]);
 
         $response->assertSessionHasErrors('team_id');
@@ -111,6 +143,7 @@ class OrganizationManagementTest extends TestCase
             'email' => $target->email,
             'nip' => $target->nip,
             'role_ids' => $target->roles->pluck('id')->all(),
+            'team_position' => TeamPosition::Member->value,
             'skill_ids' => [],
         ]);
 
@@ -159,6 +192,62 @@ class OrganizationManagementTest extends TestCase
             '/id="user-edit-'.$target->id.'-skill-'.$skill->id.'"[^>]*checked/s',
             $response->getContent(),
         );
+    }
+
+    public function test_team_position_in_user_management_controls_chair_assignment_and_internal_role(): void
+    {
+        $admin = $this->createUser([Role::SuperAdmin], ['username' => 'position-admin']);
+        $target = $this->createUser([Role::Pemohon], ['username' => 'position-target']);
+        $team = WorkTeam::factory()->create(['name' => 'Tim Posisi']);
+        $pemohonRole = RoleModel::query()->where('slug', Role::Pemohon->value)->firstOrFail();
+
+        $target->teamMemberships()->create([
+            'work_team_id' => $team->id,
+            'assigned_by' => $admin->id,
+            'started_at' => now(),
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($admin)->put(route('admin.users.update', $target), [
+            'name' => $target->name,
+            'username' => $target->username,
+            'email' => $target->email,
+            'nip' => $target->nip,
+            'role_ids' => [$pemohonRole->id],
+            'team_id' => $team->id,
+            'team_position' => TeamPosition::Chair->value,
+            'skill_ids' => [],
+            'is_active' => true,
+        ]);
+        $response->assertRedirect();
+
+        $target->refresh();
+        $this->assertTrue($target->hasRole(Role::KetuaTimKerja));
+        $this->assertDatabaseHas('team_chair_assignments', [
+            'work_team_id' => $team->id,
+            'user_id' => $target->id,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($admin)->put(route('admin.users.update', $target), [
+            'name' => $target->name,
+            'username' => $target->username,
+            'email' => $target->email,
+            'nip' => $target->nip,
+            'role_ids' => [$pemohonRole->id],
+            'team_id' => $team->id,
+            'team_position' => TeamPosition::Member->value,
+            'skill_ids' => [],
+            'is_active' => true,
+        ])->assertRedirect();
+
+        $target->refresh();
+        $this->assertFalse($target->hasRole(Role::KetuaTimKerja));
+        $this->assertDatabaseHas('team_chair_assignments', [
+            'work_team_id' => $team->id,
+            'user_id' => $target->id,
+            'is_active' => false,
+        ]);
     }
 
     public function test_super_admin_can_revoke_and_grant_roles_with_history(): void
@@ -212,6 +301,63 @@ class OrganizationManagementTest extends TestCase
         ]);
     }
 
+    public function test_user_edit_can_change_status(): void
+    {
+        $admin = $this->createUser([Role::SuperAdmin], ['username' => 'status-edit-admin']);
+        $target = $this->createUser([Role::Pemohon], ['username' => 'status-edit-target']);
+        $team = WorkTeam::factory()->create(['name' => 'Tim Status']);
+
+        $target->teamMemberships()->create([
+            'work_team_id' => $team->id,
+            'assigned_by' => $admin->id,
+            'started_at' => now(),
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($admin)->put(route('admin.users.update', $target), [
+            'name' => $target->name,
+            'username' => $target->username,
+            'email' => $target->email,
+            'nip' => $target->nip,
+            'role_ids' => $target->roles->pluck('id')->all(),
+            'team_id' => $team->id,
+            'team_position' => TeamPosition::Member->value,
+            'skill_ids' => [],
+            'is_active' => '0',
+        ]);
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('users', [
+            'id' => $target->id,
+            'is_active' => false,
+        ]);
+    }
+
+    public function test_super_admin_can_soft_delete_user_but_not_self(): void
+    {
+        $admin = $this->createUser([Role::SuperAdmin], ['username' => 'delete-admin']);
+        $target = $this->createUser([Role::Pemohon], ['username' => 'delete-target']);
+
+        $this->actingAs($admin)->delete(route('admin.users.destroy', $target))
+            ->assertRedirect();
+
+        $this->assertSoftDeleted('users', ['id' => $target->id]);
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $admin->id,
+            'auditable_id' => $target->id,
+            'action' => 'admin.user.deleted',
+            'outcome' => 'succeeded',
+        ]);
+        $this->assertFalse(User::query()->whereKey($target->id)->exists());
+
+        $this->actingAs($admin)->delete(route('admin.users.destroy', $admin))
+            ->assertForbidden();
+        $this->assertDatabaseHas('users', [
+            'id' => $admin->id,
+            'deleted_at' => null,
+        ]);
+    }
+
     public function test_user_transfer_keeps_one_active_team_and_records_history(): void
     {
         $admin = $this->createUser([Role::SuperAdmin], ['username' => 'team-admin']);
@@ -238,33 +384,23 @@ class OrganizationManagementTest extends TestCase
         ]);
     }
 
-    public function test_team_chair_must_be_an_active_member_and_assignment_is_audited(): void
+    public function test_team_management_only_displays_read_only_membership_data(): void
     {
-        $admin = $this->createUser([Role::SuperAdmin], ['username' => 'chair-admin']);
-        $member = $this->createUser([Role::KetuaTimKerja], ['username' => 'chair-member']);
-        $outsider = $this->createUser([Role::Pemohon], ['username' => 'chair-outsider']);
-        $team = WorkTeam::factory()->create(['name' => 'Tim Ketua']);
+        $admin = $this->createUser([Role::SuperAdmin], ['username' => 'team-read-only-admin']);
+        $team = WorkTeam::factory()->create(['name' => 'Tim Read Only']);
 
-        $this->actingAs($admin)->post(route('admin.teams.members.assign', $team), ['user_id' => $member->id])
-            ->assertRedirect();
-        $this->actingAs($admin)->put(route('admin.teams.chair.update', $team), ['user_id' => $member->id])
-            ->assertRedirect();
+        $response = $this->actingAs($admin)->get(route('admin.teams.index'));
 
-        $this->assertDatabaseHas('team_chair_assignments', [
-            'work_team_id' => $team->id,
-            'user_id' => $member->id,
-            'is_active' => true,
-        ]);
-
-        $this->actingAs($admin)->put(route('admin.teams.chair.update', $team), ['user_id' => $outsider->id])
-            ->assertSessionHasErrors('user_id');
-        $this->assertSame(1, TeamChairAssignment::query()->where('work_team_id', $team->id)->where('is_active', true)->count());
-        $this->assertDatabaseHas('audit_logs', [
-            'user_id' => $admin->id,
-            'auditable_id' => $team->id,
-            'action' => 'admin.team.chair.changed',
-            'outcome' => 'succeeded',
-        ]);
+        $response->assertOk()
+            ->assertSee('Nama Tim Kerja')
+            ->assertSee('Ketua Tim Kerja')
+            ->assertSee('Anggota')
+            ->assertSee('Deskripsi')
+            ->assertSee('Aksi')
+            ->assertSee('Edit Tim Kerja')
+            ->assertDontSee('Tambah anggota')
+            ->assertDontSee('Pilih ketua')
+            ->assertDontSee('Simpan ketua');
     }
 
     public function test_service_skill_mapping_and_soft_delete_preserve_history(): void
@@ -317,6 +453,7 @@ class OrganizationManagementTest extends TestCase
     {
         $this->seed(ServiceCatalogSeeder::class);
         $admin = $this->createUser([Role::SuperAdmin], ['username' => 'page-admin']);
+        $this->createUser([Role::Pemohon], ['username' => 'page-listed-user']);
         $team = WorkTeam::factory()->create(['name' => 'Tim Halaman']);
         $skill = Skill::factory()->create(['name' => 'Dukungan Aplikasi', 'slug' => 'dukungan-aplikasi']);
         $team->currentMembers()->attach($admin->id, [
@@ -324,7 +461,18 @@ class OrganizationManagementTest extends TestCase
             'started_at' => now(),
             'is_active' => true,
         ]);
-        $this->actingAs($admin)->get(route('admin.users.index'))->assertOk()->assertSee('Pengguna dan akses');
+        $this->actingAs($admin)->get(route('admin.users.index'))
+            ->assertOk()
+            ->assertSee('Pengguna dan akses')
+            ->assertSee('Nama Pengguna')
+            ->assertSee('Detail Pengguna')
+            ->assertSee('Username')
+            ->assertSee('NIP')
+            ->assertSee('Tim Kerja')
+            ->assertSee('Lihat pengguna')
+            ->assertSee('Hapus pengguna')
+            ->assertSee('Status')
+            ->assertSee('data-clear-on-close="true"', false);
         $this->actingAs($admin)->get(route('admin.users.edit', $admin))->assertOk()->assertSee('Riwayat organisasi');
         $this->actingAs($admin)->get(route('admin.teams.index'))->assertOk()->assertSee('Tim Halaman');
         $this->actingAs($admin)->get(route('admin.skills.index'))->assertOk()->assertSee('Dukungan Aplikasi')->assertDontSee('Kategori Masalah');

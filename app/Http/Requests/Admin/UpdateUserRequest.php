@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Enums\Role;
+use App\Enums\TeamPosition;
 use App\Models\Role as RoleModel;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -15,6 +16,8 @@ class UpdateUserRequest extends FormRequest
             'role_ids' => $this->input('role_ids', []),
             'skill_ids' => $this->input('skill_ids', []),
             'team_id' => $this->input('team_id') === '' ? null : $this->input('team_id'),
+            'team_position' => $this->input('team_position') === '' ? null : $this->input('team_position'),
+            'is_active' => $this->has('is_active') ? $this->boolean('is_active') : null,
         ]);
     }
 
@@ -35,8 +38,10 @@ class UpdateUserRequest extends FormRequest
             'role_ids' => ['required', 'array', 'min:1'],
             'role_ids.*' => ['integer', 'distinct', 'exists:roles,id'],
             'team_id' => ['required', 'integer', 'exists:work_teams,id'],
+            'team_position' => ['required_with:team_id', Rule::enum(TeamPosition::class)],
             'skill_ids' => ['nullable', 'array'],
             'skill_ids.*' => ['integer', 'distinct', 'exists:skills,id'],
+            'is_active' => ['required', 'boolean'],
         ];
     }
 
@@ -56,8 +61,12 @@ class UpdateUserRequest extends FormRequest
             'role_ids.*.exists' => 'Role yang dipilih tidak tersedia.',
             'team_id.required' => 'Tim kerja wajib dipilih.',
             'team_id.exists' => 'Tim kerja yang dipilih tidak tersedia.',
+            'team_position.required_with' => 'Posisi dalam tim wajib dipilih setelah tim kerja dipilih.',
+            'team_position.enum' => 'Posisi dalam tim tidak valid.',
             'skill_ids.array' => 'Daftar keahlian tidak valid.',
             'skill_ids.*.exists' => 'Keahlian yang dipilih tidak tersedia.',
+            'is_active.required' => 'Status pengguna wajib dipilih.',
+            'is_active.boolean' => 'Status pengguna tidak valid.',
         ];
     }
 

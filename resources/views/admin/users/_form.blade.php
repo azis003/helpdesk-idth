@@ -12,6 +12,16 @@
     $emailValue = $useOld ? old('email') : $user?->email;
     $nipValue = $useOld ? old('nip') : $user?->nip;
     $teamValue = $useOld ? old('team_id') : $user?->currentTeamMembership?->work_team_id;
+    $activeChairAssignment = $user?->teamChairAssignments?->first(
+        fn ($assignment): bool => $assignment->is_active
+            && (string) $assignment->work_team_id === (string) $teamValue,
+    );
+    $teamPositionValue = $useOld
+        ? old('team_position')
+        : ($activeChairAssignment !== null ? \App\Enums\TeamPosition::Chair->value : (filled($teamValue) ? \App\Enums\TeamPosition::Member->value : null));
+    $statusValue = $useOld
+        ? old('is_active', $user?->is_active ? '1' : '0')
+        : ($user?->is_active ? '1' : '0');
     $selectedRoleIds = collect($useOld ? old('role_ids', []) : ($user?->roles?->pluck('id')->all() ?? []))
         ->map(fn ($id): string => (string) $id)
         ->values()
@@ -22,6 +32,7 @@
         ->all();
     $technicianRoleSlug = \App\Enums\Role::AgenTier2->value;
     $hasTechnicianRole = $roles->contains(fn ($role): bool => in_array((string) $role->id, $selectedRoleIds, true) && $role->slug === $technicianRoleSlug);
+    $assignableRoles = $roles->reject(fn ($role): bool => $role->slug === \App\Enums\Role::KetuaTimKerja->value);
     $roleError = $errors->first('role_ids') ?: $errors->first('role_ids.*');
 @endphp
 
@@ -44,45 +55,67 @@
 
     <div class="grid gap-4 sm:grid-cols-2">
         <div>
-            <label for="{{ $prefix }}-name" class="ui-field-label">Nama Pegawai <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only"> wajib</span></label>
+            <label for="{{ $prefix }}-name" class="ui-field-label">Nama Pengguna <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only"> wajib</span></label>
             <input id="{{ $prefix }}-name" name="name" type="text" value="{{ $nameValue }}" autocomplete="name" required data-ui-modal-focus class="ui-input mt-2" @error('name') aria-invalid="true" aria-describedby="{{ $prefix }}-name-error" @enderror>
-            @error('name')<p id="{{ $prefix }}-name-error" class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+            @error('name')<p id="{{ $prefix }}-name-error" data-ui-validation-error class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
         </div>
 
         <div>
             <label for="{{ $prefix }}-username" class="ui-field-label">Username <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only"> wajib</span></label>
             <input id="{{ $prefix }}-username" name="username" type="text" value="{{ $usernameValue }}" autocomplete="username" required class="ui-input mt-2" @error('username') aria-invalid="true" aria-describedby="{{ $prefix }}-username-error" @enderror>
-            @error('username')<p id="{{ $prefix }}-username-error" class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+            @error('username')<p id="{{ $prefix }}-username-error" data-ui-validation-error class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
         </div>
 
         <div>
             <label for="{{ $prefix }}-email" class="ui-field-label">Email</label>
             <input id="{{ $prefix }}-email" name="email" type="email" value="{{ $emailValue }}" autocomplete="email" class="ui-input mt-2" @error('email') aria-invalid="true" aria-describedby="{{ $prefix }}-email-error" @enderror>
-            @error('email')<p id="{{ $prefix }}-email-error" class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+            @error('email')<p id="{{ $prefix }}-email-error" data-ui-validation-error class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
         </div>
 
         <div>
             <label for="{{ $prefix }}-nip" class="ui-field-label">NIP</label>
             <input id="{{ $prefix }}-nip" name="nip" type="text" value="{{ $nipValue }}" inputmode="numeric" class="ui-input mt-2" @error('nip') aria-invalid="true" aria-describedby="{{ $prefix }}-nip-error" @enderror>
-            @error('nip')<p id="{{ $prefix }}-nip-error" class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+            @error('nip')<p id="{{ $prefix }}-nip-error" data-ui-validation-error class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
         </div>
 
         <div>
             <label for="{{ $prefix }}-team" class="ui-field-label">Tim Kerja <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only"> wajib</span></label>
-            <select id="{{ $prefix }}-team" name="team_id" required class="ui-select mt-2" @error('team_id') aria-invalid="true" aria-describedby="{{ $prefix }}-team-error" @enderror>
+            <select id="{{ $prefix }}-team" name="team_id" required data-user-team-input class="ui-select mt-2" @error('team_id') aria-invalid="true" aria-describedby="{{ $prefix }}-team-error" @enderror>
                 <option value="">Pilih tim kerja</option>
                 @foreach ($teams as $team)
                     <option value="{{ $team->id }}" @selected((string) $teamValue === (string) $team->id)>{{ $team->name }}</option>
                 @endforeach
             </select>
-            @error('team_id')<p id="{{ $prefix }}-team-error" class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+            @error('team_id')<p id="{{ $prefix }}-team-error" data-ui-validation-error class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
         </div>
+
+        <div class="sm:col-span-2 {{ filled($teamValue) ? '' : 'hidden' }}" data-user-team-position>
+            <label for="{{ $prefix }}-team-position" class="ui-field-label">Posisi dalam Tim <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only"> wajib</span></label>
+            <select id="{{ $prefix }}-team-position" name="team_position" data-user-team-position-input required @disabled(! filled($teamValue)) class="ui-select mt-2" @error('team_position') aria-invalid="true" aria-describedby="{{ $prefix }}-team-position-help {{ $prefix }}-team-position-error" @else aria-describedby="{{ $prefix }}-team-position-help" @enderror>
+                <option value="">Pilih posisi dalam tim</option>
+                <option value="{{ \App\Enums\TeamPosition::Member->value }}" @selected($teamPositionValue === \App\Enums\TeamPosition::Member->value)>Anggota</option>
+                <option value="{{ \App\Enums\TeamPosition::Chair->value }}" @selected($teamPositionValue === \App\Enums\TeamPosition::Chair->value)>Ketua Tim Kerja</option>
+            </select>
+            <p id="{{ $prefix }}-team-position-help" class="ui-field-help">Tentukan apakah pengguna menjadi anggota atau ketua dari tim kerja tersebut.</p>
+            @error('team_position')<p id="{{ $prefix }}-team-position-error" data-ui-validation-error class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+        </div>
+
+        @if ($isEdit)
+            <div class="sm:col-span-2">
+                <label for="{{ $prefix }}-status" class="ui-field-label">Status <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only"> wajib</span></label>
+                <select id="{{ $prefix }}-status" name="is_active" required class="ui-select mt-2" @error('is_active') aria-invalid="true" aria-describedby="{{ $prefix }}-status-error" @enderror>
+                    <option value="1" @selected((string) $statusValue === '1')>Aktif</option>
+                    <option value="0" @selected((string) $statusValue === '0')>Nonaktif</option>
+                </select>
+                @error('is_active')<p id="{{ $prefix }}-status-error" data-ui-validation-error class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+            </div>
+        @endif
 
         <fieldset class="sm:col-span-2" data-user-role-group @if($roleError) aria-invalid="true" aria-describedby="{{ $prefix }}-role-help {{ $prefix }}-role-error" @else aria-describedby="{{ $prefix }}-role-help" @endif>
             <legend class="ui-field-label">Role <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only"> wajib</span></legend>
             <p id="{{ $prefix }}-role-help" class="ui-field-help">Pilih satu atau beberapa role sesuai kewenangan pengguna.</p>
             <div class="mt-2 grid gap-2 sm:grid-cols-2">
-                @foreach ($roles as $role)
+                @foreach ($assignableRoles as $role)
                     <label for="{{ $prefix }}-role-{{ $role->id }}" class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-[#d7e0e4] bg-white px-3 py-2.5 text-sm text-[#35505b] transition hover:border-[#79c7e8] hover:bg-[#f4fbfe]">
                         <input
                             id="{{ $prefix }}-role-{{ $role->id }}"
@@ -98,7 +131,7 @@
                     </label>
                 @endforeach
             </div>
-            @if ($roleError)<p id="{{ $prefix }}-role-error" class="mt-2 text-sm text-rose-700">{{ $roleError }}</p>@endif
+            @if ($roleError)<p id="{{ $prefix }}-role-error" data-ui-validation-error class="mt-2 text-sm text-rose-700">{{ $roleError }}</p>@endif
         </fieldset>
     </div>
 
@@ -125,7 +158,7 @@
         @if ($skills->isEmpty())
             <p class="mt-2 text-sm text-amber-700">Belum ada keahlian aktif. Tambahkan keahlian terlebih dahulu.</p>
         @endif
-        @error('skill_ids')<p id="{{ $prefix }}-skills-error" class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+        @error('skill_ids')<p id="{{ $prefix }}-skills-error" data-ui-validation-error class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
     </fieldset>
 
     @if (! $isEdit)
@@ -134,13 +167,13 @@
                 <label for="{{ $prefix }}-password" class="ui-field-label">Password <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only"> wajib</span></label>
                 <input id="{{ $prefix }}-password" name="temporary_password" type="password" autocomplete="new-password" required class="ui-input mt-2" @error('temporary_password') aria-invalid="true" aria-describedby="{{ $prefix }}-password-help {{ $prefix }}-password-error" @enderror>
                 <p id="{{ $prefix }}-password-help" class="ui-field-help">Minimal 12 karakter dengan huruf besar, huruf kecil, angka, dan simbol.</p>
-                @error('temporary_password')<p id="{{ $prefix }}-password-error" class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+                @error('temporary_password')<p id="{{ $prefix }}-password-error" data-ui-validation-error class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
             </div>
 
             <div>
                 <label for="{{ $prefix }}-password-confirmation" class="ui-field-label">Konfirmasi Password <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only"> wajib</span></label>
                 <input id="{{ $prefix }}-password-confirmation" name="temporary_password_confirmation" type="password" autocomplete="new-password" required class="ui-input mt-2" @error('temporary_password_confirmation') aria-invalid="true" aria-describedby="{{ $prefix }}-password-confirmation-error" @enderror>
-                @error('temporary_password_confirmation')<p id="{{ $prefix }}-password-confirmation-error" class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+                @error('temporary_password_confirmation')<p id="{{ $prefix }}-password-confirmation-error" data-ui-validation-error class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
             </div>
         </div>
     @else

@@ -59,6 +59,11 @@ class UserPolicy
         return $this->canManage($actor) && $actor->isNot($target);
     }
 
+    public function delete(User $actor, User $target): bool
+    {
+        return $this->canManage($actor) && $actor->isNot($target);
+    }
+
     private function canManage(User $actor): bool
     {
         return $actor->isActive() && $actor->hasRole(Role::SuperAdmin);

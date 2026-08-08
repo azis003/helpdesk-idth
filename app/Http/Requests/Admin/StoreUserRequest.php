@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Enums\Role;
+use App\Enums\TeamPosition;
 use App\Models\Role as RoleModel;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -30,6 +31,7 @@ class StoreUserRequest extends FormRequest
             'role_ids' => ['required', 'array', 'min:1'],
             'role_ids.*' => ['integer', 'distinct', 'exists:roles,id'],
             'team_id' => ['required', 'integer', 'exists:work_teams,id'],
+            'team_position' => ['required_with:team_id', Rule::enum(TeamPosition::class)],
             'skill_ids' => ['nullable', 'array'],
             'skill_ids.*' => ['integer', 'distinct', 'exists:skills,id'],
         ];
@@ -58,6 +60,8 @@ class StoreUserRequest extends FormRequest
             'role_ids.*.exists' => 'Role yang dipilih tidak tersedia.',
             'team_id.required' => 'Tim kerja wajib dipilih.',
             'team_id.exists' => 'Tim kerja yang dipilih tidak tersedia.',
+            'team_position.required_with' => 'Posisi dalam tim wajib dipilih setelah tim kerja dipilih.',
+            'team_position.enum' => 'Posisi dalam tim tidak valid.',
             'skill_ids.array' => 'Daftar keahlian tidak valid.',
             'skill_ids.*.exists' => 'Keahlian yang dipilih tidak tersedia.',
         ];
