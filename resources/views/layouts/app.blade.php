@@ -94,12 +94,18 @@
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.5 19 6v5.3c0 4.1-2.8 7.5-7 9.2-4.2-1.7-7-5.1-7-9.2V6l7-2.5Z" /><path stroke-linecap="round" stroke-linejoin="round" d="m9.2 12 1.8 1.8 3.9-4" /></svg></span>
                         <span class="ui-nav-label">Manajemen SLA</span>
                     </a>
-                    <details class="ui-sidebar-dropdown" @if ($parameterMenuOpen) open @endif>
-                        <summary class="ui-nav-link ui-sidebar-dropdown-summary {{ $parameterMenuOpen ? 'is-active' : '' }}" aria-label="Manajemen Parameter" title="Manajemen Parameter">
-                            <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" /><circle cx="8" cy="7" r="1.25" fill="currentColor" stroke="none" /><circle cx="15" cy="12" r="1.25" fill="currentColor" stroke="none" /><circle cx="10" cy="17" r="1.25" fill="currentColor" stroke="none" /></svg></span>
-                            <span class="ui-nav-label">Manajemen Parameter</span>
-                        </summary>
-                        <div class="ui-nav-subgroup" role="group" aria-label="Submenu Manajemen Parameter">
+                    <div class="ui-sidebar-dropdown{{ $parameterMenuOpen ? ' is-open' : '' }}" data-nav-disclosure data-nav-open="{{ $parameterMenuOpen ? 'true' : 'false' }}" data-nav-label="Manajemen Parameter">
+                        <div class="ui-nav-disclosure-row">
+                            <button type="button" class="ui-nav-link ui-nav-disclosure-link" data-nav-disclosure-toggle aria-controls="sidebar-parameter-submenu" aria-expanded="{{ $parameterMenuOpen ? 'true' : 'false' }}" aria-label="{{ $parameterMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Parameter" title="{{ $parameterMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Parameter">
+                                <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" /><circle cx="8" cy="7" r="1.25" fill="currentColor" stroke="none" /><circle cx="15" cy="12" r="1.25" fill="currentColor" stroke="none" /><circle cx="10" cy="17" r="1.25" fill="currentColor" stroke="none" /></svg></span>
+                                <span class="ui-nav-label">Manajemen Parameter</span>
+                            </button>
+                            <button type="button" class="ui-nav-disclosure-toggle" data-nav-disclosure-toggle aria-controls="sidebar-parameter-submenu" aria-expanded="{{ $parameterMenuOpen ? 'true' : 'false' }}" aria-label="{{ $parameterMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Parameter" title="{{ $parameterMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Parameter">
+                                <span class="ui-nav-disclosure-chevron" aria-hidden="true"></span>
+                                <span class="sr-only">{{ $parameterMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Parameter</span>
+                            </button>
+                        </div>
+                        <div id="sidebar-parameter-submenu" class="ui-nav-subgroup" data-nav-disclosure-panel role="group" aria-label="Submenu Manajemen Parameter" @unless ($parameterMenuOpen) hidden @endunless>
                             <a href="{{ route('admin.operational-policies.index', ['section' => 'deadline']) }}#settings-heading" class="ui-nav-link ui-nav-sublink {{ $isOperationalPolicies && $operationalSection === 'deadline' ? 'is-active' : '' }}" aria-label="Parameter Batas Waktu" title="Parameter Batas Waktu">
                                 <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5" /><path stroke-linecap="round" d="M12 7.5v5l3.5 2" /></svg></span>
                                 <span class="ui-nav-label">Parameter Batas Waktu</span>
@@ -113,23 +119,29 @@
                                 <span class="ui-nav-label">Kebijakan Lampiran</span>
                             </a>
                         </div>
-                    </details>
+                    </div>
                     <a href="{{ route('admin.announcements.index') }}" class="ui-nav-link {{ request()->routeIs('admin.announcements.*') ? 'is-active' : '' }}" aria-label="Manajemen Pengumuman" title="Manajemen Pengumuman">
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 11.5h3l8-4v9l-8-4h-3a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1Z" /><path stroke-linecap="round" d="M8 16.5 9.5 20h2L10 16.5M18.5 10a3 3 0 0 1 0 4" /></svg></span>
                         <span class="ui-nav-label">Manajemen Pengumuman</span>
                     </a>
-                    <details class="ui-sidebar-dropdown" @if ($applicationMenuOpen) open @endif>
-                        <summary class="ui-nav-link ui-sidebar-dropdown-summary {{ $applicationMenuOpen ? 'is-active' : '' }}" aria-label="Manajemen Aplikasi" title="Manajemen Aplikasi">
-                            <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 8.5h8M8 12h5M8 15.5h7" /><path stroke-linecap="round" d="M16.5 3.5v3M7.5 3.5v3" /></svg></span>
-                            <span class="ui-nav-label">Manajemen Aplikasi</span>
-                        </summary>
-                        <div class="ui-nav-subgroup" role="group" aria-label="Submenu Manajemen Aplikasi">
+                    <div class="ui-sidebar-dropdown{{ $applicationMenuOpen ? ' is-open' : '' }}" data-nav-disclosure data-nav-open="{{ $applicationMenuOpen ? 'true' : 'false' }}" data-nav-label="Manajemen Aplikasi">
+                        <div class="ui-nav-disclosure-row">
+                            <button type="button" class="ui-nav-link ui-nav-disclosure-link" data-nav-disclosure-toggle aria-controls="sidebar-application-submenu" aria-expanded="{{ $applicationMenuOpen ? 'true' : 'false' }}" aria-label="{{ $applicationMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Aplikasi" title="{{ $applicationMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Aplikasi">
+                                <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 8.5h8M8 12h5M8 15.5h7" /><path stroke-linecap="round" d="M16.5 3.5v3M7.5 3.5v3" /></svg></span>
+                                <span class="ui-nav-label">Manajemen Aplikasi</span>
+                            </button>
+                            <button type="button" class="ui-nav-disclosure-toggle" data-nav-disclosure-toggle aria-controls="sidebar-application-submenu" aria-expanded="{{ $applicationMenuOpen ? 'true' : 'false' }}" aria-label="{{ $applicationMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Aplikasi" title="{{ $applicationMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Aplikasi">
+                                <span class="ui-nav-disclosure-chevron" aria-hidden="true"></span>
+                                <span class="sr-only">{{ $applicationMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Aplikasi</span>
+                            </button>
+                        </div>
+                        <div id="sidebar-application-submenu" class="ui-nav-subgroup" data-nav-disclosure-panel role="group" aria-label="Submenu Manajemen Aplikasi" @unless ($applicationMenuOpen) hidden @endunless>
                             <a href="{{ route('admin.branding.index') }}" class="ui-nav-link ui-nav-sublink {{ request()->routeIs('admin.branding.*') ? 'is-active' : '' }}" aria-label="Identitas Aplikasi" title="Identitas Aplikasi">
                                 <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 8.5h8M8 12h5M8 15.5h7" /><path stroke-linecap="round" d="M16.5 3.5v3M7.5 3.5v3" /></svg></span>
                                 <span class="ui-nav-label">Identitas Aplikasi</span>
                             </a>
                         </div>
-                    </details>
+                    </div>
                 </nav>
 
                 <nav class="mt-5 flex flex-col gap-2" aria-label="Laporan">
@@ -336,21 +348,33 @@
 
                                 <div class="ui-mobile-nav-group-label">Konfigurasi</div>
                                 <a href="{{ route('admin.operational-policies.index', ['section' => 'sla']) }}#sla-heading" class="ui-mobile-nav-link {{ $isOperationalPolicies && $operationalSection === 'sla' ? 'is-active' : '' }}">Manajemen SLA</a>
-                                <details class="ui-mobile-nav-dropdown" @if ($parameterMenuOpen) open @endif>
-                                    <summary class="ui-mobile-nav-link ui-mobile-nav-dropdown-summary {{ $parameterMenuOpen ? 'is-active' : '' }}">Manajemen Parameter</summary>
-                                    <div class="ui-mobile-nav-dropdown-panel">
+                                <div class="ui-mobile-nav-dropdown{{ $parameterMenuOpen ? ' is-open' : '' }}" data-nav-disclosure data-nav-open="{{ $parameterMenuOpen ? 'true' : 'false' }}" data-nav-label="Manajemen Parameter">
+                                    <div class="ui-mobile-nav-disclosure-row">
+                                        <button type="button" class="ui-mobile-nav-link ui-mobile-nav-disclosure-link" data-nav-disclosure-toggle aria-controls="mobile-parameter-submenu" aria-expanded="{{ $parameterMenuOpen ? 'true' : 'false' }}" aria-label="{{ $parameterMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Parameter" title="{{ $parameterMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Parameter">Manajemen Parameter</button>
+                                        <button type="button" class="ui-mobile-nav-disclosure-toggle" data-nav-disclosure-toggle aria-controls="mobile-parameter-submenu" aria-expanded="{{ $parameterMenuOpen ? 'true' : 'false' }}" aria-label="{{ $parameterMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Parameter" title="{{ $parameterMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Parameter">
+                                            <span class="ui-mobile-nav-disclosure-chevron" aria-hidden="true"></span>
+                                            <span class="sr-only">{{ $parameterMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Parameter</span>
+                                        </button>
+                                    </div>
+                                    <div id="mobile-parameter-submenu" class="ui-mobile-nav-dropdown-panel" data-nav-disclosure-panel @unless ($parameterMenuOpen) hidden @endunless>
                                         <a href="{{ route('admin.operational-policies.index', ['section' => 'deadline']) }}#settings-heading" class="ui-mobile-nav-link {{ $isOperationalPolicies && $operationalSection === 'deadline' ? 'is-active' : '' }}">Parameter Batas Waktu</a>
                                         <a href="{{ route('admin.operational-policies.index', ['section' => 'service-hours']) }}#calendar-heading" class="ui-mobile-nav-link {{ $isOperationalPolicies && $operationalSection === 'service-hours' ? 'is-active' : '' }}">Parameter Jam Layanan</a>
                                         <a href="{{ route('admin.catalog.index', ['section' => 'attachments']) }}" class="ui-mobile-nav-link {{ $isCatalogAttachments ? 'is-active' : '' }}">Kebijakan Lampiran</a>
                                     </div>
-                                </details>
+                                </div>
                                 <a href="{{ route('admin.announcements.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.announcements.*') ? 'is-active' : '' }}">Manajemen Pengumuman</a>
-                                <details class="ui-mobile-nav-dropdown" @if ($applicationMenuOpen) open @endif>
-                                    <summary class="ui-mobile-nav-link ui-mobile-nav-dropdown-summary {{ $applicationMenuOpen ? 'is-active' : '' }}">Manajemen Aplikasi</summary>
-                                    <div class="ui-mobile-nav-dropdown-panel">
+                                <div class="ui-mobile-nav-dropdown{{ $applicationMenuOpen ? ' is-open' : '' }}" data-nav-disclosure data-nav-open="{{ $applicationMenuOpen ? 'true' : 'false' }}" data-nav-label="Manajemen Aplikasi">
+                                    <div class="ui-mobile-nav-disclosure-row">
+                                        <button type="button" class="ui-mobile-nav-link ui-mobile-nav-disclosure-link" data-nav-disclosure-toggle aria-controls="mobile-application-submenu" aria-expanded="{{ $applicationMenuOpen ? 'true' : 'false' }}" aria-label="{{ $applicationMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Aplikasi" title="{{ $applicationMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Aplikasi">Manajemen Aplikasi</button>
+                                        <button type="button" class="ui-mobile-nav-disclosure-toggle" data-nav-disclosure-toggle aria-controls="mobile-application-submenu" aria-expanded="{{ $applicationMenuOpen ? 'true' : 'false' }}" aria-label="{{ $applicationMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Aplikasi" title="{{ $applicationMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Aplikasi">
+                                            <span class="ui-mobile-nav-disclosure-chevron" aria-hidden="true"></span>
+                                            <span class="sr-only">{{ $applicationMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Aplikasi</span>
+                                        </button>
+                                    </div>
+                                    <div id="mobile-application-submenu" class="ui-mobile-nav-dropdown-panel" data-nav-disclosure-panel @unless ($applicationMenuOpen) hidden @endunless>
                                         <a href="{{ route('admin.branding.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.branding.*') ? 'is-active' : '' }}">Identitas Aplikasi</a>
                                     </div>
-                                </details>
+                                </div>
 
                                 <div class="ui-mobile-nav-group-label">Laporan</div>
                                 @if ($canViewReports)

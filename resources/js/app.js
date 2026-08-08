@@ -158,6 +158,86 @@ if (sidebar && sidebarToggle) {
     renderSidebar();
 }
 
+const navigationDisclosures = [...document.querySelectorAll('[data-nav-disclosure]')];
+
+navigationDisclosures.forEach((disclosure) => {
+    const toggles = [...disclosure.querySelectorAll('[data-nav-disclosure-toggle]')];
+    const panel = disclosure.querySelector('[data-nav-disclosure-panel]');
+
+    if (toggles.length === 0 || !panel) {
+        return;
+    }
+
+    const label = disclosure.dataset.navLabel || 'menu';
+
+    const setOpen = (open) => {
+        disclosure.classList.toggle('is-open', open);
+        panel.hidden = !open;
+        toggles.forEach((toggle) => {
+            toggle.setAttribute('aria-expanded', String(open));
+            toggle.setAttribute('aria-label', `${open ? 'Tutup' : 'Buka'} submenu ${label}`);
+            toggle.setAttribute('title', `${open ? 'Tutup' : 'Buka'} submenu ${label}`);
+        });
+    };
+
+    setOpen(disclosure.dataset.navOpen === 'true' || !panel.hidden);
+
+    toggles.forEach((toggle) => {
+        toggle.addEventListener('click', () => {
+            setOpen(!disclosure.classList.contains('is-open'));
+        });
+    });
+});
+
+const navigationLinks = [
+    ...document.querySelectorAll('.ui-nav-link[href], .ui-mobile-nav-link[href]'),
+];
+const navigationLoadingLinks = navigationLinks.filter(
+    (link) => !link.matches('.ui-nav-disclosure-link, .ui-mobile-nav-disclosure-link'),
+);
+let navigationPending = false;
+
+navigationLinks.forEach((link) => {
+    link.addEventListener('click', (event) => {
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+            return;
+        }
+
+        if (navigationPending) {
+            event.preventDefault();
+
+            return;
+        }
+
+        const targetUrl = new URL(link.href, window.location.href);
+        const currentUrl = new URL(window.location.href);
+        const sameDocument = targetUrl.origin === currentUrl.origin
+            && targetUrl.pathname === currentUrl.pathname
+            && targetUrl.search === currentUrl.search;
+
+        navigationLinks.forEach((item) => {
+            item.classList.remove('is-active', 'is-loading');
+            item.removeAttribute('aria-current');
+            item.removeAttribute('aria-busy');
+        });
+
+        link.classList.add('is-active');
+        link.setAttribute('aria-current', 'page');
+
+        if (sameDocument) {
+            return;
+        }
+
+        navigationPending = true;
+
+        if (navigationLoadingLinks.includes(link)) {
+            link.classList.add('is-loading');
+            link.setAttribute('aria-busy', 'true');
+            document.body.classList.add('is-navigating');
+        }
+    });
+});
+
 const mandatoryPasswordModal = document.querySelector('[data-mandatory-password-modal]');
 
 if (mandatoryPasswordModal) {
