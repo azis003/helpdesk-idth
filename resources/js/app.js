@@ -228,9 +228,6 @@ navigationDisclosures.forEach((disclosure) => {
 const navigationLinks = [
     ...document.querySelectorAll('.ui-nav-link[href], .ui-mobile-nav-link[href]'),
 ];
-const navigationLoadingLinks = navigationLinks.filter(
-    (link) => !link.matches('.ui-nav-disclosure-link, .ui-mobile-nav-disclosure-link'),
-);
 let navigationPending = false;
 
 navigationLinks.forEach((link) => {
@@ -252,9 +249,8 @@ navigationLinks.forEach((link) => {
             && targetUrl.search === currentUrl.search;
 
         navigationLinks.forEach((item) => {
-            item.classList.remove('is-active', 'is-loading');
+            item.classList.remove('is-active');
             item.removeAttribute('aria-current');
-            item.removeAttribute('aria-busy');
         });
 
         link.classList.add('is-active');
@@ -265,13 +261,7 @@ navigationLinks.forEach((link) => {
         }
 
         navigationPending = true;
-
-        if (navigationLoadingLinks.includes(link)) {
-            link.classList.add('is-loading');
-            link.setAttribute('aria-busy', 'true');
-            document.body.classList.add('is-navigating');
-            setGlobalLoadingState(true, 'Memuat halaman...');
-        }
+        setGlobalLoadingState(true, 'Memuat halaman...');
     });
 });
 

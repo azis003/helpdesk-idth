@@ -363,31 +363,6 @@
         box-shadow: inset 3px 0 0 #eb3349;
     }
 
-    .ui-nav-link.is-loading,
-    .ui-mobile-nav-link.is-loading {
-        cursor: wait;
-        opacity: 0.78;
-        pointer-events: none;
-    }
-
-    .ui-mobile-nav-link.is-loading {
-        display: flex;
-        align-items: center;
-    }
-
-    .ui-nav-link.is-loading::after,
-    .ui-mobile-nav-link.is-loading::after {
-        height: 0.8rem;
-        width: 0.8rem;
-        margin-left: auto;
-        border: 2px solid currentColor;
-        border-right-color: transparent;
-        border-radius: 9999px;
-        content: '';
-        flex: 0 0 auto;
-        animation: ui-nav-spinner 700ms linear infinite;
-    }
-
     .ui-global-loading-overlay {
         position: fixed;
         inset: 0;
@@ -429,39 +404,6 @@
     @keyframes ui-global-loading-spin {
         to {
             transform: rotate(360deg);
-        }
-    }
-
-    body.is-navigating::before {
-        position: fixed;
-        top: 0;
-        right: 0;
-        left: 0;
-        z-index: 60;
-        height: 2px;
-        background: #0b98e5;
-        content: '';
-        transform-origin: left center;
-        animation: ui-nav-progress 900ms ease-in-out infinite;
-    }
-
-    @keyframes ui-nav-spinner {
-        to {
-            transform: rotate(360deg);
-        }
-    }
-
-    @keyframes ui-nav-progress {
-        0% {
-            transform: scaleX(0.08);
-        }
-
-        50% {
-            transform: scaleX(0.62);
-        }
-
-        100% {
-            transform: scaleX(0.92);
         }
     }
 
@@ -507,10 +449,6 @@
     .ui-sidebar.is-collapsed .ui-nav-disclosure-chevron {
         height: 0.38rem;
         width: 0.38rem;
-    }
-
-    .ui-sidebar.is-collapsed .ui-nav-link.is-loading::after {
-        display: none;
     }
 
     .ui-sidebar.is-collapsed .ui-nav-subgroup {
