@@ -6,16 +6,16 @@
 @endphp
 
 @section('title', 'Data Keahlian — '.$branding['application_name'])
-@section('header_kicker', 'Administrasi')
+@section('header_kicker', 'Data Master')
 @section('header_title', 'Data keahlian')
 
 @section('content')
     <div class="ui-page-header">
         <div>
             <h1 class="ui-page-title">Data Keahlian</h1>
-            <p class="ui-page-description">Kelola master bidang keahlian. Pemetaan penggunaannya diatur langsung pada Katalog Layanan.</p>
+            <p class="ui-page-description">Kelola master bidang keahlian. Pemetaan penggunaannya diatur langsung pada Layanan &amp; formulir.</p>
         </div>
-        <a href="{{ route('admin.catalog.index') }}" class="ui-btn ui-btn-secondary w-full shrink-0 sm:w-auto">Atur pemetaan di Katalog Layanan <span aria-hidden="true">→</span></a>
+        <a href="{{ route('admin.catalog.index', ['section' => 'services']) }}" class="ui-btn ui-btn-secondary w-full shrink-0 sm:w-auto">Atur pemetaan di Layanan &amp; formulir <span aria-hidden="true">→</span></a>
     </div>
 
     <section class="mt-8 grid gap-3 sm:grid-cols-3" aria-label="Ringkasan data keahlian">

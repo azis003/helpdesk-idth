@@ -26,6 +26,11 @@ class ServiceCatalogController extends Controller
     public function index(Request $request): mixed
     {
         $actor = $request->user();
+        $activeSection = $request->string('section')->toString();
+        $activeSection = in_array($activeSection, ['services', 'locations', 'attachments'], true)
+            ? $activeSection
+            : 'services';
+
         $this->authorization->authorize($actor, 'viewAny', ServiceType::class, 'admin.catalog.view');
         $this->authorization->authorize($actor, 'viewAny', ServiceFieldDefinition::class, 'admin.catalog.fields.view');
         $this->authorization->authorize($actor, 'viewAny', Skill::class, 'admin.skills.view');
@@ -33,6 +38,7 @@ class ServiceCatalogController extends Controller
         $this->authorization->authorize($actor, 'viewAny', AttachmentPolicy::class, 'admin.attachment-policies.view');
 
         return view('admin.catalog.index', [
+            'activeSection' => $activeSection,
             'serviceTypes' => ServiceType::query()
                 ->with(['variants', 'activeFieldDefinitions.options', 'skills'])
                 ->orderBy('sort_order')

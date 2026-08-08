@@ -42,6 +42,33 @@ class CatalogManagementTest extends TestCase
         ]);
     }
 
+    public function test_catalog_contexts_are_separated_for_admin_tasks(): void
+    {
+        $this->seed(ServiceCatalogSeeder::class);
+
+        $admin = $this->createUser([Role::SuperAdmin]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.catalog.index', ['section' => 'services']))
+            ->assertOk()
+            ->assertSee('Daftar layanan')
+            ->assertSee('Template formulir')
+            ->assertDontSee('Gedung, lantai, dan ruangan');
+
+        $this->actingAs($admin)
+            ->get(route('admin.catalog.index', ['section' => 'locations']))
+            ->assertOk()
+            ->assertSee('Lokasi')
+            ->assertSee('Tambah gedung')
+            ->assertDontSee('Daftar layanan');
+
+        $this->actingAs($admin)
+            ->get(route('admin.catalog.index', ['section' => 'attachments']))
+            ->assertOk()
+            ->assertSee('Kebijakan lampiran')
+            ->assertDontSee('Daftar layanan');
+    }
+
     public function test_super_admin_can_update_service_and_version_dynamic_fields(): void
     {
         $this->seed(ServiceCatalogSeeder::class);

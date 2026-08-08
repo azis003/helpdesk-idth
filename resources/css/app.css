@@ -910,6 +910,16 @@
         padding: 0.65rem 0.75rem;
     }
 
+    .ui-mobile-nav-group-label {
+        margin: 0.65rem 0.75rem 0.2rem;
+        color: #9aa8ad;
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        line-height: 1.25;
+        text-transform: uppercase;
+    }
+
     .ui-mobile-nav-link:hover,
     .ui-mobile-nav-link.is-active {
         background: #e5f6fc;

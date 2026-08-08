@@ -18,7 +18,7 @@
             <p class="ui-page-description">Buat informasi yang tampil pada area layanan. Super Admin dan Agen Tier 1 aktif dapat mengelola pengumuman sesuai kebutuhan operasional.</p>
         </div>
         @if (auth()->user()->hasRole(\App\Enums\Role::SuperAdmin))
-            <a href="{{ route('admin.catalog.index') }}" class="ui-btn ui-btn-ghost">Kembali ke katalog <span aria-hidden="true">→</span></a>
+            <a href="{{ route('admin.catalog.index', ['section' => 'services']) }}" class="ui-btn ui-btn-ghost">Lihat layanan &amp; formulir <span aria-hidden="true">→</span></a>
         @endif
     </div>
 

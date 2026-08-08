@@ -7,7 +7,7 @@
 
 @section('title', 'Edit Pengguna — '.$branding['application_name'])
 
-@section('header_kicker', 'Administrasi')
+@section('header_kicker', 'Data Master')
 @section('header_title', 'Edit pengguna')
 
 @section('content')

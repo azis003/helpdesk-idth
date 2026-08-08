@@ -2,13 +2,13 @@
 
 @section('title', 'Reset Password — '.$branding['application_name'])
 
-@section('header_kicker', 'Administrasi akses')
+@section('header_kicker', 'Data Master · akses')
 @section('header_title', 'Atur ulang password')
 
 @section('content')
     <div class="max-w-2xl">
         <a href="{{ route('admin.users.index') }}" class="text-sm font-semibold text-cyan-700 underline decoration-cyan-300 underline-offset-4 hover:text-cyan-900">← Kembali ke daftar pengguna</a>
-        <p class="ui-eyebrow mt-8"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Administrasi akses</p>
+        <p class="ui-eyebrow mt-8"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Data Master · akses</p>
         <h1 class="ui-page-title">Atur ulang password pengguna</h1>
         <p class="ui-page-description">Reset untuk <span class="font-bold text-[#35505b]">{{ $user->name }}</span> ({{ $user->username }}).</p>
 

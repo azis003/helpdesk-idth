@@ -222,6 +222,18 @@ class OrganizationManagementTest extends TestCase
         $this->actingAs($admin)->get(route('admin.users.edit', $admin))->assertOk()->assertSee('Riwayat organisasi');
         $this->actingAs($admin)->get(route('admin.teams.index'))->assertOk()->assertSee('Tim Halaman');
         $this->actingAs($admin)->get(route('admin.skills.index'))->assertOk()->assertSee('Dukungan Aplikasi')->assertDontSee('Kategori Masalah');
-        $this->actingAs($admin)->get(route('admin.catalog.index'))->assertOk()->assertSee('Katalog dan formulir dinamis')->assertSee('Keahlian penanganan');
+        $this->actingAs($admin)->get(route('admin.catalog.index', ['section' => 'services']))
+            ->assertOk()
+            ->assertSee('Layanan &amp; formulir', false)
+            ->assertSee('Keahlian penanganan')
+            ->assertSeeInOrder(['Ruang Kerja', 'Administrasi', 'Data Master', 'Komunikasi'])
+            ->assertSee('Manajemen formulir')
+            ->assertSee('Manajemen lokasi')
+            ->assertSee('Kebijakan lampiran')
+            ->assertSee('href="'.route('admin.catalog.index', ['section' => 'services']).'" class="ui-nav-link is-active"', false);
+        $this->actingAs($admin)->get(route('admin.catalog.index', ['section' => 'locations']))
+            ->assertOk()
+            ->assertSee('Manajemen lokasi')
+            ->assertSee('href="'.route('admin.catalog.index', ['section' => 'locations']).'" class="ui-nav-link is-active"', false);
     }
 }
