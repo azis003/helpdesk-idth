@@ -98,7 +98,7 @@
                                             </button>
                                         @endif
                                         @if ($listedUser->isNot(auth()->user()))
-                                            <form method="POST" action="{{ route('admin.users.destroy', $listedUser) }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus user ini?');">
+                                            <form method="POST" action="{{ route('admin.users.destroy', $listedUser) }}" data-swal-confirm="Apakah Anda yakin ingin menghapus user ini?">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#e94f70] text-white transition hover:bg-[#d63d5e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e94f70] focus-visible:ring-offset-2" aria-label="Hapus pengguna {{ $listedUser->name }}" title="Hapus pengguna">
@@ -172,7 +172,7 @@
                             </button>
                         @endif
                         @if ($listedUser->isNot(auth()->user()))
-                            <form method="POST" action="{{ route('admin.users.destroy', $listedUser) }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus user ini?');">
+                            <form method="POST" action="{{ route('admin.users.destroy', $listedUser) }}" data-swal-confirm="Apakah Anda yakin ingin menghapus user ini?">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#e94f70] text-white transition hover:bg-[#d63d5e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e94f70] focus-visible:ring-offset-2" aria-label="Hapus pengguna {{ $listedUser->name }}" title="Hapus pengguna">

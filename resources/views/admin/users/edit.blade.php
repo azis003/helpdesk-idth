@@ -17,7 +17,7 @@
                     <span class="rounded-full bg-white/15 px-2.5 py-1 text-xs font-bold">{{ $user->is_active ? 'Aktif' : 'Nonaktif' }}</span>
                     @if ($user->isNot(auth()->user()))
                         @if ($user->is_active)
-                            <form method="POST" action="{{ route('admin.users.deactivate', $user) }}" onsubmit="return confirm('Nonaktifkan akun ini? Pengguna tidak dapat login sampai diaktifkan kembali.');">
+                            <form method="POST" action="{{ route('admin.users.deactivate', $user) }}" data-swal-confirm="Nonaktifkan akun ini? Pengguna tidak dapat login sampai diaktifkan kembali.">
                                 @csrf
                                 <button type="submit" class="rounded-lg bg-rose-500/90 px-3 py-2 text-xs font-bold text-white transition hover:bg-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Nonaktifkan</button>
                             </form>

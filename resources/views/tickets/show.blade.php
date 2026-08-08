@@ -71,7 +71,7 @@
             <p class="ui-page-description">Detail permintaan, kepemilikan tiket, jalur triase, dan histori penanganan.</p>
         </div>
         @if ($canCancel)
-            <form method="POST" action="{{ route('tickets.cancel', $ticket) }}" onsubmit="return window.confirm('Batalkan tiket ini? Tiket hanya dapat dibatalkan saat status Baru dan tidak dapat diproses lebih lanjut.');">
+            <form method="POST" action="{{ route('tickets.cancel', $ticket) }}" data-swal-confirm="Batalkan tiket ini? Tiket hanya dapat dibatalkan saat status Baru dan tidak dapat diproses lebih lanjut.">
                 @csrf
                 <button type="submit" class="ui-btn ui-btn-danger">Batalkan tiket</button>
             </form>
@@ -517,10 +517,10 @@
                                 <p class="mt-1 text-xs leading-5 text-[#526f79]">Oleh {{ $changeControl->executionStartedBy?->name ?? 'Pengguna yang tercatat' }} pada {{ $changeControl->execution_started_at?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}.</p>
                             </div>
                         @elseif ($canStartDatabaseChange)
-                            <form method="POST" action="{{ route('tickets.database-change.execute', $ticket) }}" class="space-y-3" data-ticket-database-change-form>
+                            <form method="POST" action="{{ route('tickets.database-change.execute', $ticket) }}" class="space-y-3" data-ticket-database-change-form data-swal-confirm="Mulai Eksekusi SVC-03 setelah tiga bukti diverifikasi?">
                                 @csrf
                                 <p class="text-xs leading-5 text-[#78909a]">Pastikan ketiga bukti sudah benar. Aksi ini menyimpan pelaku dan waktu Mulai Eksekusi ke histori.</p>
-                                <button type="submit" class="ui-btn ui-btn-warning w-full" onclick="return window.confirm('Mulai Eksekusi SVC-03 setelah tiga bukti diverifikasi?');">Mulai Eksekusi</button>
+                                <button type="submit" class="ui-btn ui-btn-warning w-full">Mulai Eksekusi</button>
                                 @error('database_change')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror
                             </form>
                         @elseif (! ($specialControlReadiness['evidence_ready'] ?? false))
@@ -595,7 +595,7 @@
                     </div>
                     <div class="grid gap-3 p-5 sm:p-6">
                         @if ($canConfirm)
-                            <form method="POST" action="{{ route('tickets.confirm', $ticket) }}" onsubmit="return window.confirm('Konfirmasi hasil ini dan tutup tiket?');">
+                            <form method="POST" action="{{ route('tickets.confirm', $ticket) }}" data-swal-confirm="Konfirmasi hasil ini dan tutup tiket?">
                                 @csrf
                                 <button type="submit" class="ui-btn ui-btn-primary w-full">Hasil sudah sesuai dan tutup tiket</button>
                             </form>

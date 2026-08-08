@@ -200,7 +200,7 @@
                     @endif
                 </div>
 
-                <form method="POST" action="{{ route('admin.operational-policies.approver.update') }}" class="space-y-4" onsubmit="return confirm('Tetapkan pengguna ini sebagai Manajer TI/Approver aktif dan pindahkan approval tertunda?');">
+                <form method="POST" action="{{ route('admin.operational-policies.approver.update') }}" class="space-y-4" data-swal-confirm="Tetapkan pengguna ini sebagai Manajer TI/Approver aktif dan pindahkan approval tertunda?">
                     @csrf
                     @method('PUT')
                     <div>

@@ -1048,6 +1048,30 @@
         display: none;
     }
 
+    .sihati-swal-popup {
+        border-radius: 1.25rem;
+        font-family: inherit;
+    }
+
+    .sihati-swal-popup .swal2-title {
+        color: #263a43;
+        font-size: 1.25rem;
+        font-weight: 800;
+    }
+
+    .sihati-swal-popup .swal2-html-container {
+        color: #526f79;
+    }
+
+    .sihati-swal-errors {
+        max-height: 14rem;
+        margin: 0;
+        overflow-y: auto;
+        padding-left: 1.25rem;
+        text-align: left;
+        line-height: 1.5;
+    }
+
     @media (min-width: 640px) {
         .ui-login-accent {
             width: 12.25%;

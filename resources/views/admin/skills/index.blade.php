@@ -100,8 +100,8 @@
                                     <button type="submit" form="delete-skill-{{ $skill->id }}" class="ui-btn ui-btn-danger !min-h-9 !px-3 !text-xs">Hapus</button>
                                 </div>
                                 <form id="activate-skill-{{ $skill->id }}" method="POST" action="{{ route('admin.skills.activate', $skill) }}" class="hidden">@csrf</form>
-                                    <form id="deactivate-skill-{{ $skill->id }}" method="POST" action="{{ route('admin.skills.deactivate', $skill) }}" class="hidden" onsubmit="return confirm('Nonaktifkan keahlian ini? Pemetaan dan histori yang ada tetap disimpan.');">@csrf</form>
-                                <form id="delete-skill-{{ $skill->id }}" method="POST" action="{{ route('admin.skills.destroy', $skill) }}" class="hidden" onsubmit="return confirm('Hapus keahlian secara lunak? Histori pemetaan tetap tersedia.');">@csrf @method('DELETE')</form>
+                                    <form id="deactivate-skill-{{ $skill->id }}" method="POST" action="{{ route('admin.skills.deactivate', $skill) }}" class="hidden" data-swal-confirm="Nonaktifkan keahlian ini? Pemetaan dan histori yang ada tetap disimpan.">@csrf</form>
+                                <form id="delete-skill-{{ $skill->id }}" method="POST" action="{{ route('admin.skills.destroy', $skill) }}" class="hidden" data-swal-confirm="Hapus keahlian secara lunak? Histori pemetaan tetap tersedia.">@csrf @method('DELETE')</form>
                             </td>
                         </tr>
                     @empty

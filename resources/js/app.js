@@ -1,77 +1,122 @@
 import './bootstrap';
+import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
 
-const toastItems = [...document.querySelectorAll('[data-toast]')];
-const toastReduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+const swalToast = Swal.mixin({
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    showCloseButton: true,
+    timer: 5500,
+    timerProgressBar: true,
+    customClass: {
+        popup: 'sihati-swal-popup',
+    },
+});
 
-toastItems.forEach((toast) => {
-    const closeButton = toast.querySelector('[data-toast-close]');
-    const duration = Number.parseInt(toast.dataset.toastDuration || '0', 10);
-    let dismissTimer = null;
-    let removed = false;
+const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+}[character]));
 
-    const clearDismissTimer = () => {
-        if (dismissTimer) {
-            window.clearTimeout(dismissTimer);
-            dismissTimer = null;
-        }
-    };
+const showSwalConfirmation = (message, options = {}) => Swal.fire({
+    icon: 'warning',
+    title: options.title || 'Konfirmasi tindakan',
+    text: message,
+    showCancelButton: true,
+    confirmButtonText: options.confirmButtonText || 'Ya, lanjutkan',
+    cancelButtonText: 'Batal',
+    reverseButtons: true,
+    focusCancel: true,
+    allowOutsideClick: false,
+    confirmButtonColor: '#0b98e5',
+    cancelButtonColor: '#94a3b8',
+    customClass: {
+        popup: 'sihati-swal-popup',
+    },
+});
 
-    const removeToast = () => {
-        if (removed) {
-            return;
-        }
+const requestFormSubmit = (form) => {
+    if (typeof form.requestSubmit === 'function') {
+        form.requestSubmit();
 
-        removed = true;
-        clearDismissTimer();
-        toast.remove();
-    };
-
-    const dismissToast = () => {
-        if (removed) {
-            return;
-        }
-
-        clearDismissTimer();
-        toast.classList.add('translate-x-4', 'scale-95', 'opacity-0');
-
-        if (toastReduceMotion) {
-            removeToast();
-
-            return;
-        }
-
-        window.setTimeout(removeToast, 320);
-    };
-
-    const scheduleDismiss = () => {
-        clearDismissTimer();
-
-        if (duration > 0) {
-            dismissTimer = window.setTimeout(dismissToast, duration);
-        }
-    };
-
-    toast.classList.add('translate-x-4', 'scale-95', 'opacity-0');
-
-    if (toastReduceMotion) {
-        toast.classList.remove('translate-x-4', 'scale-95', 'opacity-0');
-    } else {
-        window.requestAnimationFrame(() => {
-            toast.classList.remove('translate-x-4', 'scale-95', 'opacity-0');
-        });
+        return;
     }
 
-    closeButton?.addEventListener('click', dismissToast);
-    toast.addEventListener('mouseenter', clearDismissTimer);
-    toast.addEventListener('mouseleave', scheduleDismiss);
-    toast.addEventListener('focusin', clearDismissTimer);
-    toast.addEventListener('focusout', (event) => {
-        if (!toast.contains(event.relatedTarget)) {
-            scheduleDismiss();
+    HTMLFormElement.prototype.submit.call(form);
+};
+
+const flashElement = document.querySelector('[data-swal-flash]');
+
+if (flashElement) {
+    try {
+        const flash = JSON.parse(flashElement.textContent || '{}');
+
+        if (flash.success) {
+            swalToast.fire({
+                icon: 'success',
+                title: flash.success,
+            });
+        } else if (flash.warning) {
+            swalToast.fire({
+                icon: 'warning',
+                title: flash.warning,
+                timer: 6500,
+            });
+        } else if (Array.isArray(flash.errors) && flash.errors.length > 0) {
+            const errorItems = flash.errors
+                .map((error) => `<li>${escapeHtml(error)}</li>`)
+                .join('');
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Periksa kembali data yang dimasukkan.',
+                html: `<ul class="sihati-swal-errors">${errorItems}</ul>`,
+                confirmButtonText: 'Tutup',
+                confirmButtonColor: '#0b98e5',
+                customClass: {
+                    popup: 'sihati-swal-popup',
+                },
+            });
+        }
+    } catch {
+        // Abaikan flash yang tidak dapat dibaca agar halaman tetap dapat digunakan.
+    }
+}
+
+const confirmableForms = [...document.querySelectorAll('form[data-swal-confirm]')];
+
+confirmableForms.forEach((form) => {
+    form.addEventListener('submit', async (event) => {
+        if (form.dataset.swalConfirmed === 'true') {
+            delete form.dataset.swalConfirmed;
+
+            return;
+        }
+
+        if (form.dataset.swalPending === 'true') {
+            event.preventDefault();
+
+            return;
+        }
+
+        event.preventDefault();
+        form.dataset.swalPending = 'true';
+
+        try {
+            const result = await showSwalConfirmation(form.dataset.swalConfirm);
+
+            if (result.isConfirmed) {
+                form.dataset.swalConfirmed = 'true';
+                requestFormSubmit(form);
+            }
+        } finally {
+            delete form.dataset.swalPending;
         }
     });
-
-    scheduleDismiss();
 });
 
 const sidebar = document.querySelector('[data-sidebar]');
@@ -731,10 +776,33 @@ triageForms.forEach((triageForm) => {
 
     outcomeInputs.forEach((input) => input.addEventListener('change', updateTriagePanels));
 
-    triageForm.addEventListener('submit', (event) => {
-        if (selectedOutcome() === 'reject' && !window.confirm('Tolak tiket ini? Alasan penolakan akan terlihat oleh Pemohon dan tiket menjadi final.')) {
+    triageForm.addEventListener('submit', async (event) => {
+        if (selectedOutcome() === 'reject' && triageForm.dataset.swalConfirmed !== 'true') {
+            if (triageForm.dataset.swalPending === 'true') {
+                event.preventDefault();
+
+                return;
+            }
+
             event.preventDefault();
+            triageForm.dataset.swalPending = 'true';
+
+            try {
+                const result = await showSwalConfirmation('Tolak tiket ini? Alasan penolakan akan terlihat oleh Pemohon dan tiket menjadi final.');
+
+                if (result.isConfirmed) {
+                    triageForm.dataset.swalConfirmed = 'true';
+                    requestFormSubmit(triageForm);
+                }
+            } finally {
+                delete triageForm.dataset.swalPending;
+            }
+
             return;
+        }
+
+        if (triageForm.dataset.swalConfirmed === 'true') {
+            delete triageForm.dataset.swalConfirmed;
         }
 
         if (submitButton) {
