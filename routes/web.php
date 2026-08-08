@@ -104,6 +104,8 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('/users/{user}/reset-password', [UserManagementController::class, 'editReset'])->name('users.reset-password.edit');
             Route::put('/users/{user}/reset-password', [UserManagementController::class, 'resetPassword'])->name('users.reset-password');
 
+            Route::get('/locations', [LocationController::class, 'index'])->name('locations.index');
+
             Route::get('/teams', [WorkTeamController::class, 'index'])->name('teams.index');
             Route::post('/teams', [WorkTeamController::class, 'store'])->name('teams.store');
             Route::put('/teams/{workTeam}', [WorkTeamController::class, 'update'])->name('teams.update');

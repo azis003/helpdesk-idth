@@ -31,6 +31,10 @@ class ServiceCatalogController extends Controller
             ? $activeSection
             : 'services';
 
+        if ($activeSection === 'locations') {
+            return app(LocationController::class)->index($request);
+        }
+
         $this->authorization->authorize($actor, 'viewAny', ServiceType::class, 'admin.catalog.view');
         $this->authorization->authorize($actor, 'viewAny', ServiceFieldDefinition::class, 'admin.catalog.fields.view');
         $this->authorization->authorize($actor, 'viewAny', Skill::class, 'admin.skills.view');

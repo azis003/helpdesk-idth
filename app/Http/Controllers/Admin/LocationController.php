@@ -21,6 +21,37 @@ class LocationController extends Controller
         private readonly LocationService $locations,
     ) {}
 
+    public function index(Request $request): mixed
+    {
+        $this->authorization->authorize($request->user(), 'viewAny', Building::class, 'admin.locations.view');
+
+        $search = trim((string) $request->query('q', ''));
+        $perPage = (int) $request->query('per_page', 10);
+
+        if (! in_array($perPage, [10, 25, 50], true)) {
+            $perPage = 10;
+        }
+
+        $buildings = Building::query()
+            ->with(['floors' => fn ($query) => $query->orderBy('sort_order')->orderBy('id')])
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(function ($buildingQuery) use ($search): void {
+                    $buildingQuery
+                        ->where('name', 'like', "%{$search}%")
+                        ->orWhereHas('floors', fn ($floorQuery) => $floorQuery->where('name', 'like', "%{$search}%"));
+                });
+            })
+            ->orderBy('name')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        return view('admin.locations.index', [
+            'buildings' => $buildings,
+            'search' => $search,
+            'perPage' => $perPage,
+        ]);
+    }
+
     public function storeBuilding(BuildingRequest $request): RedirectResponse
     {
         $actor = $request->user();
