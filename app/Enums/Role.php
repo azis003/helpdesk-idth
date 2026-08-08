@@ -23,6 +23,16 @@ enum Role: string
         };
     }
 
+    public function managementLabel(): string
+    {
+        return match ($this) {
+            self::AgenTier1 => 'Helpdesk',
+            self::AgenTier2 => 'Teknisi',
+            self::Approver => 'Manager IT',
+            default => $this->label(),
+        };
+    }
+
     public function isOperational(): bool
     {
         return match ($this) {

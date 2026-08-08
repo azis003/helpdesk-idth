@@ -488,6 +488,61 @@ uiModals.forEach((modal) => {
     }
 });
 
+const userForms = [...document.querySelectorAll('[data-user-form]')];
+
+userForms.forEach((form) => {
+    const roleInputs = [...form.querySelectorAll('[data-user-role]')];
+    const skillsPanel = form.querySelector('[data-user-skills]');
+    const skillInputs = [...form.querySelectorAll('[data-user-skill]')];
+
+    if (roleInputs.length === 0 || !skillsPanel) {
+        return;
+    }
+
+    const updateUserRoleFields = () => {
+        const hasSelectedRole = roleInputs.some((input) => input.checked);
+        const hasTechnicianRole = roleInputs
+            .some((input) => input.checked && input.dataset.roleSlug === 'agen_tier_2');
+
+        roleInputs.forEach((input, index) => {
+            input.required = index === 0 && !hasSelectedRole;
+        });
+
+        skillsPanel.classList.toggle('hidden', !hasTechnicianRole);
+        const hasSelectedSkill = skillInputs.some((input) => input.checked);
+
+        skillInputs.forEach((input, index) => {
+            input.disabled = !hasTechnicianRole;
+            input.required = hasTechnicianRole && index === 0 && !hasSelectedSkill;
+        });
+
+        if (!hasTechnicianRole) {
+            skillInputs.forEach((input) => {
+                input.checked = false;
+            });
+        }
+    };
+
+    roleInputs.forEach((input) => input.addEventListener('change', updateUserRoleFields));
+    skillInputs.forEach((input) => input.addEventListener('change', updateUserRoleFields));
+    form.addEventListener('reset', () => window.setTimeout(updateUserRoleFields, 0));
+    form.addEventListener('submit', () => {
+        const submit = form.querySelector('[data-user-form-submit]');
+        const label = form.querySelector('[data-ui-modal-label]');
+        const loading = form.querySelector('[data-ui-modal-loading]');
+
+        if (!submit) {
+            return;
+        }
+
+        submit.disabled = true;
+        submit.setAttribute('aria-busy', 'true');
+        label?.classList.add('hidden');
+        loading?.classList.remove('hidden');
+    });
+    updateUserRoleFields();
+});
+
 const teamAccordions = document.querySelectorAll('[data-team-accordion]');
 
 teamAccordions.forEach((accordion) => {

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Enums\Role;
+use App\Models\Role as RoleModel;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -26,9 +27,9 @@ class StoreUserRequest extends FormRequest
                 'confirmed',
                 Password::min(12)->mixedCase()->numbers()->symbols(),
             ],
-            'role_ids' => ['nullable', 'array'],
+            'role_ids' => ['required', 'array', 'min:1'],
             'role_ids.*' => ['integer', 'distinct', 'exists:roles,id'],
-            'team_id' => ['nullable', 'integer', 'exists:work_teams,id'],
+            'team_id' => ['required', 'integer', 'exists:work_teams,id'],
             'skill_ids' => ['nullable', 'array'],
             'skill_ids.*' => ['integer', 'distinct', 'exists:skills,id'],
         ];
@@ -46,15 +47,39 @@ class StoreUserRequest extends FormRequest
             'nip.unique' => 'NIP sudah digunakan.',
             'temporary_password.required' => 'Password awal wajib diisi.',
             'temporary_password.confirmed' => 'Konfirmasi password awal tidak sama.',
+            'temporary_password_confirmation.required' => 'Konfirmasi password wajib diisi.',
             'temporary_password.min' => 'Password awal minimal :min karakter.',
             'temporary_password.mixed' => 'Password awal harus mengandung huruf besar dan huruf kecil.',
             'temporary_password.numbers' => 'Password awal harus mengandung angka.',
             'temporary_password.symbols' => 'Password awal harus mengandung simbol.',
             'role_ids.array' => 'Daftar role tidak valid.',
+            'role_ids.required' => 'Role pengguna wajib dipilih.',
+            'role_ids.min' => 'Role pengguna wajib dipilih.',
             'role_ids.*.exists' => 'Role yang dipilih tidak tersedia.',
+            'team_id.required' => 'Tim kerja wajib dipilih.',
             'team_id.exists' => 'Tim kerja yang dipilih tidak tersedia.',
             'skill_ids.array' => 'Daftar keahlian tidak valid.',
             'skill_ids.*.exists' => 'Keahlian yang dipilih tidak tersedia.',
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator): void {
+            $roleIds = collect($this->input('role_ids', []))
+                ->filter(fn ($roleId): bool => $roleId !== null && $roleId !== '')
+                ->map(fn ($roleId): int => (int) $roleId)
+                ->values();
+
+            $hasTechnicianRole = $roleIds->isNotEmpty()
+                && RoleModel::query()
+                    ->whereIn('id', $roleIds->all())
+                    ->where('slug', Role::AgenTier2->value)
+                    ->exists();
+
+            if ($hasTechnicianRole && collect($this->input('skill_ids', []))->filter()->isEmpty()) {
+                $validator->errors()->add('skill_ids', 'Keahlian wajib diisi untuk role Teknisi.');
+            }
+        });
     }
 }

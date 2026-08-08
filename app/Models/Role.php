@@ -33,4 +33,9 @@ class Role extends Model
     {
         return RoleEnum::tryFrom($this->slug)?->isOperational() ?? false;
     }
+
+    public function managementLabel(): string
+    {
+        return RoleEnum::tryFrom($this->slug)?->managementLabel() ?? $this->name;
+    }
 }

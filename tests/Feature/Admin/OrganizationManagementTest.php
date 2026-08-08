@@ -55,6 +55,112 @@ class OrganizationManagementTest extends TestCase
         ]);
     }
 
+    public function test_technician_requires_at_least_one_skill_when_created(): void
+    {
+        $admin = $this->createUser([Role::SuperAdmin], ['username' => 'skill-required-admin']);
+        $technicianRole = RoleModel::query()->where('slug', Role::AgenTier2->value)->firstOrFail();
+
+        $response = $this->actingAs($admin)->post(route('admin.users.store'), [
+            'name' => 'Teknisi Tanpa Keahlian',
+            'username' => 'teknisi-tanpa-keahlian',
+            'email' => 'tanpa-keahlian@example.test',
+            'nip' => '1234567891',
+            'temporary_password' => 'Initial-Password-123!',
+            'temporary_password_confirmation' => 'Initial-Password-123!',
+            'role_ids' => [$technicianRole->id],
+        ]);
+
+        $response->assertSessionHasErrors('skill_ids');
+        $this->assertDatabaseMissing('users', ['username' => 'teknisi-tanpa-keahlian']);
+    }
+
+    public function test_user_requires_a_team_when_created(): void
+    {
+        $admin = $this->createUser([Role::SuperAdmin], ['username' => 'team-required-admin']);
+        $role = RoleModel::query()->where('slug', Role::Pemohon->value)->firstOrFail();
+
+        $response = $this->actingAs($admin)->post(route('admin.users.store'), [
+            'name' => 'Pengguna Tanpa Tim',
+            'username' => 'pengguna-tanpa-tim',
+            'email' => 'tanpa-tim@example.test',
+            'nip' => '1234567892',
+            'temporary_password' => 'Initial-Password-123!',
+            'temporary_password_confirmation' => 'Initial-Password-123!',
+            'role_ids' => [$role->id],
+        ]);
+
+        $response->assertSessionHasErrors('team_id');
+        $this->assertDatabaseMissing('users', ['username' => 'pengguna-tanpa-tim']);
+    }
+
+    public function test_user_requires_a_team_when_updated(): void
+    {
+        $admin = $this->createUser([Role::SuperAdmin], ['username' => 'team-update-admin']);
+        $target = $this->createUser([Role::Pemohon], ['username' => 'team-update-target']);
+        $team = WorkTeam::factory()->create(['name' => 'Tim Awal']);
+        $target->teamMemberships()->create([
+            'work_team_id' => $team->id,
+            'assigned_by' => $admin->id,
+            'started_at' => now(),
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($admin)->put(route('admin.users.update', $target), [
+            'name' => $target->name,
+            'username' => $target->username,
+            'email' => $target->email,
+            'nip' => $target->nip,
+            'role_ids' => $target->roles->pluck('id')->all(),
+            'skill_ids' => [],
+        ]);
+
+        $response->assertSessionHasErrors('team_id');
+        $this->assertDatabaseHas('team_memberships', [
+            'user_id' => $target->id,
+            'work_team_id' => $team->id,
+            'is_active' => true,
+        ]);
+    }
+
+    public function test_edit_modal_shows_every_role_currently_assigned_to_the_user(): void
+    {
+        $admin = $this->createUser([Role::SuperAdmin], ['username' => 'multi-role-admin']);
+        $target = $this->createUser([Role::Pemohon, Role::AgenTier1], ['username' => 'multi-role-user']);
+        $assignedRoleIds = $target->roles->pluck('id');
+
+        $response = $this->actingAs($admin)->get(route('admin.users.index'));
+        $response->assertOk()->assertDontSee('data-user-secondary-role', false);
+
+        foreach ($assignedRoleIds as $roleId) {
+            $this->assertMatchesRegularExpression(
+                '/id="user-edit-'.$target->id.'-role-'.$roleId.'"[^>]*checked/s',
+                $response->getContent(),
+            );
+        }
+    }
+
+    public function test_user_form_renders_skills_as_selectable_checkboxes(): void
+    {
+        $admin = $this->createUser([Role::SuperAdmin], ['username' => 'skill-checkbox-admin']);
+        $target = $this->createUser([Role::AgenTier2], ['username' => 'skill-checkbox-user']);
+        $skill = Skill::factory()->create(['name' => 'Jaringan', 'slug' => 'jaringan']);
+        $target->skills()->attach($skill->id, [
+            'assigned_by' => $admin->id,
+            'assigned_at' => now(),
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.users.index'));
+
+        $response->assertOk()
+            ->assertDontSee('data-user-skills-input', false)
+            ->assertSee('data-user-skill', false)
+            ->assertSee('name="skill_ids[]"', false);
+        $this->assertMatchesRegularExpression(
+            '/id="user-edit-'.$target->id.'-skill-'.$skill->id.'"[^>]*checked/s',
+            $response->getContent(),
+        );
+    }
+
     public function test_super_admin_can_revoke_and_grant_roles_with_history(): void
     {
         $admin = $this->createUser([Role::SuperAdmin], ['username' => 'role-admin']);

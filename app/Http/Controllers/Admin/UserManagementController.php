@@ -32,17 +32,33 @@ class UserManagementController extends Controller
     {
         $this->authorization->authorize($request->user(), 'viewAny', User::class, 'admin.users.view');
 
+        $search = trim((string) $request->query('q', ''));
+        $perPage = (int) $request->query('per_page', 10);
+
+        if (! in_array($perPage, [10, 25, 50], true)) {
+            $perPage = 10;
+        }
+
+        $usersQuery = User::query()
+            ->with(['roles', 'skills', 'currentTeamMembership.workTeam'])
+            ->when($search !== '', function ($query) use ($search): void {
+                $query->where(function ($userQuery) use ($search): void {
+                    $userQuery
+                        ->where('name', 'like', "%{$search}%")
+                        ->orWhere('username', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('nip', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('name');
+
         return view('admin.users.index', [
-            'users' => User::query()
-                ->with(['roles', 'skills', 'currentTeamMembership.workTeam'])
-                ->orderBy('name')
-                ->paginate(15),
-            'userStats' => [
-                'total' => User::query()->count(),
-                'active' => User::query()->where('is_active', true)->count(),
-                'without_team' => User::query()->whereDoesntHave('currentTeamMembership')->count(),
-                'password_pending' => User::query()->where('must_change_password', true)->count(),
-            ],
+            'users' => $usersQuery->paginate($perPage)->withQueryString(),
+            'search' => $search,
+            'perPage' => $perPage,
+            'roles' => Role::query()->orderBy('id')->get(),
+            'teams' => WorkTeam::query()->active()->orderBy('name')->get(),
+            'skills' => Skill::query()->active()->orderBy('name')->get(),
         ]);
     }
 

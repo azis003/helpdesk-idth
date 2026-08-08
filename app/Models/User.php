@@ -169,6 +169,9 @@ class User extends Authenticatable
      */
     public function roleLabels(): array
     {
-        return $this->roles->pluck('name')->values()->all();
+        return $this->roles
+            ->map(fn (Role $role): string => $role->managementLabel())
+            ->values()
+            ->all();
     }
 }
