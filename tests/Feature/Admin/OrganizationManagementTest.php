@@ -478,13 +478,13 @@ class OrganizationManagementTest extends TestCase
         $this->actingAs($admin)->get(route('admin.skills.index'))->assertOk()->assertSee('Dukungan Aplikasi')->assertDontSee('Kategori Masalah');
         $this->actingAs($admin)->get(route('admin.catalog.index', ['section' => 'services']))
             ->assertOk()
-            ->assertSee('Layanan &amp; formulir', false)
-            ->assertSee('Keahlian penanganan')
+            ->assertSee('Manajemen Layanan')
+            ->assertSee('Syarat keahlian')
             ->assertSeeInOrder(['Menu Utama', 'Master Data', 'Konfigurasi', 'Laporan'])
             ->assertSee('Manajemen Pengguna')
             ->assertSee('Manajemen Tim Kerja')
             ->assertSee('Manajemen Keahlian')
-            ->assertSee('Manajemen Formulir')
+            ->assertDontSee('Manajemen Formulir')
             ->assertSee('Manajemen Lokasi')
             ->assertSee('Manajemen SLA')
             ->assertSee('Parameter Batas Waktu')
@@ -502,5 +502,27 @@ class OrganizationManagementTest extends TestCase
             ->assertOk()
             ->assertSee('Manajemen Lokasi')
             ->assertSee('href="'.route('admin.catalog.index', ['section' => 'locations']).'" class="ui-nav-link is-active"', false);
+    }
+
+    public function test_skill_management_matches_user_list_controls_and_searches(): void
+    {
+        $admin = $this->createUser([Role::SuperAdmin], ['username' => 'skill-list-admin']);
+        Skill::factory()->create(['name' => 'Jaringan Kantor', 'slug' => 'jaringan-kantor']);
+        Skill::factory()->create(['name' => 'Basis Data', 'slug' => 'basis-data']);
+
+        $this->actingAs($admin)->get(route('admin.skills.index', [
+            'q' => 'jaringan',
+            'per_page' => 25,
+        ]))->assertOk()
+            ->assertSee('Daftar Keahlian')
+            ->assertSee('Tampilkan')
+            ->assertSee('Cari:')
+            ->assertSee('Nama Keahlian')
+            ->assertSee('Jaringan Kantor')
+            ->assertDontSee('Basis Data')
+            ->assertDontSee('Kode')
+            ->assertDontSee('skill-create-slug', false)
+            ->assertSee('data-ui-modal-open="skill-create-modal"', false)
+            ->assertSee('data-ui-modal-open="skill-edit-modal-', false);
     }
 }

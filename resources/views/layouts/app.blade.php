@@ -27,7 +27,8 @@
         $canViewReports = $currentUser->can('viewAny', \App\Models\ReportExport::class);
         $canManageAnnouncements = $isSuperAdmin || $isTier1;
         $catalogSection = request()->query('section', 'services');
-        $isCatalogServices = request()->routeIs('admin.catalog.*') && $catalogSection === 'services';
+        $isCatalogServices = request()->routeIs('admin.services.*')
+            || (request()->routeIs('admin.catalog.*') && $catalogSection === 'services');
         $isCatalogLocations = request()->routeIs('admin.locations.*')
             || (request()->routeIs('admin.catalog.*') && $catalogSection === 'locations');
         $isCatalogAttachments = request()->routeIs('admin.catalog.*') && $catalogSection === 'attachments';
@@ -77,9 +78,9 @@
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.8 14.1 9l5.4.45-4.12 3.5 1.24 5.25L12 15.35l-4.62 2.85 1.24-5.25-4.12-3.5L9.9 9 12 3.8Z" /><path stroke-linecap="round" d="M4 20.2h16" /></svg></span>
                         <span class="ui-nav-label">Manajemen Keahlian</span>
                     </a>
-                    <a href="{{ route('admin.catalog.index', ['section' => 'services']) }}" class="ui-nav-link {{ $isCatalogServices ? 'is-active' : '' }}" aria-label="Manajemen Formulir" title="Manajemen Formulir">
-                        <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 9h8M8 12h5M8 15h7" /></svg></span>
-                        <span class="ui-nav-label">Manajemen Formulir</span>
+                    <a href="{{ route('admin.catalog.index', ['section' => 'services']) }}" class="ui-nav-link {{ $isCatalogServices ? 'is-active' : '' }}" aria-label="Manajemen Layanan" title="Manajemen Layanan">
+                        <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 6.5h14v11H5zM8 9.5h8M8 13h5" /><path stroke-linecap="round" d="M8 4.5h8" /></svg></span>
+                        <span class="ui-nav-label">Manajemen Layanan</span>
                     </a>
                     <a href="{{ $locationMenuUrl }}" class="ui-nav-link {{ $isCatalogLocations ? 'is-active' : '' }}" aria-label="Manajemen Lokasi" title="Manajemen Lokasi">
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 20.5h14M6.5 20.5V6.2a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v14.3M9 8.5h6M9 12h6M9 15.5h3" /><path stroke-linecap="round" d="M4 20.5h16" /></svg></span>
@@ -214,9 +215,9 @@
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.8 14.1 9l5.4.45-4.12 3.5 1.24 5.25L12 15.35l-4.62 2.85 1.24-5.25-4.12-3.5L9.9 9 12 3.8Z" /><path stroke-linecap="round" d="M4 20.2h16" /></svg></span>
                         <span class="ui-nav-label">Data keahlian</span>
                     </a>
-                    <a href="{{ route('admin.catalog.index', ['section' => 'services']) }}" class="ui-nav-link {{ $isCatalogServices ? 'is-active' : '' }}" aria-label="Manajemen formulir" title="Manajemen formulir">
-                        <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 9h8M8 12h5M8 15h7" /></svg></span>
-                        <span class="ui-nav-label">Manajemen formulir</span>
+                    <a href="{{ route('admin.catalog.index', ['section' => 'services']) }}" class="ui-nav-link {{ $isCatalogServices ? 'is-active' : '' }}" aria-label="Manajemen layanan" title="Manajemen layanan">
+                        <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 6.5h14v11H5zM8 9.5h8M8 13h5" /><path stroke-linecap="round" d="M8 4.5h8" /></svg></span>
+                        <span class="ui-nav-label">Manajemen layanan</span>
                     </a>
                     <a href="{{ $locationMenuUrl }}" class="ui-nav-link {{ $isCatalogLocations ? 'is-active' : '' }}" aria-label="Manajemen lokasi" title="Manajemen lokasi">
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 20.5h14M6.5 20.5V6.2a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v14.3M9 8.5h6M9 12h6M9 15.5h3" /><path stroke-linecap="round" d="M4 20.5h16" /></svg></span>
@@ -330,7 +331,7 @@
                                 <a href="{{ route('admin.users.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.users.*') ? 'is-active' : '' }}">Manajemen Pengguna</a>
                                 <a href="{{ route('admin.teams.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.teams.*') ? 'is-active' : '' }}">Manajemen Tim Kerja</a>
                                 <a href="{{ route('admin.skills.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.skills.*') ? 'is-active' : '' }}">Manajemen Keahlian</a>
-                                <a href="{{ route('admin.catalog.index', ['section' => 'services']) }}" class="ui-mobile-nav-link {{ $isCatalogServices ? 'is-active' : '' }}">Manajemen Formulir</a>
+                                <a href="{{ route('admin.catalog.index', ['section' => 'services']) }}" class="ui-mobile-nav-link {{ $isCatalogServices ? 'is-active' : '' }}">Manajemen Layanan</a>
                                 <a href="{{ $locationMenuUrl }}" class="ui-mobile-nav-link {{ $isCatalogLocations ? 'is-active' : '' }}">Manajemen Lokasi</a>
 
                                 <div class="ui-mobile-nav-group-label">Konfigurasi</div>
@@ -388,7 +389,7 @@
                                 <a href="{{ route('admin.users.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.users.*') ? 'is-active' : '' }}">Pengguna &amp; peran</a>
                                 <a href="{{ route('admin.teams.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.teams.*') ? 'is-active' : '' }}">Tim kerja</a>
                                 <a href="{{ route('admin.skills.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.skills.*') ? 'is-active' : '' }}">Data keahlian</a>
-                                <a href="{{ route('admin.catalog.index', ['section' => 'services']) }}" class="ui-mobile-nav-link {{ $isCatalogServices ? 'is-active' : '' }}">Manajemen formulir</a>
+                                <a href="{{ route('admin.catalog.index', ['section' => 'services']) }}" class="ui-mobile-nav-link {{ $isCatalogServices ? 'is-active' : '' }}">Manajemen layanan</a>
                                 <a href="{{ $locationMenuUrl }}" class="ui-mobile-nav-link {{ $isCatalogLocations ? 'is-active' : '' }}">Manajemen lokasi</a>
                                 <a href="{{ route('admin.catalog.index', ['section' => 'attachments']) }}" class="ui-mobile-nav-link {{ $isCatalogAttachments ? 'is-active' : '' }}">Kebijakan lampiran</a>
                             @endif

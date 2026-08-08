@@ -130,6 +130,9 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::put('/operational-policies/settings', [OperationalPolicyController::class, 'updateSettings'])->name('operational-policies.settings.update');
             Route::put('/operational-policies/approver', [OperationalPolicyController::class, 'replaceApprover'])->name('operational-policies.approver.update');
 
+            Route::get('/services', [ServiceCatalogController::class, 'services'])->name('services.index');
+            Route::post('/services', [ServiceCatalogController::class, 'storeService'])->name('services.store');
+            Route::get('/forms', [ServiceCatalogController::class, 'forms'])->name('forms.index');
             Route::get('/catalog', [ServiceCatalogController::class, 'index'])->name('catalog.index');
             Route::put('/catalog/services/{serviceType}', [ServiceCatalogController::class, 'updateService'])->name('catalog.services.update');
             Route::put('/catalog/services/{serviceType}/skills', [ServiceCatalogController::class, 'updateServiceSkills'])->name('catalog.services.skills.update');
@@ -138,6 +141,7 @@ Route::middleware(['auth', 'active'])->group(function () {
                 ->name('catalog.services.status');
             Route::post('/catalog/services/{serviceType}/fields', [ServiceCatalogController::class, 'storeField'])->name('catalog.fields.store');
             Route::post('/catalog/fields/{serviceFieldDefinition}/versions', [ServiceCatalogController::class, 'storeFieldVersion'])->name('catalog.fields.versions.store');
+            Route::delete('/catalog/fields/{serviceFieldDefinition}', [ServiceCatalogController::class, 'removeField'])->name('catalog.fields.destroy');
             Route::post('/catalog/fields/{serviceFieldDefinition}/{status}', [ServiceCatalogController::class, 'setFieldStatus'])
                 ->whereIn('status', ['activate', 'deactivate'])
                 ->name('catalog.fields.status');

@@ -11,6 +11,7 @@ use App\Models\Floor;
 use App\Models\Room;
 use App\Models\ServiceFieldDefinition;
 use App\Models\ServiceType;
+use App\Models\Skill;
 use Carbon\CarbonImmutable;
 use Database\Seeders\ServiceCatalogSeeder;
 use Tests\TestCase;
@@ -52,7 +53,9 @@ class CatalogManagementTest extends TestCase
             ->get(route('admin.catalog.index', ['section' => 'services']))
             ->assertOk()
             ->assertSee('Daftar layanan')
-            ->assertSee('Template formulir')
+            ->assertSee('Kode Layanan')
+            ->assertSee('Preview formulir')
+            ->assertDontSee('Manajemen Formulir')
             ->assertDontSee('Gedung, lantai, dan ruangan');
 
         $this->actingAs($admin)
@@ -67,6 +70,84 @@ class CatalogManagementTest extends TestCase
             ->assertOk()
             ->assertSee('Kebijakan lampiran')
             ->assertDontSee('Daftar layanan');
+
+        $service = ServiceType::query()->where('code', 'SVC-04')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('admin.services.index'))
+            ->assertOk()
+            ->assertSee('Manajemen Layanan')
+            ->assertSee('Buat layanan')
+            ->assertSee('Kode Layanan')
+            ->assertSee('Preview formulir');
+
+        $this->actingAs($admin)
+            ->get(route('admin.forms.index', ['service' => $service->id]))
+            ->assertRedirect(route('admin.services.index', ['service' => $service->id]));
+    }
+
+    public function test_super_admin_can_create_service_with_skills_and_template(): void
+    {
+        $this->seed(ServiceCatalogSeeder::class);
+
+        $admin = $this->createUser([Role::SuperAdmin]);
+        $skill = Skill::factory()->create(['name' => 'Akses Aplikasi', 'slug' => 'akses-aplikasi']);
+
+        $response = $this->actingAs($admin)->post(route('admin.services.store'), [
+            'code' => 'SVC-08',
+            'name' => 'Permintaan akses aplikasi',
+            'ticket_class' => 'REQ',
+            'skill_ids' => [$skill->id],
+            'description' => 'Membutuhkan keahlian pengelolaan akses aplikasi.',
+            'fields' => [
+                [
+                    'key' => 'application_name',
+                    'label' => 'Nama aplikasi',
+                    'field_type' => 'text',
+                    'visibility' => 'requester',
+                    'is_required' => '1',
+                    'sort_order' => 1,
+                ],
+                [
+                    'key' => 'access_type',
+                    'label' => 'Jenis akses',
+                    'field_type' => 'select',
+                    'visibility' => 'both',
+                    'options_text' => "read|Baca\nwrite|Tulis",
+                    'sort_order' => 2,
+                ],
+            ],
+        ]);
+
+        $service = ServiceType::query()->where('code', 'SVC-08')->firstOrFail();
+
+        $response
+            ->assertRedirect(route('admin.services.index', ['service' => $service->id]))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('service_types', [
+            'id' => $service->id,
+            'code' => 'SVC-08',
+            'name' => 'Permintaan akses aplikasi',
+            'ticket_class' => 'REQ',
+        ]);
+        $this->assertDatabaseHas('service_type_skill', [
+            'service_type_id' => $service->id,
+            'skill_id' => $skill->id,
+        ]);
+
+        $field = ServiceFieldDefinition::query()
+            ->where('service_type_id', $service->id)
+            ->where('key', 'access_type')
+            ->firstOrFail();
+
+        $this->assertTrue($field->is_active);
+        $this->assertSame(2, $field->options()->count());
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $admin->id,
+            'action' => 'admin.service_type.created',
+            'outcome' => 'succeeded',
+        ]);
     }
 
     public function test_super_admin_can_update_service_and_version_dynamic_fields(): void
@@ -147,6 +228,23 @@ class CatalogManagementTest extends TestCase
         $this->assertDatabaseHas('audit_logs', [
             'user_id' => $admin->id,
             'action' => 'admin.service_field.versioned',
+            'outcome' => 'succeeded',
+        ]);
+
+        $this->actingAs($admin)
+            ->delete(route('admin.catalog.fields.destroy', $newVersion))
+            ->assertRedirect()
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success', "Field Lingkungan penerapan aplikasi dihapus dari formulir. Histori tiket tetap aman.");
+
+        $this->assertDatabaseHas('service_field_definitions', [
+            'id' => $newVersion->id,
+            'is_active' => false,
+        ]);
+
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $admin->id,
+            'action' => 'admin.service_field.deactivated',
             'outcome' => 'succeeded',
         ]);
     }

@@ -16,22 +16,22 @@
     };
 @endphp
 
-@section('title', 'Layanan & formulir — '.$branding['application_name'])
+@section('title', ($activeSection === 'attachments' ? 'Kebijakan lampiran' : 'Manajemen Layanan').' — '.$branding['application_name'])
 @section('header_kicker', 'Data Master')
-@section('header_title', 'Layanan & formulir')
+@section('header_title', $activeSection === 'attachments' ? 'Kebijakan lampiran' : 'Manajemen Layanan')
 
 @section('content')
     <div class="ui-page-header">
         <div>
             <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Master data</p>
-            <h1 class="ui-page-title">Layanan &amp; formulir</h1>
-            <p class="ui-page-description">Kelola katalog dan formulir dinamis. Perubahan template berlaku untuk tiket baru, sementara histori tiket lama tetap utuh.</p>
+            <h1 class="ui-page-title">{{ $activeSection === 'attachments' ? 'Kebijakan lampiran' : 'Manajemen Layanan' }}</h1>
+            <p class="ui-page-description">{{ $activeSection === 'attachments' ? 'Atur aturan lampiran per layanan.' : 'Kelola katalog layanan dan formulir dinamis. Perubahan template berlaku untuk tiket baru, sementara histori tiket lama tetap utuh.' }}</p>
         </div>
     </div>
 
     <nav class="mt-7 overflow-x-auto" aria-label="Bagian master data">
         <div class="inline-flex min-w-full gap-1 border-b border-[#dfe8ec] sm:min-w-0">
-            <a href="{{ route('admin.catalog.index', ['section' => 'services']) }}" class="whitespace-nowrap border-b-2 px-3 pb-3 text-sm font-bold transition {{ $activeSection === 'services' ? 'border-[#17313c] text-[#17313c]' : 'border-transparent text-[#78909a] hover:border-[#b9cbd1] hover:text-[#35505b]' }}" @if ($activeSection === 'services') aria-current="page" @endif>Layanan &amp; formulir <span class="ml-1 text-xs font-semibold text-[#8aa0a8]">{{ $activeServices }}</span></a>
+            <a href="{{ route('admin.catalog.index', ['section' => 'services']) }}" class="whitespace-nowrap border-b-2 px-3 pb-3 text-sm font-bold transition {{ $activeSection === 'services' ? 'border-[#17313c] text-[#17313c]' : 'border-transparent text-[#78909a] hover:border-[#b9cbd1] hover:text-[#35505b]' }}" @if ($activeSection === 'services') aria-current="page" @endif>Manajemen Layanan <span class="ml-1 text-xs font-semibold text-[#8aa0a8]">{{ $activeServices }}</span></a>
             <a href="{{ route('admin.locations.index') }}" class="whitespace-nowrap border-b-2 px-3 pb-3 text-sm font-bold transition {{ $activeSection === 'locations' ? 'border-[#17313c] text-[#17313c]' : 'border-transparent text-[#78909a] hover:border-[#b9cbd1] hover:text-[#35505b]' }}">Lokasi <span class="ml-1 text-xs font-semibold text-[#8aa0a8]">{{ $activeBuildings }}</span></a>
             <a href="{{ route('admin.catalog.index', ['section' => 'attachments']) }}" class="whitespace-nowrap border-b-2 px-3 pb-3 text-sm font-bold transition {{ $activeSection === 'attachments' ? 'border-[#17313c] text-[#17313c]' : 'border-transparent text-[#78909a] hover:border-[#b9cbd1] hover:text-[#35505b]' }}" @if ($activeSection === 'attachments') aria-current="page" @endif>Kebijakan lampiran <span class="ml-1 text-xs font-semibold text-[#8aa0a8]">{{ $activePolicies }}</span></a>
         </div>
@@ -59,7 +59,7 @@
             <div>
                 <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Definisi layanan</p>
                 <h2 id="services-heading" class="mt-2 ui-section-title">Daftar layanan</h2>
-                <p class="ui-section-description">Kelola detail layanan dan buka konfigurasi formulir melalui aksi pada baris yang dipilih.</p>
+                <p class="ui-section-description">Pilih layanan untuk mengatur field, visibilitas, keahlian penanganan, dan versi formulir yang akan dipakai pada tiket baru.</p>
             </div>
             <span class="ui-chip shrink-0">{{ $serviceTypes->count() }} layanan canonical</span>
         </div>
@@ -110,7 +110,7 @@
                             </td>
                             <td class="text-right">
                                 <div class="flex min-w-[15rem] flex-wrap justify-end gap-2">
-                                    <button type="button" data-ui-modal-open="service-edit-modal-{{ $serviceType->id }}" class="ui-btn ui-btn-ghost !min-h-9 !px-3 !text-xs">Kelola</button>
+                                    <button type="button" data-ui-modal-open="service-edit-modal-{{ $serviceType->id }}" class="ui-btn ui-btn-ghost !min-h-9 !px-3 !text-xs" aria-label="Buka editor formulir {{ $serviceType->name }}">Buka editor</button>
                                     <form method="POST" action="{{ route('admin.catalog.services.status', [$serviceType, $serviceType->is_active ? 'deactivate' : 'activate']) }}" @if ($serviceType->is_active) data-swal-confirm="Nonaktifkan layanan ini? Layanan tidak tampil bagi pemohon." @endif>
                                         @csrf
                                         <button type="submit" class="ui-btn {{ $serviceType->is_active ? 'ui-btn-warning' : 'ui-btn-secondary' }} !min-h-9 !px-3 !text-xs">{{ $serviceType->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button>
@@ -144,7 +144,7 @@
                         <div><dt class="text-[#8aa0a8]">Kelas tiket</dt><dd class="mt-1 font-extrabold text-[#35505b]">{{ $serviceType->ticket_class ?? ($serviceType->code === 'SVC-05' ? 'INC / REQ' : 'Belum diatur') }}</dd></div>
                     </dl>
                     <div class="mt-4 flex flex-wrap gap-2 border-t border-[#edf2f4] pt-3">
-                        <button type="button" data-ui-modal-open="service-edit-modal-{{ $serviceType->id }}" class="ui-btn ui-btn-ghost !min-h-9 !px-3 !text-xs">Kelola</button>
+                        <button type="button" data-ui-modal-open="service-edit-modal-{{ $serviceType->id }}" class="ui-btn ui-btn-ghost !min-h-9 !px-3 !text-xs" aria-label="Buka editor formulir {{ $serviceType->name }}">Buka editor</button>
                         <form method="POST" action="{{ route('admin.catalog.services.status', [$serviceType, $serviceType->is_active ? 'deactivate' : 'activate']) }}" @if ($serviceType->is_active) data-swal-confirm="Nonaktifkan layanan ini? Layanan tidak tampil bagi pemohon." @endif>
                             @csrf
                             <button type="submit" class="ui-btn {{ $serviceType->is_active ? 'ui-btn-warning' : 'ui-btn-secondary' }} !min-h-9 !px-3 !text-xs">{{ $serviceType->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button>
@@ -163,7 +163,7 @@
         <div id="service-edit-modal-{{ $serviceType->id }}" data-ui-modal data-auto-open="{{ $isEditingService ? 'true' : 'false' }}" class="fixed inset-0 z-50 hidden" aria-hidden="true">
             <button type="button" data-ui-modal-close class="absolute inset-0 cursor-default bg-slate-950/40" tabindex="-1" aria-label="Tutup dialog"></button>
             <div class="relative flex min-h-full items-center justify-center p-4">
-                <section role="dialog" aria-modal="true" aria-labelledby="service-edit-title-{{ $serviceType->id }}" class="relative max-h-[calc(100vh-2rem)] w-full max-w-5xl overflow-y-auto rounded-2xl border border-[#dfe8ec] bg-white shadow-[0_20px_55px_rgba(38,58,67,0.2)]">
+                <section role="dialog" aria-modal="true" aria-labelledby="service-edit-title-{{ $serviceType->id }}" class="relative max-h-[calc(100vh-2rem)] w-full max-w-6xl overflow-y-auto rounded-2xl border border-[#dfe8ec] bg-white shadow-[0_20px_55px_rgba(38,58,67,0.2)]">
                     <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-[#e7eef1] bg-white px-5 py-4 sm:px-6">
                         <div>
                             <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-[#7a929a]">Konfigurasi layanan</p>
@@ -175,7 +175,8 @@
                         </button>
                     </div>
 
-                    <div class="space-y-3 p-5 sm:p-6">
+                    <div class="grid gap-5 p-5 sm:p-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.85fr)]">
+                        <div class="space-y-3">
                         <div class="rounded-xl border border-[#d9e8ec] bg-[#f7fbfc] px-4 py-3">
                             <p class="text-xs font-extrabold text-[#35505b]">Perubahan aman untuk histori</p>
                             <p class="mt-1 text-xs leading-5 text-[#78909a]">Versi baru hanya dipakai tiket yang dibuat setelah perubahan diterbitkan. Tiket lama tetap menggunakan snapshot sebelumnya.</p>
@@ -315,6 +316,8 @@
                         </section>
                             </div>
                         </details>
+                        </div>
+                        @include('admin.catalog._form-preview', ['serviceType' => $serviceType, 'fieldTypes' => $fieldTypes])
                     </div>
                 </section>
             </div>

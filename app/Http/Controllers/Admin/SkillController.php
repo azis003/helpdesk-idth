@@ -22,8 +22,36 @@ class SkillController extends Controller
         $actor = $request->user();
         $this->authorization->authorize($actor, 'viewAny', Skill::class, 'admin.skills.view');
 
+        $search = trim((string) $request->query('q', ''));
+        $perPage = (int) $request->query('per_page', 10);
+
+        if (! in_array($perPage, [10, 25, 50], true)) {
+            $perPage = 10;
+        }
+
+        $skillsQuery = Skill::query()
+            ->with('serviceTypes')
+            ->when($search !== '', function ($query) use ($search): void {
+                $like = "%{$search}%";
+
+                $query->where(function ($skillQuery) use ($like): void {
+                    $skillQuery
+                        ->where('name', 'like', $like)
+                        ->orWhere('slug', 'like', $like)
+                        ->orWhere('description', 'like', $like)
+                        ->orWhereHas('serviceTypes', function ($serviceQuery) use ($like): void {
+                            $serviceQuery
+                                ->where('code', 'like', $like)
+                                ->orWhere('name', 'like', $like);
+                        });
+                });
+            })
+            ->orderBy('name');
+
         return view('admin.skills.index', [
-            'skills' => Skill::query()->with('serviceTypes')->orderBy('name')->get(),
+            'skills' => $skillsQuery->paginate($perPage)->withQueryString(),
+            'search' => $search,
+            'perPage' => $perPage,
         ]);
     }
 

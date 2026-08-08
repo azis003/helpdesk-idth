@@ -86,6 +86,50 @@ class ServiceCatalogService
         });
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function createServiceType(User $actor, array $data): ServiceType
+    {
+        return $this->database->transaction(function () use ($actor, $data): ServiceType {
+            $code = strtoupper(trim((string) $data['code']));
+
+            if (ServiceType::withTrashed()->where('code', $code)->exists()) {
+                throw ValidationException::withMessages([
+                    'code' => 'Kode layanan sudah digunakan.',
+                ]);
+            }
+
+            $serviceType = ServiceType::query()->create([
+                'code' => $code,
+                'name' => $data['name'],
+                'description' => $data['description'] ?? null,
+                'ticket_class' => $data['ticket_class'],
+                'sort_order' => ((int) ServiceType::withTrashed()->max('sort_order')) + 1,
+                'is_active' => true,
+            ]);
+
+            $this->syncServiceSkillsWithinTransaction($actor, $serviceType, $data['skill_ids'] ?? []);
+
+            foreach ($data['fields'] ?? [] as $fieldData) {
+                $this->createFieldRecord($actor, $serviceType, $fieldData);
+            }
+
+            $fresh = $serviceType->fresh(['variants', 'skills', 'activeFieldDefinitions.options']);
+
+            $this->auditLogger->succeeded(
+                $actor,
+                'admin.service_type.created',
+                $fresh,
+                'Layanan baru dibuat.',
+                null,
+                $this->serviceTypeSnapshot($fresh),
+            );
+
+            return $fresh;
+        });
+    }
+
     public function setServiceStatus(
         User $actor,
         ServiceType $serviceType,
@@ -114,47 +158,53 @@ class ServiceCatalogService
      */
     public function syncServiceSkills(User $actor, ServiceType $serviceType, iterable $skillIds): ServiceType
     {
-        return $this->database->transaction(function () use ($actor, $serviceType, $skillIds): ServiceType {
-            $requestedIds = $this->normalizeIds($skillIds);
-            $skills = Skill::query()->active()->whereIn('id', $requestedIds)->get()->keyBy('id');
+        return $this->database->transaction(fn (): ServiceType => $this->syncServiceSkillsWithinTransaction($actor, $serviceType, $skillIds));
+    }
 
-            if ($skills->count() !== count($requestedIds)) {
-                throw ValidationException::withMessages([
-                    'skill_ids' => 'Salah satu keahlian yang dipetakan tidak aktif atau tidak tersedia.',
-                ]);
-            }
+    /**
+     * @param  iterable<int|string>  $skillIds
+     */
+    private function syncServiceSkillsWithinTransaction(User $actor, ServiceType $serviceType, iterable $skillIds): ServiceType
+    {
+        $requestedIds = $this->normalizeIds($skillIds);
+        $skills = Skill::query()->active()->whereIn('id', $requestedIds)->get()->keyBy('id');
 
-            $currentIds = $serviceType->skills()
-                ->pluck('skills.id')
-                ->map(fn ($id): int => (int) $id)
-                ->all();
-            $toAttach = array_values(array_diff($requestedIds, $currentIds));
-            $toDetach = array_values(array_diff($currentIds, $requestedIds));
-            $now = now();
+        if ($skills->count() !== count($requestedIds)) {
+            throw ValidationException::withMessages([
+                'skill_ids' => 'Salah satu keahlian yang dipetakan tidak aktif atau tidak tersedia.',
+            ]);
+        }
 
-            if ($toDetach !== []) {
-                $serviceType->skills()->detach($toDetach);
-            }
+        $currentIds = $serviceType->skills()
+            ->pluck('skills.id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
+        $toAttach = array_values(array_diff($requestedIds, $currentIds));
+        $toDetach = array_values(array_diff($currentIds, $requestedIds));
+        $now = now();
 
-            foreach ($toAttach as $skillId) {
-                $serviceType->skills()->attach($skillId, [
-                    'assigned_by' => $actor->getKey(),
-                    'assigned_at' => $now,
-                ]);
-            }
+        if ($toDetach !== []) {
+            $serviceType->skills()->detach($toDetach);
+        }
 
-            $fresh = $serviceType->fresh(['variants', 'skills']);
-            $this->auditLogger->succeeded(
-                $actor,
-                'admin.service_type.skills.updated',
-                $fresh,
-                'Pemetaan keahlian layanan diperbarui.',
-                ['skill_ids' => $this->skillSnapshot($currentIds)],
-                ['skill_ids' => $this->skillSnapshot($requestedIds)],
-            );
+        foreach ($toAttach as $skillId) {
+            $serviceType->skills()->attach($skillId, [
+                'assigned_by' => $actor->getKey(),
+                'assigned_at' => $now,
+            ]);
+        }
 
-            return $fresh;
-        });
+        $fresh = $serviceType->fresh(['variants', 'skills']);
+        $this->auditLogger->succeeded(
+            $actor,
+            'admin.service_type.skills.updated',
+            $fresh,
+            'Pemetaan keahlian layanan diperbarui.',
+            ['skill_ids' => $this->skillSnapshot($currentIds)],
+            ['skill_ids' => $this->skillSnapshot($requestedIds)],
+        );
+
+        return $fresh;
     }
 
     /**
@@ -165,43 +215,49 @@ class ServiceCatalogService
         ServiceType $serviceType,
         array $data,
     ): ServiceFieldDefinition {
-        return $this->database->transaction(function () use ($actor, $serviceType, $data): ServiceFieldDefinition {
-            $this->validateFieldData($data);
+        return $this->database->transaction(fn (): ServiceFieldDefinition => $this->createFieldRecord($actor, $serviceType, $data));
+    }
 
-            if ($serviceType->fieldDefinitions()->where('key', $data['key'])->exists()) {
-                throw ValidationException::withMessages([
-                    'key' => 'Kunci field tersebut sudah pernah digunakan pada layanan ini. Buat versi baru dari field yang ada.',
-                ]);
-            }
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function createFieldRecord(User $actor, ServiceType $serviceType, array $data): ServiceFieldDefinition
+    {
+        $this->validateFieldData($data);
 
-            $field = $serviceType->fieldDefinitions()->create([
-                'key' => $data['key'],
-                'label' => $data['label'],
-                'help_text' => $data['help_text'] ?? null,
-                'field_type' => $data['field_type'],
-                'visibility' => $data['visibility'] ?? 'requester',
-                'is_required' => (bool) ($data['is_required'] ?? false),
-                'sort_order' => (int) ($data['sort_order'] ?? 0),
-                'version' => 1,
-                'validation_rules' => array_values($data['validation_rules'] ?? []),
-                'visibility_rules' => $data['visibility_rules'] ?? null,
-                'is_active' => true,
+        if ($serviceType->fieldDefinitions()->where('key', $data['key'])->exists()) {
+            throw ValidationException::withMessages([
+                'key' => 'Kunci field tersebut sudah pernah digunakan pada layanan ini. Buat versi baru dari field yang ada.',
             ]);
+        }
 
-            $this->replaceOptions($field, $data['options'] ?? []);
-            $field->load('options', 'serviceType');
+        $field = $serviceType->fieldDefinitions()->create([
+            'key' => $data['key'],
+            'label' => $data['label'],
+            'help_text' => $data['help_text'] ?? null,
+            'field_type' => $data['field_type'],
+            'visibility' => $data['visibility'] ?? 'requester',
+            'is_required' => (bool) ($data['is_required'] ?? false),
+            'sort_order' => (int) ($data['sort_order'] ?? 0),
+            'version' => 1,
+            'validation_rules' => array_values($data['validation_rules'] ?? []),
+            'visibility_rules' => $data['visibility_rules'] ?? null,
+            'is_active' => true,
+        ]);
 
-            $this->auditLogger->succeeded(
-                $actor,
-                'admin.service_field.created',
-                $field,
-                'Field formulir dinamis dibuat.',
-                null,
-                $this->fieldSnapshot($field),
-            );
+        $this->replaceOptions($field, $data['options'] ?? []);
+        $field->load('options', 'serviceType');
 
-            return $field;
-        });
+        $this->auditLogger->succeeded(
+            $actor,
+            'admin.service_field.created',
+            $field,
+            'Field formulir dinamis dibuat.',
+            null,
+            $this->fieldSnapshot($field),
+        );
+
+        return $field;
     }
 
     /**

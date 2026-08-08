@@ -13,6 +13,11 @@ class ServiceTypePolicy
         return $this->canManage($actor);
     }
 
+    public function create(User $actor): bool
+    {
+        return $this->canManage($actor);
+    }
+
     public function update(User $actor, ServiceType $serviceType): bool
     {
         return $this->canManage($actor);

@@ -574,6 +574,172 @@ uiModals.forEach((modal) => {
     }
 });
 
+const submitFeedbackForms = [...document.querySelectorAll('[data-submit-feedback]')];
+
+submitFeedbackForms.forEach((form) => {
+    form.addEventListener('submit', () => {
+        const submit = form.querySelector('[data-submit-button], [data-ui-modal-submit]');
+        const label = form.querySelector('[data-submit-label], [data-ui-modal-label]');
+        const loading = form.querySelector('[data-submit-loading], [data-ui-modal-loading]');
+
+        if (!submit) {
+            return;
+        }
+
+        submit.disabled = true;
+        submit.setAttribute('aria-busy', 'true');
+        label?.classList.add('hidden');
+        loading?.classList.remove('hidden');
+    });
+});
+
+const makeFieldKey = (value) => {
+    let key = String(value || '')
+        .normalize('NFKD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim()
+        .replace(/[\s-]+/g, '_')
+        .replace(/[^a-z0-9_]/g, '')
+        .replace(/_+/g, '_')
+        .replace(/^_+|_+$/g, '');
+
+    if (key === '') {
+        return '';
+    }
+
+    if (!/^[a-z]/.test(key)) {
+        key = `field_${key}`;
+    }
+
+    return key;
+};
+
+const formBuilders = [...document.querySelectorAll('[data-field-builder]')];
+
+formBuilders.forEach((form) => {
+    const labelInput = form.querySelector('[data-field-label-input]');
+    const keyInput = form.querySelector('[data-field-key-input]');
+    const typeInput = form.querySelector('[data-field-type-select]');
+    const optionsPanel = form.querySelector('[data-field-options-panel]');
+    const optionsInput = form.querySelector('[data-field-options-input]');
+
+    const syncFieldKey = () => {
+        if (labelInput && keyInput) {
+            keyInput.value = makeFieldKey(labelInput.value);
+        }
+    };
+
+    const syncOptionsPanel = () => {
+        if (!typeInput || !optionsPanel || !optionsInput) {
+            return;
+        }
+
+        const isChoiceField = ['select', 'multiselect'].includes(typeInput.value);
+        optionsPanel.classList.toggle('hidden', !isChoiceField);
+        optionsPanel.setAttribute('aria-hidden', String(!isChoiceField));
+        optionsInput.disabled = !isChoiceField;
+    };
+
+    labelInput?.addEventListener('input', syncFieldKey);
+    typeInput?.addEventListener('change', syncOptionsPanel);
+    syncFieldKey();
+    syncOptionsPanel();
+});
+
+const serviceFieldBuilders = [...document.querySelectorAll('[data-service-field-builder]')];
+
+serviceFieldBuilders.forEach((form) => {
+    const fieldList = form.querySelector('[data-service-field-list]');
+    const fieldTemplate = form.querySelector('[data-service-field-template]');
+    const addButton = form.querySelector('[data-service-field-add]');
+
+    if (!fieldList || !fieldTemplate || !addButton) {
+        return;
+    }
+
+    let nextIndex = fieldList.querySelectorAll('[data-service-field-row]').length;
+
+    const updateFieldNumbers = () => {
+        fieldList.querySelectorAll('[data-service-field-number]').forEach((number, index) => {
+            number.textContent = String(index + 1);
+        });
+    };
+
+    const bindFieldRow = (row) => {
+        const labelInput = row.querySelector('[data-service-field-label]');
+        const keyInput = row.querySelector('[data-service-field-key]');
+        const typeInput = row.querySelector('[data-service-field-type]');
+        const optionsPanel = row.querySelector('[data-service-field-options-panel]');
+        const optionsInput = row.querySelector('[data-service-field-options]');
+        const removeButton = row.querySelector('[data-service-field-remove]');
+
+        const syncFieldKey = () => {
+            if (labelInput && keyInput) {
+                keyInput.value = makeFieldKey(labelInput.value);
+            }
+        };
+
+        const syncOptionsPanel = () => {
+            if (!typeInput || !optionsPanel || !optionsInput) {
+                return;
+            }
+
+            const isChoiceField = ['select', 'multiselect'].includes(typeInput.value);
+            optionsPanel.classList.toggle('hidden', !isChoiceField);
+            optionsPanel.setAttribute('aria-hidden', String(!isChoiceField));
+            optionsInput.disabled = !isChoiceField;
+        };
+
+        labelInput?.addEventListener('input', syncFieldKey);
+        typeInput?.addEventListener('change', syncOptionsPanel);
+        removeButton?.addEventListener('click', () => {
+            row.remove();
+            updateFieldNumbers();
+        });
+        syncFieldKey();
+        syncOptionsPanel();
+    };
+
+    fieldList.querySelectorAll('[data-service-field-row]').forEach(bindFieldRow);
+    updateFieldNumbers();
+
+    addButton.addEventListener('click', () => {
+        const index = nextIndex;
+        nextIndex += 1;
+        const markup = fieldTemplate.innerHTML.replaceAll('__INDEX__', String(index));
+        fieldList.insertAdjacentHTML('beforeend', markup);
+        const newRow = fieldList.lastElementChild;
+
+        if (newRow) {
+            bindFieldRow(newRow);
+            updateFieldNumbers();
+            newRow.querySelector('[data-service-field-label]')?.focus();
+        }
+    });
+});
+
+const skillPickers = [...document.querySelectorAll('[data-skill-picker]')];
+
+skillPickers.forEach((picker) => {
+    const summary = picker.querySelector('[data-skill-picker-summary]');
+    const inputs = [...picker.querySelectorAll('input[type="checkbox"]')];
+
+    if (!summary || inputs.length === 0) {
+        return;
+    }
+
+    const syncSummary = () => {
+        const selected = inputs.filter((input) => input.checked);
+        summary.textContent = selected.length === 0
+            ? 'Belum ada keahlian dipilih'
+            : `${selected.length} keahlian dipilih`;
+    };
+
+    inputs.forEach((input) => input.addEventListener('change', syncSummary));
+    syncSummary();
+});
+
 const userForms = [...document.querySelectorAll('[data-user-form]')];
 
 userForms.forEach((form) => {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\CreateServiceTypeRequest;
 use App\Http\Requests\Admin\ServiceFieldRequest;
 use App\Http\Requests\Admin\ServiceTypeRequest;
 use App\Http\Requests\Admin\UpdateServiceSkillsRequest;
@@ -13,6 +14,7 @@ use App\Models\ServiceType;
 use App\Models\Skill;
 use App\Services\DomainAuthorization;
 use App\Services\ServiceCatalogService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -25,9 +27,8 @@ class ServiceCatalogController extends Controller
 
     public function index(Request $request): mixed
     {
-        $actor = $request->user();
         $activeSection = $request->string('section')->toString();
-        $activeSection = in_array($activeSection, ['services', 'locations', 'attachments'], true)
+        $activeSection = in_array($activeSection, ['services', 'forms', 'locations', 'attachments'], true)
             ? $activeSection
             : 'services';
 
@@ -35,16 +36,89 @@ class ServiceCatalogController extends Controller
             return app(LocationController::class)->index($request);
         }
 
+        if ($activeSection === 'services') {
+            return $this->services($request);
+        }
+
+        if ($activeSection === 'forms') {
+            return $this->forms($request);
+        }
+
+        $this->authorizeCatalog($request);
+
+        return view('admin.catalog.index', [
+            'activeSection' => $activeSection,
+            ...$this->catalogData(),
+        ]);
+    }
+
+    public function services(Request $request): mixed
+    {
+        $this->authorizeCatalog($request);
+
+        $search = trim((string) $request->query('q', ''));
+        $perPage = (int) $request->query('per_page', 10);
+
+        if (! in_array($perPage, [10, 25, 50], true)) {
+            $perPage = 10;
+        }
+
+        $serviceTypes = $this->serviceTypeQuery()
+            ->when($search !== '', function (Builder $query) use ($search): void {
+                $query->where(function (Builder $serviceQuery) use ($search): void {
+                    $serviceQuery
+                        ->where('code', 'like', "%{$search}%")
+                        ->orWhere('name', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('sort_order')
+            ->orderBy('code')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        return view('admin.services.index', [
+            'serviceTypes' => $serviceTypes,
+            'search' => $search,
+            'perPage' => $perPage,
+            'serviceCount' => ServiceType::query()->count(),
+            'activeServiceCount' => ServiceType::query()->where('is_active', true)->count(),
+            'activeFieldCount' => ServiceFieldDefinition::query()->where('is_active', true)->count(),
+            'skills' => Skill::query()->active()->orderBy('name')->get(),
+            'fieldTypes' => ServiceCatalogService::FIELD_TYPES,
+            'visibilities' => ServiceCatalogService::VISIBILITIES,
+            'ticketClasses' => ServiceCatalogService::TICKET_CLASSES,
+        ]);
+    }
+
+    public function forms(Request $request): RedirectResponse
+    {
+        $query = array_filter(['service' => $request->query('service')], fn ($value): bool => $value !== null && $value !== '');
+
+        return redirect()->route('admin.services.index', $query);
+    }
+
+    private function authorizeCatalog(Request $request): void
+    {
+        $actor = $request->user();
+
         $this->authorization->authorize($actor, 'viewAny', ServiceType::class, 'admin.catalog.view');
         $this->authorization->authorize($actor, 'viewAny', ServiceFieldDefinition::class, 'admin.catalog.fields.view');
         $this->authorization->authorize($actor, 'viewAny', Skill::class, 'admin.skills.view');
         $this->authorization->authorize($actor, 'viewAny', Building::class, 'admin.locations.view');
         $this->authorization->authorize($actor, 'viewAny', AttachmentPolicy::class, 'admin.attachment-policies.view');
+    }
 
-        return view('admin.catalog.index', [
-            'activeSection' => $activeSection,
-            'serviceTypes' => ServiceType::query()
-                ->with(['variants', 'activeFieldDefinitions.options', 'skills'])
+    private function serviceTypeQuery(): Builder
+    {
+        return ServiceType::query()->with(['variants', 'activeFieldDefinitions.options', 'skills']);
+    }
+
+    /** @return array<string, mixed> */
+    private function catalogData(): array
+    {
+        return [
+            'serviceTypes' => $this->serviceTypeQuery()
                 ->orderBy('sort_order')
                 ->orderBy('code')
                 ->get(),
@@ -61,7 +135,18 @@ class ServiceCatalogController extends Controller
             'fieldTypes' => ServiceCatalogService::FIELD_TYPES,
             'visibilities' => ServiceCatalogService::VISIBILITIES,
             'ticketClasses' => ServiceCatalogService::TICKET_CLASSES,
-        ]);
+        ];
+    }
+
+    public function storeService(CreateServiceTypeRequest $request): RedirectResponse
+    {
+        $actor = $request->user();
+        $this->authorization->authorize($actor, 'create', ServiceType::class, 'admin.service_type.create');
+        $serviceType = $this->catalog->createServiceType($actor, $request->payload());
+
+        return redirect()
+            ->route('admin.services.index', ['service' => $serviceType->id])
+            ->with('success', "Layanan {$serviceType->code} berhasil dibuat.");
     }
 
     public function updateService(ServiceTypeRequest $request, ServiceType $serviceType): RedirectResponse
@@ -125,5 +210,14 @@ class ServiceCatalogController extends Controller
         $this->catalog->setFieldStatus($actor, $serviceFieldDefinition, false);
 
         return back()->with('success', 'Field formulir dinonaktifkan. Definisi historis tetap tersedia.');
+    }
+
+    public function removeField(Request $request, ServiceFieldDefinition $serviceFieldDefinition): RedirectResponse
+    {
+        $actor = $request->user();
+        $this->authorization->authorize($actor, 'update', $serviceFieldDefinition, 'admin.service_field.deactivate');
+        $this->catalog->setFieldStatus($actor, $serviceFieldDefinition, false);
+
+        return back()->with('success', "Field {$serviceFieldDefinition->label} dihapus dari formulir. Histori tiket tetap aman.");
     }
 }
