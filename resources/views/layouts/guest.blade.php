@@ -37,5 +37,7 @@
             </div>
         </main>
     </div>
+
+    @include('components.global-loading-overlay')
 </body>
 </html>

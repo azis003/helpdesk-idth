@@ -39,6 +39,42 @@ const showSwalConfirmation = (message, options = {}) => Swal.fire({
     },
 });
 
+const globalLoadingOverlay = document.querySelector('[data-global-loading-overlay]');
+const globalLoadingMessage = globalLoadingOverlay?.querySelector('[data-global-loading-message]');
+const globalLoadingRoots = globalLoadingOverlay
+    ? [...document.body.children].filter((element) => element !== globalLoadingOverlay)
+    : [];
+let globalLoadingActive = false;
+
+const setGlobalLoadingState = (active, message = 'Memproses permintaan...') => {
+    if (!globalLoadingOverlay) {
+        return;
+    }
+
+    globalLoadingActive = active;
+    globalLoadingOverlay.hidden = !active;
+    globalLoadingOverlay.setAttribute('aria-hidden', String(!active));
+
+    if (globalLoadingMessage) {
+        globalLoadingMessage.textContent = message;
+    }
+
+    document.body.classList.toggle('is-processing', active);
+    globalLoadingRoots.forEach((root) => {
+        root.inert = active;
+    });
+
+    if (active) {
+        window.requestAnimationFrame(() => {
+            if (globalLoadingActive) {
+                globalLoadingOverlay.focus({ preventScroll: true });
+            }
+        });
+    }
+};
+
+window.addEventListener('pageshow', () => setGlobalLoadingState(false));
+
 const requestFormSubmit = (form) => {
     if (typeof form.requestSubmit === 'function') {
         form.requestSubmit();
@@ -234,6 +270,7 @@ navigationLinks.forEach((link) => {
             link.classList.add('is-loading');
             link.setAttribute('aria-busy', 'true');
             document.body.classList.add('is-navigating');
+            setGlobalLoadingState(true, 'Memuat halaman...');
         }
     });
 });
@@ -1236,6 +1273,7 @@ const downloadReportFile = async (form, button, label, loading, errorMessage) =>
         button.setAttribute('aria-busy', 'false');
         label?.classList.remove('hidden');
         loading?.classList.add('hidden');
+        setGlobalLoadingState(false);
     }
 };
 
@@ -1257,6 +1295,7 @@ reportExportForms.forEach((form) => {
         label?.classList.add('hidden');
         loading?.classList.remove('hidden');
         errorMessage?.classList.add('hidden');
+        setGlobalLoadingState(true, 'Menyiapkan file laporan...');
 
         void downloadReportFile(form, button, label, loading, errorMessage);
     });
@@ -1307,3 +1346,21 @@ if (brandingForm) {
         submitLoading?.classList.remove('hidden');
     });
 }
+
+document.addEventListener('submit', (event) => {
+    if (event.defaultPrevented || globalLoadingActive) {
+        if (globalLoadingActive) {
+            event.preventDefault();
+        }
+
+        return;
+    }
+
+    const form = event.target;
+
+    if (!(form instanceof HTMLFormElement)) {
+        return;
+    }
+
+    setGlobalLoadingState(true, form.dataset.loadingMessage || 'Memproses permintaan...');
+}, false);

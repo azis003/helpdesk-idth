@@ -437,5 +437,7 @@
             </main>
         </div>
     </div>
+
+    @include('components.global-loading-overlay')
 </body>
 </html>
