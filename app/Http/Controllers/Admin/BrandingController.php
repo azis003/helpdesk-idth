@@ -22,13 +22,22 @@ class BrandingController extends Controller
     {
         $this->authorizeView($request);
 
+        $versions = OrganizationSetting::query()
+            ->with('changedBy')
+            ->orderByDesc('version')
+            ->limit(13)
+            ->get();
+
+        $versions->each(function (OrganizationSetting $version, int $index) use ($versions): void {
+            $version->setAttribute(
+                'changed_fields',
+                $this->changedFields($version, $versions->get($index + 1)),
+            );
+        });
+
         return view('admin.branding.index', [
             'branding' => $this->branding->current(),
-            'versions' => OrganizationSetting::query()
-                ->with('changedBy')
-                ->orderByDesc('version')
-                ->limit(12)
-                ->get(),
+            'versions' => $versions->take(12),
         ]);
     }
 
@@ -48,5 +57,33 @@ class BrandingController extends Controller
             OrganizationSetting::class,
             'admin.branding.view',
         );
+    }
+
+    /** @return list<string> */
+    private function changedFields(OrganizationSetting $version, ?OrganizationSetting $previous): array
+    {
+        if ($previous === null) {
+            return ['Identitas awal'];
+        }
+
+        $fields = [
+            'Nama instansi' => ['organization_name'],
+            'Nama aplikasi' => ['application_name'],
+            'Tagline portal' => ['tagline'],
+            'Teks halaman masuk' => ['footer_text'],
+            'Logo' => ['logo_path', 'logo_disk'],
+        ];
+        $changed = [];
+
+        foreach ($fields as $label => $attributes) {
+            foreach ($attributes as $attribute) {
+                if ($version->getAttribute($attribute) !== $previous->getAttribute($attribute)) {
+                    $changed[] = $label;
+                    break;
+                }
+            }
+        }
+
+        return $changed !== [] ? $changed : ['Tidak ada perubahan'];
     }
 }

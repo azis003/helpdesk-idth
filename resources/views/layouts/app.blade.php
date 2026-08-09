@@ -35,22 +35,12 @@
         $locationMenuUrl = request()->routeIs('admin.catalog.*') && $catalogSection === 'locations'
             ? route('admin.catalog.index', ['section' => 'locations'])
             : route('admin.locations.index');
-        $applicationMenuOpen = request()->routeIs('admin.branding.*');
         $unreadNotificationCount = $currentUser->unreadNotifications()->count();
         $latestNotifications = $currentUser->notifications()->latest()->limit(5)->get();
     @endphp
 
     <div class="ui-shell lg:flex">
-        <aside id="app-sidebar" data-sidebar class="ui-sidebar hidden shrink-0 flex-col px-4 py-5 lg:flex" aria-label="Navigasi utama">
-            <a href="{{ route('dashboard') }}" class="ui-sidebar-brand" aria-label="Dasbor {{ $branding['application_name'] }}" title="{{ $branding['application_name'] }}">
-                @if ($branding['logo_url'])
-                    <img src="{{ $branding['logo_url'] }}" alt="Logo {{ $branding['organization_name'] }}" class="max-h-10 max-w-28 object-contain object-left">
-                @else
-                    <span class="ui-brand-mark">{{ $branding['monogram'] }}</span>
-                @endif
-                <span class="ui-brand-copy"><span class="block truncate text-sm font-extrabold tracking-[0.04em] text-[#18252b]">{{ $branding['application_name'] }}</span><span class="mt-0.5 block truncate text-[0.64rem] text-[#829198]">{{ $branding['organization_name'] }}</span></span>
-            </a>
-
+        <aside id="app-sidebar" data-sidebar class="ui-sidebar hidden shrink-0 flex-col lg:flex" aria-label="Navigasi utama">
             @if ($isSuperAdmin)
                 <nav class="mt-9 flex flex-col gap-2" aria-label="Menu Utama">
                     <p class="ui-sidebar-label">Menu Utama</p>
@@ -90,24 +80,10 @@
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 11.5h3l8-4v9l-8-4h-3a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1Z" /><path stroke-linecap="round" d="M8 16.5 9.5 20h2L10 16.5M18.5 10a3 3 0 0 1 0 4" /></svg></span>
                         <span class="ui-nav-label">Manajemen Pengumuman</span>
                     </a>
-                    <div class="ui-sidebar-dropdown{{ $applicationMenuOpen ? ' is-open' : '' }}" data-nav-disclosure data-nav-open="{{ $applicationMenuOpen ? 'true' : 'false' }}" data-nav-label="Manajemen Aplikasi">
-                        <div class="ui-nav-disclosure-row">
-                            <button type="button" class="ui-nav-link ui-nav-disclosure-link" data-nav-disclosure-toggle aria-controls="sidebar-application-submenu" aria-expanded="{{ $applicationMenuOpen ? 'true' : 'false' }}" aria-label="{{ $applicationMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Aplikasi" title="{{ $applicationMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Aplikasi">
-                                <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 8.5h8M8 12h5M8 15.5h7" /><path stroke-linecap="round" d="M16.5 3.5v3M7.5 3.5v3" /></svg></span>
-                                <span class="ui-nav-label">Manajemen Aplikasi</span>
-                            </button>
-                            <button type="button" class="ui-nav-disclosure-toggle" data-nav-disclosure-toggle aria-controls="sidebar-application-submenu" aria-expanded="{{ $applicationMenuOpen ? 'true' : 'false' }}" aria-label="{{ $applicationMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Aplikasi" title="{{ $applicationMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Aplikasi">
-                                <span class="ui-nav-disclosure-chevron" aria-hidden="true"></span>
-                                <span class="sr-only">{{ $applicationMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Aplikasi</span>
-                            </button>
-                        </div>
-                        <div id="sidebar-application-submenu" class="ui-nav-subgroup" data-nav-disclosure-panel role="group" aria-label="Submenu Manajemen Aplikasi" @unless ($applicationMenuOpen) hidden @endunless>
-                            <a href="{{ route('admin.branding.index') }}" class="ui-nav-link ui-nav-sublink {{ request()->routeIs('admin.branding.*') ? 'is-active' : '' }}" aria-label="Identitas Aplikasi" title="Identitas Aplikasi">
-                                <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 8.5h8M8 12h5M8 15.5h7" /><path stroke-linecap="round" d="M16.5 3.5v3M7.5 3.5v3" /></svg></span>
-                                <span class="ui-nav-label">Identitas Aplikasi</span>
-                            </a>
-                        </div>
-                    </div>
+                    <a href="{{ route('admin.branding.index') }}" class="ui-nav-link {{ request()->routeIs('admin.branding.*') ? 'is-active' : '' }}" aria-label="Identitas Aplikasi" title="Identitas Aplikasi">
+                        <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 8.5h8M8 12h5M8 15.5h7" /><path stroke-linecap="round" d="M16.5 3.5v3M7.5 3.5v3" /></svg></span>
+                        <span class="ui-nav-label">Identitas Aplikasi</span>
+                    </a>
                 </nav>
 
                 <nav class="mt-5 flex flex-col gap-2" aria-label="Laporan">
@@ -211,27 +187,24 @@
             @endif
             @endif
 
-            <div class="ui-sidebar-account mt-auto">
-                <span class="ui-avatar !h-9 !w-9 !rounded-full" title="{{ $currentUser->name }}">{{ strtoupper(substr($currentUser->name, 0, 1)) }}</span>
-                <span class="ui-account-copy min-w-0"><span class="block truncate text-xs font-bold text-[#344850]">{{ $currentUser->name }}</span><span class="mt-0.5 block truncate text-[0.65rem] text-[#89989e]">{{ $currentUser->username }}</span></span>
-            </div>
         </aside>
 
-        <div class="min-w-0 flex-1">
-            <header class="ui-topbar sticky top-0 z-30 flex min-h-[4.5rem] items-center justify-between gap-4 px-4 sm:px-7 lg:px-9">
-                <div class="flex items-center gap-3">
-                    <button type="button" class="ui-menu-button hidden lg:inline-flex" data-sidebar-toggle aria-controls="app-sidebar" aria-expanded="true" aria-label="Sembunyikan menu" title="Sembunyikan menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" /></svg><span class="sr-only" data-sidebar-toggle-label>Sembunyikan menu</span></button>
-                    <a href="{{ route('dashboard') }}" class="flex min-w-0 items-center gap-2.5 lg:border-l lg:border-[#e5ebee] lg:pl-4" aria-label="Dasbor {{ $branding['application_name'] }}">
+        <div class="ui-content-shell min-w-0 flex-1">
+            <header class="ui-topbar fixed inset-x-0 top-0 z-30 flex min-h-[4.5rem] items-center justify-between gap-4 px-4 sm:px-7 lg:px-9">
+                <div class="flex min-w-0 items-center gap-3">
+                    <a href="{{ route('dashboard') }}" class="ui-topbar-brand flex min-w-0 items-center gap-2.5" aria-label="Dasbor {{ $branding['application_name'] }}">
                         @if ($branding['logo_url'])
-                            <img src="{{ $branding['logo_url'] }}" alt="Logo {{ $branding['organization_name'] }}" class="max-h-9 max-w-24 object-contain object-left lg:hidden">
+                            <img src="{{ $branding['logo_url'] }}" alt="Logo {{ $branding['organization_name'] }}" class="ui-topbar-brand-logo">
                         @else
-                            <span class="ui-brand-mark !h-9 !w-9 !rounded-lg text-xs lg:hidden">{{ $branding['monogram'] }}</span>
+                            <span class="ui-brand-mark !h-11 !w-11 !rounded-xl text-sm">{{ $branding['monogram'] }}</span>
                         @endif
                         <span class="max-w-[12rem] truncate text-lg font-extrabold tracking-[-0.05em] text-[#18252b]">{{ $branding['application_name'] }}</span>
                         <span class="hidden max-w-[14rem] truncate text-sm text-[#718088] sm:inline">{{ $branding['organization_name'] }}</span>
                     </a>
                     <span class="hidden h-5 w-px bg-[#dfe7eb] lg:block" aria-hidden="true"></span>
-                    <span class="hidden text-sm text-[#6c7c83] lg:inline">@yield('header_title', 'Ruang kerja')</span>
+                    <button type="button" class="ui-menu-button hidden lg:inline-flex" data-sidebar-toggle aria-controls="app-sidebar" aria-expanded="true" aria-label="Sembunyikan menu" title="Sembunyikan menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" /></svg><span class="sr-only" data-sidebar-toggle-label>Sembunyikan menu</span></button>
+                    <span class="hidden h-5 w-px bg-[#dfe7eb] lg:block" aria-hidden="true"></span>
+                    <span class="hidden truncate text-sm text-[#6c7c83] lg:inline">@yield('header_title', 'Ruang kerja')</span>
                 </div>
 
                 <div class="flex items-center gap-3">
@@ -306,18 +279,7 @@
 
                                 <div class="ui-mobile-nav-group-label">Konfigurasi</div>
                                 <a href="{{ route('admin.announcements.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.announcements.*') ? 'is-active' : '' }}">Manajemen Pengumuman</a>
-                                <div class="ui-mobile-nav-dropdown{{ $applicationMenuOpen ? ' is-open' : '' }}" data-nav-disclosure data-nav-open="{{ $applicationMenuOpen ? 'true' : 'false' }}" data-nav-label="Manajemen Aplikasi">
-                                    <div class="ui-mobile-nav-disclosure-row">
-                                        <button type="button" class="ui-mobile-nav-link ui-mobile-nav-disclosure-link" data-nav-disclosure-toggle aria-controls="mobile-application-submenu" aria-expanded="{{ $applicationMenuOpen ? 'true' : 'false' }}" aria-label="{{ $applicationMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Aplikasi" title="{{ $applicationMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Aplikasi">Manajemen Aplikasi</button>
-                                        <button type="button" class="ui-mobile-nav-disclosure-toggle" data-nav-disclosure-toggle aria-controls="mobile-application-submenu" aria-expanded="{{ $applicationMenuOpen ? 'true' : 'false' }}" aria-label="{{ $applicationMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Aplikasi" title="{{ $applicationMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Aplikasi">
-                                            <span class="ui-mobile-nav-disclosure-chevron" aria-hidden="true"></span>
-                                            <span class="sr-only">{{ $applicationMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Aplikasi</span>
-                                        </button>
-                                    </div>
-                                    <div id="mobile-application-submenu" class="ui-mobile-nav-dropdown-panel" data-nav-disclosure-panel @unless ($applicationMenuOpen) hidden @endunless>
-                                        <a href="{{ route('admin.branding.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.branding.*') ? 'is-active' : '' }}">Identitas Aplikasi</a>
-                                    </div>
-                                </div>
+                                <a href="{{ route('admin.branding.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.branding.*') ? 'is-active' : '' }}">Identitas Aplikasi</a>
 
                                 <div class="ui-mobile-nav-group-label">Laporan</div>
                                 @if ($canViewReports)

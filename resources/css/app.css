@@ -195,50 +195,59 @@
         background: #edf2f5;
     }
 
+    .ui-content-shell {
+        padding-top: 4.75rem;
+    }
+
     .ui-sidebar {
+        position: sticky;
+        top: 0;
         width: 15rem;
-        overflow: hidden;
+        height: 100vh;
+        max-height: 100vh;
+        overflow-x: hidden;
+        overflow-y: auto;
         background: #ffffff;
         border-right: 1px solid #dce6ea;
         color: #455a63;
+        padding: 3.5rem 1rem 1.25rem;
+        scrollbar-color: #c8d8de transparent;
+        scrollbar-width: thin;
         transition: width 260ms ease, padding 260ms ease;
     }
 
     .ui-sidebar.is-collapsed {
         width: 4.25rem;
+        padding-top: 4rem;
         padding-right: 0.6rem;
         padding-left: 0.6rem;
     }
 
-    .ui-sidebar-brand {
-        display: flex;
-        min-height: 2.75rem;
-        align-items: center;
-        gap: 0.75rem;
-        overflow: hidden;
-        white-space: nowrap;
-    }
-
-    .ui-brand-copy,
-    .ui-nav-label,
-    .ui-account-copy {
+    .ui-nav-label {
         max-width: 12rem;
         opacity: 1;
         overflow: hidden;
         transition: max-width 220ms ease, opacity 180ms ease;
     }
 
-    .ui-sidebar.is-collapsed .ui-sidebar-brand {
-        justify-content: center;
-    }
-
-    .ui-sidebar.is-collapsed .ui-brand-copy,
     .ui-sidebar.is-collapsed .ui-nav-label,
-    .ui-sidebar.is-collapsed .ui-account-copy,
     .ui-sidebar.is-collapsed .ui-sidebar-label {
         max-width: 0;
         opacity: 0;
         pointer-events: none;
+    }
+
+    .ui-sidebar.is-collapsed > nav {
+        gap: 0.25rem;
+        margin-top: 0.75rem !important;
+    }
+
+    .ui-sidebar.is-collapsed > nav:first-of-type {
+        margin-top: 1rem !important;
+    }
+
+    .ui-sidebar.is-collapsed .ui-sidebar-label {
+        display: none;
     }
 
     .ui-brand-mark {
@@ -422,13 +431,17 @@
 
     .ui-sidebar.is-collapsed .ui-nav-link {
         justify-content: center;
+        height: 2.75rem;
         width: 3rem;
+        margin-inline: auto;
         padding-right: 0.7rem;
         padding-left: 0.7rem;
     }
 
     .ui-sidebar.is-collapsed .ui-nav-disclosure-row {
+        height: 2.75rem;
         width: 3rem;
+        margin-inline: auto;
         gap: 0;
     }
 
@@ -440,7 +453,7 @@
     }
 
     .ui-sidebar.is-collapsed .ui-nav-disclosure-toggle {
-        height: 3rem;
+        height: 2.75rem;
         width: 1rem;
         flex-basis: 1rem;
         padding: 0;
@@ -472,33 +485,24 @@
         color: currentColor;
     }
 
-    .ui-sidebar-account {
-        display: flex;
-        align-items: center;
-        gap: 0.7rem;
-        border: 0;
-        border-radius: 1rem;
-        background: transparent;
-        padding: 0;
-    }
-
-    .ui-sidebar-account form {
-        margin-left: auto;
-    }
-
-    .ui-sidebar.is-collapsed .ui-sidebar-account {
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
-    .ui-sidebar.is-collapsed .ui-sidebar-account form {
-        margin-left: 0;
-    }
-
     .ui-topbar {
         min-height: 4.75rem;
         border-bottom: 1px solid #e0e8ec;
         background: #ffffff;
+    }
+
+    .ui-topbar-brand {
+        min-width: 0;
+    }
+
+    .ui-topbar-brand-logo {
+        display: block;
+        height: 2.75rem;
+        width: 2.75rem;
+        flex: 0 0 2.75rem;
+        border-radius: 0.65rem;
+        object-fit: cover;
+        object-position: center;
     }
 
     .ui-topbar-kicker {
@@ -738,6 +742,26 @@
     .ui-panel--accent {
         border-color: #b9e5f2;
         background: #f1fbfe;
+    }
+
+    .ui-branding-logo-stage {
+        display: flex;
+        min-height: 7rem;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border: 1px solid #dce9ed;
+        border-radius: 0.9rem;
+        background: #f8fbfc;
+        padding: 1rem;
+    }
+
+    .ui-branding-preview {
+        overflow: hidden;
+        border: 1px solid #d9e5e9;
+        border-radius: 1rem;
+        background: #ffffff;
+        box-shadow: 0 14px 32px rgba(38, 58, 67, 0.1);
     }
 
     .ui-panel-header {

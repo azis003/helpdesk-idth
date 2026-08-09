@@ -42,6 +42,8 @@ const showSwalConfirmation = (message, options = {}) => Swal.fire({
 let globalLoadingActive = false;
 
 const setGlobalLoadingState = (active, message = 'Memproses permintaan...') => {
+    globalLoadingActive = active;
+
     const globalLoadingOverlay = document.querySelector('[data-global-loading-overlay]');
 
     if (!globalLoadingOverlay) {
@@ -52,7 +54,6 @@ const setGlobalLoadingState = (active, message = 'Memproses permintaan...') => {
     const globalLoadingRoots = [...document.body.children]
         .filter((element) => element !== globalLoadingOverlay);
 
-    globalLoadingActive = active;
     globalLoadingOverlay.hidden = !active;
     globalLoadingOverlay.setAttribute('aria-hidden', String(!active));
 
@@ -1384,35 +1385,109 @@ const brandingForm = document.querySelector('[data-branding-form]');
 
 if (brandingForm) {
     const logoInput = brandingForm.querySelector('[data-branding-logo-input]') || brandingForm.querySelector('#branding-logo');
-    const previewImage = brandingForm.querySelector('[data-branding-preview-image]');
-    const previewFallback = brandingForm.querySelector('[data-branding-preview-fallback]');
+    const previewImages = [...brandingForm.querySelectorAll('[data-branding-preview-image]')];
+    const previewFallbacks = [...brandingForm.querySelectorAll('[data-branding-preview-fallback]')];
+    const previewApplications = [...brandingForm.querySelectorAll('[data-branding-preview-application]')];
+    const previewOrganizations = [...brandingForm.querySelectorAll('[data-branding-preview-organization]')];
+    const previewTaglines = [...brandingForm.querySelectorAll('[data-branding-preview-tagline]')];
+    const previewFooters = [...brandingForm.querySelectorAll('[data-branding-preview-footer]')];
+    const brandingFields = [...brandingForm.querySelectorAll('[data-branding-field]')];
     const fileName = brandingForm.querySelector('[data-branding-file-name]');
     const submitButton = brandingForm.querySelector('[data-branding-submit]');
     const submitLabel = brandingForm.querySelector('[data-branding-submit-label]');
     const submitLoading = brandingForm.querySelector('[data-branding-submit-loading]');
+    const removeLogo = brandingForm.querySelector('[data-branding-remove-logo]');
+    const initialPreviewSources = previewImages.map((image) => image.getAttribute('src') || '');
+    let previewObjectUrl = null;
 
-    logoInput?.addEventListener('change', () => {
-        const file = logoInput.files?.[0];
+    const monogramFor = (name) => {
+        const words = String(name || '').trim().split(/[\s_-]+/u).filter(Boolean);
+
+        if (words.length > 1) {
+            return words.slice(0, 2).map((word) => [...word][0]).join('').slice(0, 2).toUpperCase();
+        }
+
+        return [...String(name || '').trim()].slice(0, 2).join('').toUpperCase() || 'SI';
+    };
+
+    const valueFor = (fieldName) => brandingFields.find((field) => field.dataset.brandingField === fieldName)?.value.trim() || '';
+
+    const syncTextPreview = () => {
+        const applicationName = valueFor('application_name') || 'Nama aplikasi';
+        const organizationName = valueFor('organization_name') || 'Nama instansi';
+        const tagline = valueFor('tagline') || brandingForm.dataset.brandingDefaultTagline || 'Portal layanan internal';
+        const footer = valueFor('footer_text') || brandingForm.dataset.brandingDefaultFooter || 'Portal layanan TI internal';
+        const monogram = monogramFor(applicationName);
+
+        previewApplications.forEach((element) => { element.textContent = applicationName; });
+        previewOrganizations.forEach((element) => { element.textContent = organizationName; });
+        previewTaglines.forEach((element) => { element.textContent = tagline; });
+        previewFooters.forEach((element) => { element.textContent = footer; });
+        previewFallbacks.forEach((element) => { element.textContent = monogram; });
+        previewImages.forEach((image) => { image.alt = `Pratinjau logo ${organizationName}`; });
+    };
+
+    const restoreInitialLogoPreview = () => {
+        previewImages.forEach((image, index) => {
+            const initialSource = initialPreviewSources[index] || '';
+
+            image.src = initialSource;
+            image.classList.toggle('hidden', initialSource === '');
+        });
+        previewFallbacks.forEach((fallback, index) => {
+            fallback.classList.toggle('hidden', initialPreviewSources[index] !== '');
+        });
+    };
+
+    const syncLogoPreview = () => {
+        if (previewObjectUrl) {
+            URL.revokeObjectURL(previewObjectUrl);
+            previewObjectUrl = null;
+        }
+
+        const file = logoInput?.files?.[0];
 
         if (!file) {
             if (fileName) {
                 fileName.textContent = 'Belum ada file baru yang dipilih.';
             }
 
+            restoreInitialLogoPreview();
+
+            if (removeLogo?.checked) {
+                previewImages.forEach((image) => { image.classList.add('hidden'); });
+                previewFallbacks.forEach((fallback) => { fallback.classList.remove('hidden'); });
+            }
+
             return;
         }
 
-        if (fileName) {
-            fileName.textContent = `${file.name} · ${(file.size / 1024 / 1024).toFixed(2)} MB`;
-        }
+        previewObjectUrl = URL.createObjectURL(file);
+        previewImages.forEach((image) => {
+            image.src = previewObjectUrl;
+            image.alt = `Pratinjau ${file.name}`;
+            image.classList.remove('hidden');
+        });
+        previewFallbacks.forEach((fallback) => { fallback.classList.add('hidden'); });
 
-        if (previewImage) {
-            previewImage.src = URL.createObjectURL(file);
-            previewImage.alt = `Pratinjau ${file.name}`;
-            previewImage.classList.remove('hidden');
-            previewFallback?.classList.add('hidden');
+        if (fileName) {
+            fileName.textContent = `File logo baru: ${file.name} · ${(file.size / 1024 / 1024).toFixed(2)} MB`;
+        }
+    };
+
+    brandingFields.forEach((field) => field.addEventListener('input', syncTextPreview));
+
+    logoInput?.addEventListener('change', syncLogoPreview);
+
+    removeLogo?.addEventListener('change', () => {
+        if (!logoInput?.files?.length) {
+            previewImages.forEach((image) => { image.classList.toggle('hidden', removeLogo.checked); });
+            previewFallbacks.forEach((fallback) => { fallback.classList.toggle('hidden', !removeLogo.checked); });
         }
     });
+
+    syncTextPreview();
+    syncLogoPreview();
 
     brandingForm.addEventListener('submit', () => {
         if (!submitButton) {

@@ -69,6 +69,14 @@ class BrandingManagementTest extends TestCase
             'is_active' => 1,
         ]);
 
+        $this->actingAs($admin)
+            ->get(route('admin.branding.index'))
+            ->assertOk()
+            ->assertSee('Informasi diubah')
+            ->assertSee('Nama instansi')
+            ->assertSee('Nama aplikasi')
+            ->assertSee('Identitas awal');
+
         $audit = AuditLog::query()
             ->where('action', 'admin.branding.updated')
             ->latest('id')

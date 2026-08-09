@@ -116,7 +116,11 @@ class BrandingService
                     return $current;
                 }
 
-                $version = ((int) OrganizationSetting::query()->lockForUpdate()->max('version')) + 1;
+                $latestSetting = OrganizationSetting::query()
+                    ->orderByDesc('version')
+                    ->lockForUpdate()
+                    ->first();
+                $version = ((int) ($latestSetting?->version ?? 0)) + 1;
 
                 if ($current !== null) {
                     $current->forceFill(['is_active' => false])->save();
