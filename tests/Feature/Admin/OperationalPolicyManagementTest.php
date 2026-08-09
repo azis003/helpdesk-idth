@@ -32,9 +32,13 @@ class OperationalPolicyManagementTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.operational-policies.index'))
             ->assertOk()
-            ->assertSee('Kebijakan operasional')
-            ->assertSee('Asia/Jakarta')
-            ->assertSee('Target SLA per layanan');
+            ->assertSee('Manajemen SLA')
+            ->assertSee('Daftar SLA')
+            ->assertSee('SVC-01')
+            ->assertSee('Simpan versi SLA')
+            ->assertDontSee('id="calendar-heading"', false)
+            ->assertDontSee('id="settings-heading"', false)
+            ->assertDontSee('id="approver-heading"', false);
 
         $this->actingAs($pemohon)
             ->get(route('admin.operational-policies.index'))

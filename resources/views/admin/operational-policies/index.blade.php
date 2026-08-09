@@ -1,229 +1,247 @@
 @extends('layouts.app')
 
-@section('title', 'Kebijakan operasional — '.$branding['application_name'])
-@section('header_kicker', 'Administrasi')
-@section('header_title', 'Kebijakan operasional')
+@php
+    $autoOpenForm = old('_sla_form');
+    $serviceCount = $serviceTypes->count();
+    $usingSlaCount = $serviceTypes->filter(fn ($serviceType) => $serviceType->activeSlaPolicy?->uses_sla === true)->count();
+@endphp
+
+@section('title', 'Manajemen SLA — '.$branding['application_name'])
+@section('header_kicker', 'Konfigurasi layanan')
+@section('header_title', 'Manajemen SLA')
 
 @section('content')
-    <div class="ui-page-header">
-        <div>
-            <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Kontrol workflow tiket</p>
-            <h1 class="ui-page-title">Kebijakan operasional</h1>
-            <p class="ui-page-description">Atur SLA, kalender jam layanan, batas waktu workflow, dan Manajer TI tanpa mengubah kode atau database secara langsung.</p>
-        </div>
-        <a href="{{ route('dashboard') }}" class="ui-btn ui-btn-ghost">Kembali ke dasbor <span aria-hidden="true">→</span></a>
+    <div class="mb-6">
+        <h1 class="text-2xl font-extrabold tracking-tight text-[#18252b]">Manajemen SLA</h1>
+        <p class="mt-2 text-sm text-[#718088]">Target penyelesaian per layanan dikelola dari satu daftar dengan riwayat versi yang tetap aman.</p>
     </div>
 
-    <div class="mt-8 space-y-5">
-        <section class="ui-panel overflow-hidden" aria-labelledby="sla-heading">
-            <div class="ui-panel-header">
-                <div>
-                    <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Target penyelesaian</p>
-                    <h2 id="sla-heading" class="ui-section-title">Target SLA per layanan</h2>
-                    <p class="ui-section-description">Target dihitung dalam hari kerja dan disimpan sebagai versi baru agar tiket lama tetap memakai kebijakan yang berlaku saat dibuat.</p>
-                </div>
+    <section id="sla-heading" class="overflow-hidden rounded-lg border border-[#d7dde0] bg-white shadow-[0_2px_8px_rgba(36,57,67,0.06)]" aria-labelledby="sla-list-title">
+        <div class="flex flex-col gap-4 bg-[#075998] px-5 py-5 text-white sm:flex-row sm:items-center sm:justify-between sm:px-8">
+            <div>
+                <h2 id="sla-list-title" class="text-xl font-extrabold tracking-tight">Daftar SLA</h2>
+                <p class="mt-1 text-sm text-blue-100">{{ $serviceCount }} layanan · {{ $usingSlaCount }} menggunakan SLA</p>
             </div>
+            <p class="text-xs font-bold text-blue-100">Edit target dari aksi pada setiap baris</p>
+        </div>
 
-            <form method="POST" action="{{ route('admin.operational-policies.sla.update') }}" class="p-5 sm:p-6">
-                @csrf
-                @method('PUT')
-                <div class="grid gap-3 lg:grid-cols-2">
-                    @foreach ($serviceTypes as $serviceType)
+        <div class="px-5 py-5 sm:px-8">
+            <p class="text-sm leading-6 text-[#718088]">Perubahan disimpan sebagai versi kebijakan baru. Snapshot SLA pada tiket lama tidak ikut berubah.</p>
+
+        <div class="mt-4 hidden overflow-x-auto rounded-lg border border-[#cfd6da] md:block">
+            <table class="min-w-[1060px] w-full border-collapse text-left text-sm">
+                <caption class="sr-only">Daftar kebijakan SLA, target hari kerja, status, versi, dan aksi</caption>
+                <thead class="bg-[#fbfcfd] text-[#34495a]">
+                    <tr>
+                        <th scope="col" class="w-16 border-b border-[#cfd6da] px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide">No</th>
+                        <th scope="col" class="border-b border-[#cfd6da] px-4 py-3 text-xs font-extrabold uppercase tracking-wide">Layanan</th>
+                        <th scope="col" class="border-b border-[#cfd6da] px-4 py-3 text-xs font-extrabold uppercase tracking-wide">Target SLA</th>
+                        <th scope="col" class="w-28 border-b border-[#cfd6da] px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide">Status</th>
+                        <th scope="col" class="w-24 border-b border-[#cfd6da] px-4 py-3 text-xs font-extrabold uppercase tracking-wide">Versi</th>
+                        <th scope="col" class="border-b border-[#cfd6da] px-4 py-3 text-xs font-extrabold uppercase tracking-wide">Berlaku mulai</th>
+                        <th scope="col" class="border-b border-[#cfd6da] px-4 py-3 text-xs font-extrabold uppercase tracking-wide">Diubah oleh</th>
+                        <th scope="col" class="w-24 border-b border-[#cfd6da] px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($serviceTypes as $serviceType)
                         @php
                             $sla = $serviceType->activeSlaPolicy;
                             $usesSla = $sla?->uses_sla ?? $serviceType->code !== 'SVC-07';
                             $targetDays = $sla?->target_working_days;
+                            $statusLabel = $sla === null ? 'Belum diatur' : ($usesSla ? 'Aktif' : 'Tanpa SLA');
                         @endphp
-                        <article class="rounded-xl border border-[#dce9ed] bg-[#f8fbfc] p-4 sm:p-5">
-                            <input type="hidden" name="policies[{{ $serviceType->id }}][service_type_id]" value="{{ $serviceType->id }}">
-                            <input type="hidden" name="policies[{{ $serviceType->id }}][uses_sla]" value="0">
-                            <div class="flex items-start justify-between gap-3">
-                                <div class="min-w-0">
-                                    <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.13em] text-[#5e8792]">{{ $serviceType->code }}</p>
-                                    <h3 class="mt-1 text-sm font-extrabold text-[#29434d]">{{ $serviceType->name }}</h3>
-                                    <p class="mt-1 text-xs text-[#78909a]">Kelas nomor: {{ $serviceType->ticket_class ?? 'Ditentukan subjenis' }}</p>
+                        <tr class="odd:bg-[#f8fafb] even:bg-white hover:bg-[#eef7fc]">
+                            <td class="border-b border-[#e5eaed] px-4 py-5 text-center font-semibold text-[#172d45]">{{ $loop->iteration }}</td>
+                            <td class="border-b border-[#e5eaed] px-4 py-5">
+                                <div class="flex items-start gap-3">
+                                    <span class="mt-0.5 inline-flex min-w-16 items-center justify-center rounded-md bg-[#e8f7fb] px-2 py-1 font-mono text-[0.68rem] font-extrabold tracking-[0.08em] text-[#1d6579]">{{ $serviceType->code }}</span>
+                                    <div class="min-w-0">
+                                        <p class="font-semibold text-[#112b49]">{{ $serviceType->name }}</p>
+                                        <p class="mt-1 text-xs text-[#78909a]">Kelas nomor: {{ $serviceType->ticket_class ?? 'Ditentukan subjenis' }}</p>
+                                    </div>
                                 </div>
-                                @if ($serviceType->code === 'SVC-07')
-                                    <span class="ui-status ui-status-inactive shrink-0">Tanpa SLA</span>
+                            </td>
+                            <td class="border-b border-[#e5eaed] px-4 py-5">
+                                @if ($usesSla && $targetDays !== null)
+                                    <p class="font-mono text-base font-extrabold tracking-tight text-[#172d45]">{{ $targetDays }} <span class="font-sans text-xs font-bold text-[#6a8089]">hari kerja</span></p>
+                                    <p class="mt-1 text-[0.68rem] text-[#78909a]">Prioritas tidak mengubah target.</p>
                                 @else
-                                    <label class="inline-flex min-h-9 shrink-0 items-center gap-2 rounded-lg border border-[#dce9ed] bg-white px-3 text-xs font-bold text-[#526f79]">
-                                        <input type="checkbox" name="policies[{{ $serviceType->id }}][uses_sla]" value="1" class="ui-checkbox" @checked(old("policies.{$serviceType->id}.uses_sla", $usesSla))>
-                                        Gunakan SLA
-                                    </label>
+                                    <p class="font-semibold text-[#78909a]">Tidak menggunakan SLA</p>
+                                    <p class="mt-1 text-[0.68rem] text-[#9aabb0]">Timer SLA tidak berjalan.</p>
                                 @endif
-                            </div>
-                            <div class="mt-4 max-w-[14rem]">
-                                <label for="sla-target-{{ $serviceType->id }}" class="ui-field-label">Target (hari kerja)</label>
-                                <input id="sla-target-{{ $serviceType->id }}" name="policies[{{ $serviceType->id }}][target_working_days]" type="number" min="1" max="365" value="{{ old("policies.{$serviceType->id}.target_working_days", $targetDays) }}" class="ui-input mt-2" @disabled($serviceType->code === 'SVC-07')>
-                                @if ($serviceType->code === 'SVC-07')
-                                    <p class="mt-2 text-xs leading-5 text-[#78909a]">Layanan ini memang tidak menggunakan SLA sesuai PRD.</p>
-                                @else
-                                    <p class="mt-2 text-xs leading-5 text-[#78909a]">Prioritas tiket tidak mengubah target SLA.</p>
-                                @endif
-                            </div>
-                        </article>
-                    @endforeach
-                </div>
-                <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#e7eef1] pt-5">
-                    <p class="max-w-2xl text-xs leading-5 text-[#78909a]">Perubahan tidak mengubah snapshot kebijakan yang sudah dipakai transaksi sebelumnya.</p>
-                    <button type="submit" class="ui-btn ui-btn-primary">Simpan target SLA</button>
-                </div>
-            </form>
-        </section>
+                            </td>
+                            <td class="border-b border-[#e5eaed] px-4 py-5 text-center"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold {{ $sla === null ? 'bg-[#fff6df] text-[#a16207]' : ($usesSla ? 'bg-[#e8faf4] text-[#087f5b]' : 'bg-[#eef2f4] text-[#657984]') }}">{{ $statusLabel }}</span></td>
+                            <td class="border-b border-[#e5eaed] px-4 py-5 font-mono text-xs font-semibold text-[#526f79]">{{ $sla ? 'v'.$sla->version : '—' }}</td>
+                            <td class="whitespace-nowrap border-b border-[#e5eaed] px-4 py-5 text-xs font-semibold text-[#526f79]">
+                                {{ $sla?->effective_from?->timezone(config('app.timezone'))->format('d/m/Y H:i') ?? 'Belum ada versi' }}
+                            </td>
+                            <td class="max-w-36 border-b border-[#e5eaed] px-4 py-5 text-xs text-[#6a8089]">{{ $sla?->changedBy?->name ?? 'Sistem awal' }}</td>
+                            <td class="border-b border-[#e5eaed] px-4 py-5">
+                                <div class="flex justify-center">
+                                    <button type="button" data-ui-modal-open="sla-edit-modal-{{ $serviceType->id }}" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#f1b900] text-white transition hover:bg-[#d49f00] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f1b900] focus-visible:ring-offset-2" aria-label="{{ $sla ? 'Edit' : 'Atur' }} SLA {{ $serviceType->code }}" title="{{ $sla ? 'Edit SLA' : 'Atur SLA' }}">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 2.651 2.651M4.5 19.5l4.04-.808a2 2 0 0 0 1.02-.55l8.95-8.95a2 2 0 0 0 0-2.828l-.884-.884a2 2 0 0 0-2.828 0l-8.95 8.95a2 2 0 0 0-.55 1.02L4.5 19.5Z" /></svg>
+                                        <span class="sr-only">{{ $sla ? 'Edit' : 'Atur' }} SLA {{ $serviceType->code }}</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="border-b border-[#e5eaed] px-4 py-12 text-center text-[#718088]">
+                                <p class="font-extrabold text-[#35505b]">Belum ada layanan untuk dikonfigurasi.</p>
+                                <p class="mt-2 text-sm text-[#78909a]">Tambahkan layanan terlebih dahulu dari Manajemen Layanan.</p>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
 
-        <section class="ui-panel overflow-hidden" aria-labelledby="calendar-heading">
-            @php
-                $calendarDays = $calendar?->working_days ?? \App\Services\OperationalPolicyService::DEFAULT_WORKING_DAYS;
-                $holidayLines = $calendar?->holidays?->map(fn ($holiday) => $holiday->holiday_date?->format('Y-m-d').'|'.$holiday->name)->implode("\n") ?? '';
-            @endphp
-            <div class="ui-panel-header">
-                <div>
-                    <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Waktu operasional</p>
-                    <h2 id="calendar-heading" class="ui-section-title">Kalender jam layanan</h2>
-                    <p class="ui-section-description">SLA hanya berjalan pada hari dan jam yang dipilih. Kalender yang digunakan transaksi lama tetap tersimpan sebagai snapshot.</p>
-                </div>
-            </div>
-
-            <form method="POST" action="{{ route('admin.operational-policies.calendar.update') }}" class="space-y-5 p-5 sm:p-6">
-                @csrf
-                @method('PUT')
-                <div class="grid gap-4 sm:grid-cols-3">
-                    <div>
-                        <label for="calendar-timezone" class="ui-field-label">Zona waktu</label>
-                        <input id="calendar-timezone" name="timezone" value="Asia/Jakarta" readonly class="ui-input mt-2 bg-[#f1f6f7]" aria-describedby="calendar-timezone-help">
-                        <p id="calendar-timezone-help" class="mt-2 text-xs leading-5 text-[#78909a]">Zona waktu {{ $branding['application_name'] }} ditetapkan Asia/Jakarta.</p>
-                    </div>
-                    <div>
-                        <label for="calendar-opens" class="ui-field-label">Jam mulai layanan <span class="text-rose-600">*</span></label>
-                        <input id="calendar-opens" name="opens_at" type="time" value="{{ old('opens_at', substr((string) ($calendar?->opens_at ?? '08:00'), 0, 5)) }}" required class="ui-input mt-2">
-                    </div>
-                    <div>
-                        <label for="calendar-closes" class="ui-field-label">Jam selesai layanan <span class="text-rose-600">*</span></label>
-                        <input id="calendar-closes" name="closes_at" type="time" value="{{ old('closes_at', substr((string) ($calendar?->closes_at ?? '16:00'), 0, 5)) }}" required class="ui-input mt-2">
-                    </div>
-                </div>
-
-                <fieldset>
-                    <legend class="ui-field-label">Hari kerja <span class="text-rose-600">*</span></legend>
-                    <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-                        @foreach ($workingDayLabels as $dayNumber => $dayLabel)
-                            <label class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#dce9ed] bg-[#f8fbfc] px-3 text-sm font-bold text-[#526f79]">
-                                <input type="checkbox" name="working_days[]" value="{{ $dayNumber }}" class="ui-checkbox" @checked(in_array($dayNumber, old('working_days', $calendarDays), true))>
-                                {{ $dayLabel }}
-                            </label>
-                        @endforeach
-                    </div>
-                </fieldset>
-
-                <div>
-                    <label for="calendar-holidays" class="ui-field-label">Hari libur</label>
-                    <textarea id="calendar-holidays" name="holidays_text" rows="5" class="ui-textarea mt-2" aria-describedby="calendar-holidays-help">{{ old('holidays_text', $holidayLines) }}</textarea>
-                    <p id="calendar-holidays-help" class="mt-2 text-xs leading-5 text-[#78909a]">Satu baris untuk setiap hari libur dengan format <code class="rounded bg-[#eef4f5] px-1 py-0.5 text-[0.7rem]">YYYY-MM-DD|Nama hari libur</code>. Kosongkan jika tidak ada.</p>
-                </div>
-
-                <div class="flex flex-wrap items-center justify-between gap-3 border-t border-[#e7eef1] pt-5">
-                    <p class="max-w-2xl text-xs leading-5 text-[#78909a]">Jam selesai harus setelah jam mulai. Hari libur dicatat bersama revision kalender.</p>
-                    <button type="submit" class="ui-btn ui-btn-primary">Simpan kalender layanan</button>
-                </div>
-            </form>
-        </section>
-
-        <section class="ui-panel overflow-hidden" aria-labelledby="settings-heading">
-            <div class="ui-panel-header">
-                <div>
-                    <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Batas workflow</p>
-                    <h2 id="settings-heading" class="ui-section-title">Ambang dan batas waktu</h2>
-                    <p class="ui-section-description">Nilai ini menjadi sumber kebijakan untuk scheduler, indikator SLA, dan alur buka kembali pada issue berikutnya.</p>
-                </div>
-            </div>
-
-            <form method="POST" action="{{ route('admin.operational-policies.settings.update') }}" class="p-5 sm:p-6">
-                @csrf
-                @method('PUT')
-                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <div>
-                        <label for="setting-warning" class="ui-field-label">Ambang mendekati SLA (%) <span class="text-rose-600">*</span></label>
-                        <input id="setting-warning" name="sla_warning_percent" type="number" min="1" max="100" value="{{ old('sla_warning_percent', $settings['sla_warning_percent']) }}" required class="ui-input mt-2">
-                        <p class="mt-2 text-xs leading-5 text-[#78909a]">Tiket mendekati batas saat sisa aktif berada di bawah ambang ini.</p>
-                    </div>
-                    <div>
-                        <label for="setting-requester" class="ui-field-label">Menunggu Pemohon (hari kerja) <span class="text-rose-600">*</span></label>
-                        <input id="setting-requester" name="requester_wait_working_days" type="number" min="1" max="365" value="{{ old('requester_wait_working_days', $settings['requester_wait_working_days']) }}" required class="ui-input mt-2">
-                    </div>
-                    <div>
-                        <label for="setting-confirmation" class="ui-field-label">Menunggu Konfirmasi (hari kerja) <span class="text-rose-600">*</span></label>
-                        <input id="setting-confirmation" name="confirmation_wait_working_days" type="number" min="1" max="365" value="{{ old('confirmation_wait_working_days', $settings['confirmation_wait_working_days']) }}" required class="ui-input mt-2">
-                    </div>
-                    <div>
-                        <label for="setting-reopen-window" class="ui-field-label">Jendela buka kembali (hari kerja) <span class="text-rose-600">*</span></label>
-                        <input id="setting-reopen-window" name="reopen_window_working_days" type="number" min="1" max="365" value="{{ old('reopen_window_working_days', $settings['reopen_window_working_days']) }}" required class="ui-input mt-2">
-                    </div>
-                    <div>
-                        <label for="setting-reopen-count" class="ui-field-label">Maksimum buka kembali (kali) <span class="text-rose-600">*</span></label>
-                        <input id="setting-reopen-count" name="max_reopen_count" type="number" min="1" max="20" value="{{ old('max_reopen_count', $settings['max_reopen_count']) }}" required class="ui-input mt-2">
-                    </div>
-                </div>
-                <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#e7eef1] pt-5">
-                    <p class="max-w-2xl text-xs leading-5 text-[#78909a]">Setiap nilai yang berubah menjadi revision baru dan tidak mengubah transaksi historis secara diam-diam.</p>
-                    <button type="submit" class="ui-btn ui-btn-primary">Simpan batas workflow</button>
-                </div>
-            </form>
-        </section>
-
-        <section class="ui-panel overflow-hidden" aria-labelledby="approver-heading">
-            <div class="ui-panel-header">
-                <div>
-                    <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#e4a72c] !shadow-[0_0_0_4px_#fff4d7]" aria-hidden="true"></span>Persetujuan tunggal</p>
-                    <h2 id="approver-heading" class="ui-section-title">Manajer TI / Approver aktif</h2>
-                    <p class="ui-section-description">Hanya satu pengguna aktif yang menerima permintaan persetujuan. Penggantian memindahkan approval tertunda dalam transaksi yang sama.</p>
-                </div>
-            </div>
-
-            <div class="grid gap-5 p-5 sm:p-6 lg:grid-cols-[0.9fr_1.1fr]">
-                <div class="rounded-xl border border-[#dce9ed] bg-[#f8fbfc] p-5">
-                    <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-[#6f8a92]">Penetapan saat ini</p>
-                    @if ($currentApprover?->user)
-                        <div class="mt-4 flex items-start gap-3">
-                            <span class="ui-avatar !h-11 !w-11 !rounded-xl">{{ strtoupper(substr($currentApprover->user->name, 0, 1)) }}</span>
-                            <div class="min-w-0">
-                                <p class="truncate text-sm font-extrabold text-[#29434d]">{{ $currentApprover->user->name }}</p>
-                                <p class="mt-1 truncate text-xs text-[#78909a]">{{ '@'.$currentApprover->user->username }}{{ $currentApprover->user->nip ? ' · '.$currentApprover->user->nip : '' }}</p>
-                                <span class="ui-status ui-status-active mt-3">Aktif</span>
+        <div class="divide-y divide-[#e5eaed] md:hidden">
+            @forelse ($serviceTypes as $serviceType)
+                @php
+                    $sla = $serviceType->activeSlaPolicy;
+                    $usesSla = $sla?->uses_sla ?? $serviceType->code !== 'SVC-07';
+                    $targetDays = $sla?->target_working_days;
+                    $statusLabel = $sla === null ? 'Belum diatur' : ($usesSla ? 'Aktif' : 'Tanpa SLA');
+                @endphp
+                <article class="p-5">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-xs font-bold uppercase tracking-wide text-[#78909a]">No. {{ $loop->iteration }}</p>
+                            <div class="mt-1 flex items-center gap-2">
+                                <span class="inline-flex rounded-md bg-[#e8f7fb] px-2 py-1 font-mono text-[0.68rem] font-extrabold tracking-[0.08em] text-[#1d6579]">{{ $serviceType->code }}</span>
+                                <h3 class="min-w-0 text-sm font-bold leading-5 text-[#112b49]">{{ $serviceType->name }}</h3>
                             </div>
                         </div>
-                        <dl class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                            <div class="rounded-lg bg-white p-3"><dt class="text-[0.68rem] font-extrabold uppercase tracking-[0.1em] text-[#8aa0a8]">Mulai</dt><dd class="mt-1 text-xs font-bold text-[#526f79]">{{ $currentApprover->started_at?->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</dd></div>
-                            <div class="rounded-lg bg-white p-3"><dt class="text-[0.68rem] font-extrabold uppercase tracking-[0.1em] text-[#8aa0a8]">Approval tertunda</dt><dd class="mt-1 text-xs font-bold text-[#526f79]">{{ $pendingApprovalCount }} permintaan</dd></div>
-                        </dl>
-                    @else
-                        <div class="mt-4 rounded-lg border border-amber-200 bg-[#fff9e9] p-4 text-sm leading-6 text-amber-900" role="status">Belum ada Manajer TI/Approver aktif. Tetapkan pengguna yang memenuhi syarat sebelum workflow persetujuan digunakan.</div>
-                    @endif
+                        <span class="shrink-0 rounded-full px-2 py-1 text-[0.65rem] font-bold {{ $sla === null ? 'bg-[#fff6df] text-[#a16207]' : ($usesSla ? 'bg-[#e8faf4] text-[#087f5b]' : 'bg-[#eef2f4] text-[#657984]') }}">{{ $statusLabel }}</span>
+                    </div>
+                    <dl class="mt-4 grid grid-cols-2 gap-3 rounded-lg bg-[#f8fafb] p-4 text-xs">
+                        <div>
+                            <dt class="font-bold uppercase tracking-wide text-[#78909a]">Target SLA</dt>
+                            <dd class="mt-1 text-[#172d45]">{{ $usesSla && $targetDays !== null ? $targetDays.' hari kerja' : 'Tidak ada target' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="font-bold uppercase tracking-wide text-[#78909a]">Versi</dt>
+                            <dd class="mt-1 font-mono text-[#172d45]">{{ $sla ? 'v'.$sla->version : '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="font-bold uppercase tracking-wide text-[#78909a]">Berlaku mulai</dt>
+                            <dd class="mt-1 text-[#172d45]">{{ $sla?->effective_from?->timezone(config('app.timezone'))->format('d/m/Y H:i') ?? 'Belum ada versi' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="font-bold uppercase tracking-wide text-[#78909a]">Diubah oleh</dt>
+                            <dd class="mt-1 truncate text-[#172d45]">{{ $sla?->changedBy?->name ?? 'Sistem awal' }}</dd>
+                        </div>
+                    </dl>
+                    <div class="mt-4 flex justify-end">
+                        <button type="button" data-ui-modal-open="sla-edit-modal-{{ $serviceType->id }}" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#f1b900] text-white transition hover:bg-[#d49f00] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f1b900] focus-visible:ring-offset-2" aria-label="{{ $sla ? 'Edit' : 'Atur' }} SLA {{ $serviceType->code }}" title="{{ $sla ? 'Edit SLA' : 'Atur SLA' }}">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 2.651 2.651M4.5 19.5l4.04-.808a2 2 0 0 0 1.02-.55l8.95-8.95a2 2 0 0 0 0-2.828l-.884-.884a2 2 0 0 0-2.828 0l-8.95 8.95a2 2 0 0 0-.55 1.02L4.5 19.5Z" /></svg>
+                            <span class="sr-only">{{ $sla ? 'Edit' : 'Atur' }} SLA {{ $serviceType->code }}</span>
+                        </button>
+                    </div>
+                </article>
+            @empty
+                <div class="px-5 py-12 text-center">
+                    <p class="font-extrabold text-[#35505b]">Belum ada layanan untuk dikonfigurasi.</p>
+                    <p class="mt-2 text-sm text-[#78909a]">Tambahkan layanan terlebih dahulu dari Manajemen Layanan.</p>
                 </div>
+            @endforelse
+        </div>
 
-                <form method="POST" action="{{ route('admin.operational-policies.approver.update') }}" class="space-y-4" data-swal-confirm="Tetapkan pengguna ini sebagai Manajer TI/Approver aktif dan pindahkan approval tertunda?">
-                    @csrf
-                    @method('PUT')
-                    <div>
-                        <label for="replacement-user" class="ui-field-label">Pengguna pengganti <span class="text-rose-600">*</span></label>
-                        <select id="replacement-user" name="replacement_user_id" required class="ui-select mt-2">
-                            <option value="">Pilih pengguna aktif dengan role Approver</option>
-                            @foreach ($approverCandidates as $candidate)
-                                <option value="{{ $candidate->id }}" @selected(old('replacement_user_id') == $candidate->id)>{{ $candidate->name }} · {{ '@'.$candidate->username }}</option>
-                            @endforeach
-                        </select>
-                        <p class="mt-2 text-xs leading-5 text-[#78909a]">Akun harus aktif, memiliki role Approver, dan sudah mengganti password awal.</p>
+        <div class="mt-4 flex flex-col gap-3 text-sm text-[#718088] sm:flex-row sm:items-center sm:justify-between">
+            <p>{{ $serviceCount }} layanan ditampilkan dalam daftar aktif.</p>
+            <p>Target dihitung dalam hari kerja sesuai kalender layanan.</p>
+        </div>
+        </div>
+    </section>
+
+    @foreach ($serviceTypes as $serviceType)
+        @php
+            $sla = $serviceType->activeSlaPolicy;
+            $usesSla = $sla?->uses_sla ?? $serviceType->code !== 'SVC-07';
+            $targetDays = $sla?->target_working_days;
+            $isAutoOpen = $autoOpenForm === 'edit-'.$serviceType->id && $errors->any();
+        @endphp
+        <div id="sla-edit-modal-{{ $serviceType->id }}" data-ui-modal data-auto-open="{{ $isAutoOpen ? 'true' : 'false' }}" data-reset-on-close="true" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+            <div class="absolute inset-0 bg-slate-950/45" data-ui-modal-close></div>
+            <div class="relative flex min-h-full items-start justify-center overflow-y-auto p-4 sm:items-center sm:p-8">
+                <section role="dialog" aria-modal="true" aria-labelledby="sla-edit-title-{{ $serviceType->id }}" class="relative max-h-[calc(100vh-2rem)] w-full max-w-xl overflow-y-auto rounded-xl border border-[#dfe8ec] bg-white shadow-[0_20px_55px_rgba(38,58,67,0.2)] sm:max-h-[calc(100vh-4rem)]">
+                    <div class="sticky top-0 z-10 flex items-center justify-between gap-4 bg-[#6098c6] px-5 py-4 text-white sm:px-6">
+                        <h2 id="sla-edit-title-{{ $serviceType->id }}" class="text-lg font-extrabold">{{ $sla ? 'Edit' : 'Atur' }} SLA {{ $serviceType->code }}</h2>
+                        <button type="button" data-ui-modal-close class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-white transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label="Tutup dialog {{ $sla ? 'edit' : 'atur' }} SLA {{ $serviceType->code }}">
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" d="m7 7 10 10M17 7 7 17" /></svg>
+                        </button>
                     </div>
-                    <div>
-                        <label for="approver-reason" class="ui-field-label">Alasan penetapan/penggantian <span class="text-rose-600">*</span></label>
-                        <textarea id="approver-reason" name="reason" rows="4" required maxlength="500" class="ui-textarea mt-2" placeholder="Contoh: pergantian Manajer TI per 1 September 2026.">{{ old('reason') }}</textarea>
-                    </div>
-                    <label class="flex items-start gap-3 rounded-lg border border-[#dce9ed] bg-[#f8fbfc] p-4 text-sm leading-6 text-[#526f79]">
-                        <input type="checkbox" name="transfer_pending_approvals" value="1" required class="ui-checkbox mt-1">
-                        <span>Saya memahami bahwa seluruh approval tertunda akan dipindahkan kepada pengguna pengganti dan perubahan ini dicatat di audit log.</span>
-                    </label>
-                    <button type="submit" class="ui-btn ui-btn-primary w-full sm:w-auto">Simpan penetapan approver</button>
-                </form>
+
+                    <form method="POST" action="{{ route('admin.operational-policies.sla.update') }}" data-ui-modal-form data-loading-message="Menyimpan kebijakan SLA..." class="p-5 sm:p-6">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="_sla_form" value="edit-{{ $serviceType->id }}">
+
+                        @foreach ($serviceTypes as $formServiceType)
+                            @php
+                                $formSla = $formServiceType->activeSlaPolicy;
+                                $formUsesSla = $formSla?->uses_sla ?? $formServiceType->code !== 'SVC-07';
+                                $formTargetDays = $formSla?->target_working_days;
+                                $isCurrentService = $formServiceType->is($serviceType);
+                                $formUsesSlaValue = old("policies.{$formServiceType->id}.uses_sla", $formUsesSla) ? 1 : 0;
+                                $formTargetValue = old("policies.{$formServiceType->id}.target_working_days", $formTargetDays);
+                            @endphp
+                            <input type="hidden" name="policies[{{ $formServiceType->id }}][service_type_id]" value="{{ $formServiceType->id }}">
+                            @if ($isCurrentService)
+                                <input type="hidden" name="policies[{{ $formServiceType->id }}][uses_sla]" value="0">
+                            @else
+                                <input type="hidden" name="policies[{{ $formServiceType->id }}][uses_sla]" value="{{ $formUsesSlaValue }}">
+                                <input type="hidden" name="policies[{{ $formServiceType->id }}][target_working_days]" value="{{ $formTargetValue }}">
+                            @endif
+                        @endforeach
+
+                        <div class="mt-1">
+                            <div class="flex items-start gap-3">
+                                <span class="inline-flex min-w-16 items-center justify-center rounded-md bg-[#e8f7fb] px-2 py-1 font-mono text-[0.68rem] font-extrabold tracking-[0.08em] text-[#1d6579]">{{ $serviceType->code }}</span>
+                                <div class="min-w-0">
+                                    <p class="font-extrabold text-[#29434d]">{{ $serviceType->name }}</p>
+                                    <p class="mt-1 text-xs text-[#78909a]">Kelas nomor: {{ $serviceType->ticket_class ?? 'Ditentukan subjenis' }}</p>
+                                </div>
+                            </div>
+
+                            <fieldset class="mt-5">
+                                <legend class="ui-field-label">Status kebijakan</legend>
+                                @if ($serviceType->code === 'SVC-07')
+                                    <p class="mt-2 inline-flex min-h-10 items-center rounded-lg border border-[#dfe5e7] bg-white px-3 text-xs font-bold text-[#657984]">Tanpa SLA sesuai karakter layanan</p>
+                                @else
+                                    <label for="sla-uses-{{ $serviceType->id }}" class="mt-2 inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#c4ebe5] bg-white px-3 text-xs font-bold text-[#526f79]">
+                                        <input id="sla-uses-{{ $serviceType->id }}" name="policies[{{ $serviceType->id }}][uses_sla]" type="checkbox" value="1" class="ui-checkbox" @checked((bool) old("policies.{$serviceType->id}.uses_sla", $usesSla)) data-ui-modal-focus>
+                                        Gunakan SLA untuk layanan ini
+                                    </label>
+                                @endif
+                            </fieldset>
+
+                            <div class="mt-5">
+                                <label for="sla-target-{{ $serviceType->id }}" class="ui-field-label">Target SLA (hari kerja)</label>
+                                <div class="mt-2 flex items-center gap-2">
+                                    <input id="sla-target-{{ $serviceType->id }}" name="policies[{{ $serviceType->id }}][target_working_days]" type="number" min="1" max="365" value="{{ old("policies.{$serviceType->id}.target_working_days", $targetDays) }}" class="ui-input max-w-40 font-mono font-bold" @disabled($serviceType->code === 'SVC-07') @if ($serviceType->code === 'SVC-07') aria-describedby="sla-target-help-{{ $serviceType->id }}" @else data-ui-modal-focus @endif>
+                                    <span class="text-xs font-bold text-[#6a8089]">hari kerja</span>
+                                </div>
+                                @error("policies.{$serviceType->id}.target_working_days")
+                                    <p class="mt-2 text-sm text-rose-700">{{ $message }}</p>
+                                @enderror
+                                <p id="sla-target-help-{{ $serviceType->id }}" class="mt-2 text-xs leading-5 text-[#78909a]">{{ $serviceType->code === 'SVC-07' ? 'Layanan ini tidak memakai timer SLA.' : 'Perubahan akan membuat versi kebijakan baru dan tidak mengubah snapshot tiket lama.' }}</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-5 flex flex-col-reverse gap-2 border-t border-[#edf2f4] pt-4 sm:flex-row sm:justify-end">
+                            <button type="button" data-ui-modal-close class="ui-btn ui-btn-ghost">Batal</button>
+                            <button type="submit" data-ui-modal-submit class="ui-btn ui-btn-primary">
+                                <span data-ui-modal-label>Simpan versi SLA</span>
+                                <span data-ui-modal-loading class="hidden" aria-live="polite">Menyimpan...</span>
+                            </button>
+                        </div>
+                    </form>
+                </section>
             </div>
-        </section>
-    </div>
+        </div>
+    @endforeach
 @endsection

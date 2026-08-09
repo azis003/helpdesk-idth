@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ApproverAssignmentRequest;
 use App\Http\Requests\Admin\OperationalSettingRequest;
@@ -10,7 +9,6 @@ use App\Http\Requests\Admin\ServiceCalendarRequest;
 use App\Http\Requests\Admin\SlaPolicyRequest;
 use App\Models\ServiceType;
 use App\Models\SlaPolicy;
-use App\Models\User;
 use App\Services\ApproverAssignmentService;
 use App\Services\DomainAuthorization;
 use App\Services\OperationalPolicyService;
@@ -29,35 +27,12 @@ class OperationalPolicyController extends Controller
     {
         $this->authorizeView($request);
 
-        $currentApprover = $this->approvers->current();
-
         return view('admin.operational-policies.index', [
             'serviceTypes' => ServiceType::query()
-                ->with('activeSlaPolicy')
+                ->with('activeSlaPolicy.changedBy')
                 ->orderBy('sort_order')
                 ->orderBy('code')
                 ->get(),
-            'calendar' => $this->policies->currentCalendar(),
-            'settings' => $this->policies->settings(),
-            'currentApprover' => $currentApprover,
-            'pendingApprovalCount' => $this->approvers->pendingCount($currentApprover?->user_id),
-            'approverCandidates' => User::query()
-                ->where('is_active', true)
-                ->where('must_change_password', false)
-                ->whereNotNull('password_changed_at')
-                ->whereHas('roles', fn ($query) => $query->where('slug', Role::Approver->value))
-                ->with('roles')
-                ->orderBy('name')
-                ->get(),
-            'workingDayLabels' => [
-                1 => 'Senin',
-                2 => 'Selasa',
-                3 => 'Rabu',
-                4 => 'Kamis',
-                5 => 'Jumat',
-                6 => 'Sabtu',
-                7 => 'Minggu',
-            ],
         ]);
     }
 

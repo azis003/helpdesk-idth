@@ -39,17 +39,18 @@ const showSwalConfirmation = (message, options = {}) => Swal.fire({
     },
 });
 
-const globalLoadingOverlay = document.querySelector('[data-global-loading-overlay]');
-const globalLoadingMessage = globalLoadingOverlay?.querySelector('[data-global-loading-message]');
-const globalLoadingRoots = globalLoadingOverlay
-    ? [...document.body.children].filter((element) => element !== globalLoadingOverlay)
-    : [];
 let globalLoadingActive = false;
 
 const setGlobalLoadingState = (active, message = 'Memproses permintaan...') => {
+    const globalLoadingOverlay = document.querySelector('[data-global-loading-overlay]');
+
     if (!globalLoadingOverlay) {
         return;
     }
+
+    const globalLoadingMessage = globalLoadingOverlay.querySelector('[data-global-loading-message]');
+    const globalLoadingRoots = [...document.body.children]
+        .filter((element) => element !== globalLoadingOverlay);
 
     globalLoadingActive = active;
     globalLoadingOverlay.hidden = !active;
@@ -84,6 +85,55 @@ const requestFormSubmit = (form) => {
 
     HTMLFormElement.prototype.submit.call(form);
 };
+
+const initializeSihatiPage = () => {
+    if (document.body.dataset.sihatiPageInitialized === 'true') {
+        return;
+    }
+
+    document.body.dataset.sihatiPageInitialized = 'true';
+
+const livewireNavigationEnabled = document.body.hasAttribute('data-livewire-navigation');
+
+const markLivewireNavigableLinks = () => {
+    if (!livewireNavigationEnabled || !window.Livewire) {
+        return;
+    }
+
+    const currentUrl = new URL(window.location.href);
+
+    document.querySelectorAll('a[href]').forEach((link) => {
+        if (link.hasAttribute('wire:navigate')
+            || link.hasAttribute('download')
+            || link.target && link.target !== '_self'
+            || link.closest('[data-no-livewire-navigate]')) {
+            return;
+        }
+
+        let targetUrl;
+
+        try {
+            targetUrl = new URL(link.href, currentUrl);
+        } catch {
+            return;
+        }
+
+        const sameDocument = targetUrl.origin === currentUrl.origin
+            && targetUrl.pathname === currentUrl.pathname
+            && targetUrl.search === currentUrl.search;
+
+        if (targetUrl.origin !== currentUrl.origin
+            || !['http:', 'https:'].includes(targetUrl.protocol)
+            || (sameDocument && targetUrl.hash)
+            || targetUrl.pathname.startsWith('/attachments/')) {
+            return;
+        }
+
+        link.setAttribute('wire:navigate', '');
+    });
+};
+
+markLivewireNavigableLinks();
 
 const flashElement = document.querySelector('[data-swal-flash]');
 
@@ -1335,6 +1385,28 @@ if (brandingForm) {
         submitLabel?.classList.add('hidden');
         submitLoading?.classList.remove('hidden');
     });
+}
+
+};
+
+document.addEventListener('livewire:navigate', () => {
+    document.body.removeAttribute('data-sihati-page-initialized');
+    setGlobalLoadingState(true, 'Memuat halaman...');
+});
+
+document.addEventListener('livewire:navigated', () => {
+    setGlobalLoadingState(false);
+    initializeSihatiPage();
+});
+
+if (document.body.hasAttribute('data-livewire-navigation')) {
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!window.Livewire) {
+            initializeSihatiPage();
+        }
+    }, { once: true });
+} else {
+    initializeSihatiPage();
 }
 
 document.addEventListener('submit', (event) => {
