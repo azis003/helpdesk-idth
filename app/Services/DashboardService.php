@@ -98,11 +98,25 @@ class DashboardService
             array_map(fn (TicketStatus $status): string => $status->value, TicketStatus::cases()),
             self::TERMINAL_STATUSES,
         );
+        $requesterActiveStatuses = [
+            TicketStatus::Baru->value,
+            TicketStatus::Diproses->value,
+            TicketStatus::Dikerjakan->value,
+            TicketStatus::MenungguPersetujuan->value,
+            TicketStatus::MenungguPemohon->value,
+            TicketStatus::MenungguPihakKetiga->value,
+        ];
 
         return [
             'visible' => true,
             'ticket_count' => (clone $periodQuery)->count(),
             'active_ticket_count' => (clone $periodQuery)->whereIn('status', $activeStatuses)->count(),
+            'completed_ticket_count' => (clone $periodQuery)->where('status', TicketStatus::MenungguKonfirmasi->value)->count(),
+            'closed_ticket_count' => (clone $periodQuery)->where('status', TicketStatus::Ditutup->value)->count(),
+            'total_ticket_count' => (clone $baseQuery)->count(),
+            'total_active_ticket_count' => (clone $baseQuery)->whereIn('status', $requesterActiveStatuses)->count(),
+            'total_completed_ticket_count' => (clone $baseQuery)->where('status', TicketStatus::MenungguKonfirmasi->value)->count(),
+            'total_closed_ticket_count' => (clone $baseQuery)->where('status', TicketStatus::Ditutup->value)->count(),
             'needs_reply_count' => (clone $periodQuery)->where('status', TicketStatus::MenungguPemohon->value)->count(),
             'needs_confirmation_count' => (clone $periodQuery)->where('status', TicketStatus::MenungguKonfirmasi->value)->count(),
             'tickets' => $tickets,
@@ -443,6 +457,12 @@ class DashboardService
             'visible' => false,
             'ticket_count' => 0,
             'active_ticket_count' => 0,
+            'completed_ticket_count' => 0,
+            'closed_ticket_count' => 0,
+            'total_ticket_count' => 0,
+            'total_active_ticket_count' => 0,
+            'total_completed_ticket_count' => 0,
+            'total_closed_ticket_count' => 0,
             'needs_reply_count' => 0,
             'needs_confirmation_count' => 0,
             'tickets' => collect(),

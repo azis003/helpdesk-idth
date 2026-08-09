@@ -174,6 +174,26 @@ if (flashElement) {
     }
 }
 
+const reportingGuideTemplate = document.querySelector('[data-reporting-guide-template]');
+const reportingGuideTriggers = [...document.querySelectorAll('[data-reporting-guide-trigger]')];
+
+reportingGuideTriggers.forEach((trigger) => {
+    trigger.addEventListener('click', () => {
+        Swal.fire({
+            title: 'Tata cara pelaporan',
+            html: reportingGuideTemplate?.innerHTML || '<p>Ikuti petunjuk pada formulir untuk mengirim laporan.</p>',
+            showCloseButton: true,
+            closeButtonAriaLabel: 'Tutup dialog',
+            confirmButtonText: 'Mengerti',
+            confirmButtonColor: '#0b98e5',
+            customClass: {
+                popup: 'sihati-swal-popup',
+                htmlContainer: 'sihati-swal-html',
+            },
+        });
+    });
+});
+
 const confirmableForms = [...document.querySelectorAll('form[data-swal-confirm]')];
 
 confirmableForms.forEach((form) => {
@@ -964,6 +984,9 @@ const ticketForms = document.querySelectorAll('[data-ticket-form]');
 
 ticketForms.forEach((ticketForm) => {
     const serviceSelect = ticketForm.querySelector('[data-ticket-service-select]');
+    const serviceCards = [...ticketForm.querySelectorAll('[data-ticket-service-card]')];
+    const serviceSearch = ticketForm.querySelector('[data-ticket-service-search]');
+    const serviceCatalogEmpty = ticketForm.querySelector('[data-ticket-service-catalog-empty]');
     const servicePanels = [...ticketForm.querySelectorAll('[data-ticket-service-panel]')];
     const serviceEmptyState = ticketForm.querySelector('[data-ticket-service-empty]');
     const attachmentGroups = [...ticketForm.querySelectorAll('[data-ticket-attachment]')];
@@ -1020,7 +1043,37 @@ ticketForms.forEach((ticketForm) => {
         }
     };
 
-    serviceSelect.addEventListener('change', updateTicketForm);
+    const updateServiceCatalog = () => {
+        const query = serviceSearch?.value.trim().toLowerCase() || '';
+        let visibleCount = 0;
+
+        serviceCards.forEach((card) => {
+            const matches = !query || (card.dataset.serviceSearch || '').includes(query);
+            const selected = card.dataset.serviceId === serviceSelect.value;
+
+            card.hidden = !matches;
+            card.setAttribute('aria-pressed', String(selected));
+
+            if (matches) {
+                visibleCount += 1;
+            }
+        });
+
+        serviceCatalogEmpty?.classList.toggle('hidden', visibleCount > 0);
+    };
+
+    serviceCards.forEach((card) => {
+        card.addEventListener('click', () => {
+            serviceSelect.value = card.dataset.serviceId || '';
+            serviceSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    });
+
+    serviceSearch?.addEventListener('input', updateServiceCatalog);
+    serviceSelect.addEventListener('change', () => {
+        updateTicketForm();
+        updateServiceCatalog();
+    });
 
     ticketForm.addEventListener('submit', () => {
         if (!submitButton) {
@@ -1034,6 +1087,7 @@ ticketForms.forEach((ticketForm) => {
     });
 
     updateTicketForm();
+    updateServiceCatalog();
 });
 
 const queueClaimForms = document.querySelectorAll('[data-queue-claim]');

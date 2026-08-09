@@ -12,12 +12,74 @@
 @section('content')
     <div class="ui-page-header">
         <div>
-            <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Permintaan layanan TI</p>
+            <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Katalog layanan TI</p>
             <h1 class="ui-page-title">Buat tiket</h1>
             <p class="ui-page-description">Pilih layanan yang sesuai, jelaskan kebutuhan Anda, lalu kirim tiket untuk dicatat oleh Tim TI.</p>
         </div>
         <a href="{{ route('tickets.index') }}" class="ui-btn ui-btn-ghost">Lihat tiket saya</a>
     </div>
+
+    <section class="mt-7" aria-labelledby="service-catalog-heading">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+                <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Pilih kebutuhan Anda</p>
+                <h2 id="service-catalog-heading" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">Katalog layanan</h2>
+                <p class="mt-2 max-w-2xl text-sm leading-6 text-[#6a8089]">Mulai dari layanan yang paling mendekati kebutuhan Anda. Detail formulir akan menyesuaikan pilihan ini.</p>
+            </div>
+            <div class="w-full lg:max-w-xs">
+                <label for="service-catalog-search" class="sr-only">Cari layanan</label>
+                <div class="relative">
+                    <input id="service-catalog-search" type="search" class="ui-input !pr-10" placeholder="Cari layanan" autocomplete="off" data-ticket-service-search>
+                    <svg class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#78909a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.3" /><path stroke-linecap="round" d="m16 16 4.2 4.2" /></svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" data-ticket-service-catalog>
+            @foreach ($serviceTypes as $serviceType)
+                @php
+                    $serviceSearchText = strtolower(trim($serviceType->code.' '.$serviceType->name.' '.($serviceType->description ?? '')));
+                    $serviceIsSelected = (string) $selectedServiceId === (string) $serviceType->id;
+                @endphp
+                <button
+                    type="button"
+                    class="ui-catalog-card group text-left"
+                    data-ticket-service-card
+                    data-service-id="{{ $serviceType->id }}"
+                    data-service-search="{{ $serviceSearchText }}"
+                    aria-pressed="{{ $serviceIsSelected ? 'true' : 'false' }}"
+                >
+                    <span class="ui-catalog-icon" aria-hidden="true">
+                        @switch($serviceType->code)
+                            @case('SVC-01')
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M5 12h3l2-6 4 12 2-6h3" /></svg>
+                                @break
+                            @case('SVC-02')
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 4.5h9l3 3v12H6zM14 4.5v3h4M9 12h6M9 15.5h4" /></svg>
+                                @break
+                            @case('SVC-03')
+                            @case('SVC-04')
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 7.5h14v9H5zM8 4.5h8M8 11h8M8 14h4" /></svg>
+                                @break
+                            @case('SVC-05')
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4.5" y="6.5" width="15" height="11" rx="1.5" /><path stroke-linecap="round" d="M8 10h8M8 13.5h5" /></svg>
+                                @break
+                            @case('SVC-06')
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 9h8M8 12h5M8 15h7" /></svg>
+                                @break
+                            @default
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 4.5h12v15H6zM9 8h6M9 11.5h6M9 15h4" /></svg>
+                        @endswitch
+                    </span>
+                    <span class="mt-4 text-[0.68rem] font-extrabold uppercase tracking-[0.1em] text-[#78909a]">{{ $serviceType->code }} · {{ $serviceType->ticket_class ?? 'Layanan' }}</span>
+                    <span class="mt-2 text-sm font-extrabold leading-5 text-[#35505b]">{{ $serviceType->name }}</span>
+                    <span class="mt-2 line-clamp-2 text-xs leading-5 text-[#78909a]">{{ $serviceType->description ?: 'Pilih layanan ini untuk melihat formulir yang sesuai.' }}</span>
+                    <span class="mt-auto pt-4 text-xs font-extrabold text-[#147a79]">Pilih layanan <span aria-hidden="true">→</span></span>
+                </button>
+            @endforeach
+        </div>
+        <p class="ui-empty mt-4 hidden !p-6" data-ticket-service-catalog-empty role="status">Layanan yang Anda cari belum ditemukan. Coba kata kunci lain.</p>
+    </section>
 
     @if ($announcements->isNotEmpty())
         <section class="mt-7" aria-labelledby="ticket-announcements-heading">
@@ -71,7 +133,7 @@
 
                 <div>
                     <label for="service_type_id" class="ui-field-label">Layanan <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only">wajib</span></label>
-                    <p id="service_type_id-help" class="ui-field-help">Field formulir dan kelas nomor akan mengikuti layanan yang dipilih.</p>
+                    <p id="service_type_id-help" class="ui-field-help">Pilihan dari katalog akan mengatur formulir di bawah. Anda dapat mengubahnya kapan saja.</p>
                     <select id="service_type_id" name="service_type_id" required data-ticket-service-select class="ui-select mt-2" @error('service_type_id') aria-invalid="true" aria-describedby="service_type_id-error" @else aria-describedby="service_type_id-help" @enderror>
                         <option value="" data-service-code="">Pilih layanan</option>
                         @foreach ($serviceTypes as $serviceType)

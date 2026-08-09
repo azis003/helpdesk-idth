@@ -40,64 +40,38 @@
                 </div>
             </div>
 
-            <div class="hidden overflow-x-auto md:block">
-                <table class="ui-table" aria-describedby="tickets-list-heading">
-                    <thead>
-                        <tr>
-                            <th scope="col">Nomor dan layanan</th>
-                            <th scope="col">Pemohon</th>
-                            <th scope="col">Status</th>
-                            <th scope="col">Prioritas</th>
-                            <th scope="col">Dibuat</th>
-                            <th scope="col"><span class="sr-only">Aksi</span></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($tickets as $ticket)
-                            @php
-                                $ticketRouteTarget = $isTeamChair ? $ticket->id : $ticket;
-                                $ticketNumber = $isTeamChair ? $ticket->ticketLabel() : ($ticket->ticket_number ?? 'Tiket #'.$ticket->id);
-                                $serviceCode = $isTeamChair ? $ticket->serviceCode : ($ticket->service_type_code_snapshot ?? $ticket->serviceType?->code);
-                                $serviceName = $isTeamChair ? $ticket->serviceLabel() : $ticket->service_type_name_snapshot ?? $ticket->serviceType?->name;
-                                $requesterName = $isTeamChair ? ($ticket->requesterName ?? 'Belum tercatat') : ($ticket->requester_name_snapshot ?? $ticket->requester?->name ?? 'Belum tercatat');
-                                $submittedAt = $isTeamChair ? $ticket->submittedAt : ($ticket->submitted_at ?? $ticket->created_at);
-                            @endphp
-                            <tr>
-                                <td>
-                                    <a href="{{ route('tickets.show', $ticketRouteTarget) }}" class="font-extrabold text-[#1d5d72] hover:underline">{{ $ticketNumber }}</a>
-                                    <p class="mt-1 max-w-sm text-sm font-bold text-[#35505b]">{{ $ticket->subject }}</p>
-                                    <p class="mt-1 text-xs text-[#78909a]">{{ $serviceCode ?? 'Layanan belum tersedia' }} &middot; {{ $serviceName }}</p>
-                                </td>
-                                <td class="text-sm text-[#526f79]">{{ $requesterName }}</td>
-                                <td><x-status-badge :status="$ticket->status" /></td>
-                                <td><x-priority-badge :priority="$ticket->priority" /></td>
-                                <td class="whitespace-nowrap text-xs text-[#78909a]">{{ $submittedAt?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</td>
-                                <td class="text-right"><a href="{{ route('tickets.show', $ticketRouteTarget) }}" class="ui-action-link">Buka detail</a></td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="space-y-3 p-4 md:hidden">
+            <div class="grid gap-4 p-4 sm:p-5 lg:grid-cols-2">
                 @foreach ($tickets as $ticket)
                     @php
                         $ticketRouteTarget = $isTeamChair ? $ticket->id : $ticket;
                         $ticketNumber = $isTeamChair ? $ticket->ticketLabel() : ($ticket->ticket_number ?? 'Tiket #'.$ticket->id);
                         $serviceCode = $isTeamChair ? $ticket->serviceCode : ($ticket->service_type_code_snapshot ?? $ticket->serviceType?->code);
+                        $serviceName = $isTeamChair ? $ticket->serviceLabel() : $ticket->service_type_name_snapshot ?? $ticket->serviceType?->name;
+                        $requesterName = $isTeamChair ? ($ticket->requesterName ?? 'Belum tercatat') : ($ticket->requester_name_snapshot ?? $ticket->requester?->name ?? 'Belum tercatat');
                         $submittedAt = $isTeamChair ? $ticket->submittedAt : ($ticket->submitted_at ?? $ticket->created_at);
                     @endphp
-                    <a href="{{ route('tickets.show', $ticketRouteTarget) }}" class="block rounded-xl border border-[#e1eaed] bg-[#fbfdfd] p-4 transition hover:border-[#8bd7ee] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#2bb8aa]">
-                        <div class="flex flex-wrap items-start justify-between gap-2">
-                            <span class="text-xs font-extrabold text-[#1d5d72]">{{ $ticketNumber }}</span>
-                            <x-status-badge :status="$ticket->status" />
-                        </div>
-                        <h3 class="mt-3 text-sm font-extrabold leading-5 text-[#35505b]">{{ $ticket->subject }}</h3>
-                        <p class="mt-1 text-xs text-[#78909a]">{{ $serviceCode ?? 'Layanan belum tersedia' }}</p>
-                        <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
-                            <x-priority-badge :priority="$ticket->priority" />
-                            <span class="text-xs text-[#78909a]">{{ $submittedAt?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</span>
-                        </div>
+                    <a href="{{ route('tickets.show', $ticketRouteTarget) }}" aria-label="Buka detail {{ $ticketNumber }}: {{ $ticket->subject }}" class="group flex min-h-40 gap-4 rounded-xl border border-[#e1eaed] bg-white p-4 transition hover:-translate-y-0.5 hover:border-[#8bd7ee] hover:shadow-[0_12px_24px_-20px_rgba(48,134,165,0.75)] focus-visible:outline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#2bb8aa] sm:p-5">
+                        <span class="ui-catalog-icon mt-0.5 shrink-0" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 7.5h14v11H5zM8 7.5V5h8v2.5M8.5 11h7M8.5 14.5h4" /></svg>
+                        </span>
+                        <span class="min-w-0 flex-1">
+                            <span class="flex items-start justify-between gap-3">
+                                <span class="min-w-0">
+                                    <span class="block text-xs font-extrabold text-[#1d5d72]">{{ $ticketNumber }}</span>
+                                    <span class="mt-2 block line-clamp-2 text-sm font-extrabold leading-5 text-[#35505b]">{{ $ticket->subject }}</span>
+                                </span>
+                                <x-status-badge :status="$ticket->status" class="shrink-0" />
+                            </span>
+                            <span class="mt-2 block text-xs leading-5 text-[#78909a]">{{ $serviceCode ?? 'Layanan belum tersedia' }} &middot; {{ $serviceName ?: 'Layanan belum tersedia' }}</span>
+                            @if ($isTeamChair)
+                                <span class="mt-1 block truncate text-xs text-[#78909a]">Pemohon: {{ $requesterName }}</span>
+                            @endif
+                            <span class="mt-4 flex flex-wrap items-center gap-2">
+                                <x-priority-badge :priority="$ticket->priority" />
+                                <span class="text-xs text-[#78909a]">{{ $submittedAt?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</span>
+                                <span class="ml-auto text-xs font-extrabold text-[#147a79] group-hover:underline">Buka detail <span aria-hidden="true">→</span></span>
+                            </span>
+                        </span>
                     </a>
                 @endforeach
             </div>

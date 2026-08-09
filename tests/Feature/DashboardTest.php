@@ -40,7 +40,7 @@ class DashboardTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_requester_dashboard_is_scoped_to_the_requester_and_supports_period_filtering(): void
+    public function test_requester_dashboard_is_scoped_to_the_requester_and_shows_ticket_summary(): void
     {
         $requester = $this->createUser([Role::Pemohon], ['name' => 'Pemohon Utama']);
         $otherRequester = $this->createUser([Role::Pemohon], ['name' => 'Pemohon Lain']);
@@ -57,7 +57,15 @@ class DashboardTest extends TestCase
             'subject' => 'Tiket pemohon bulan lalu',
             'requester_id' => $requester->id,
             'created_by_id' => $requester->id,
+            'status' => TicketStatus::MenungguKonfirmasi,
             'created_at' => Carbon::parse('2026-07-30 09:00:00', 'Asia/Jakarta'),
+        ]);
+        Ticket::factory()->create([
+            'subject' => 'Tiket pemohon sudah ditutup',
+            'requester_id' => $requester->id,
+            'created_by_id' => $requester->id,
+            'status' => TicketStatus::Ditutup,
+            'created_at' => Carbon::parse('2026-06-30 09:00:00', 'Asia/Jakarta'),
         ]);
         Ticket::factory()->create([
             'subject' => 'Tiket milik pengguna lain',
@@ -69,16 +77,24 @@ class DashboardTest extends TestCase
         $this->actingAs($requester)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Tiket pemohon bulan berjalan')
+            ->assertSee('Tata cara pelaporan')
+            ->assertSee('Total tiket')
+            ->assertDontSee('Tiket pemohon bulan berjalan')
             ->assertDontSee('Tiket pemohon bulan lalu')
             ->assertDontSee('Tiket milik pengguna lain')
-            ->assertSee('Tiket yang membutuhkan jawaban');
+            ->assertDontSee('Tiket yang membutuhkan jawaban')
+            ->assertViewHas('requesterDashboard', function (array $dashboard): bool {
+                return $dashboard['total_ticket_count'] === 3
+                    && $dashboard['total_active_ticket_count'] === 1
+                    && $dashboard['total_completed_ticket_count'] === 1
+                    && $dashboard['total_closed_ticket_count'] === 1;
+            });
 
         $this->actingAs($requester)
             ->get(route('dashboard', ['start_date' => '2026-07-01', 'end_date' => '2026-07-31']))
             ->assertOk()
-            ->assertSee('Tiket pemohon bulan lalu')
-            ->assertDontSee('Tiket pemohon bulan berjalan');
+            ->assertSee('Total tiket')
+            ->assertViewHas('requesterDashboard.total_ticket_count', 3);
     }
 
     public function test_agent_dashboard_shows_queue_responsibility_waiting_and_sla_risk(): void

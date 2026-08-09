@@ -6,6 +6,14 @@
 
 @php
     $isTeamChair = $user->hasRole(\App\Enums\Role::KetuaTimKerja);
+    $isRequesterOnly = $user->hasRole(\App\Enums\Role::Pemohon)
+        && ! $user->hasAnyRole([
+            \App\Enums\Role::SuperAdmin,
+            \App\Enums\Role::AgenTier1,
+            \App\Enums\Role::AgenTier2,
+            \App\Enums\Role::Approver,
+            \App\Enums\Role::KetuaTimKerja,
+        ]);
     $formatDate = static fn ($value): string => $value?->timezone($periodTimezone)->locale('id')->translatedFormat('d M Y, H:i') ?? 'Belum tercatat';
     $formatMinutes = static function (?int $minutes): string {
         if ($minutes === null) {
@@ -34,21 +42,37 @@
 
 @section('content')
     <section class="ui-portal-hero" aria-labelledby="dashboard-title">
-        <div class="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
-            <div>
-                <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.16em] text-[#ffe98f]">{{ $branding['tagline'] ?: 'Portal layanan' }} · {{ $branding['application_name'] }}</p>
-                <h1 id="dashboard-title" class="mt-2 text-2xl font-extrabold tracking-[-0.04em] sm:text-3xl">Selamat datang, {{ $user->name }}</h1>
-                <p class="mt-2 max-w-2xl text-sm leading-6 text-[#d7e8ed]">Pantau pekerjaan yang menjadi cakupan peran Anda dalam satu tampilan.</p>
+        @if ($isRequesterOnly)
+            <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                    <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.16em] text-[#ffe98f]">Portal layanan TI</p>
+                    <h1 id="dashboard-title" class="mt-2 text-2xl font-extrabold tracking-[-0.04em] sm:text-3xl">Butuh bantuan TI?</h1>
+                    <p class="mt-2 max-w-2xl text-sm leading-6 text-[#d7e8ed]">Buat tiket untuk melaporkan kendala atau mengajukan layanan TI</p>
+                </div>
+                <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                    <button type="button" class="ui-btn ui-btn-secondary w-full sm:w-auto" data-reporting-guide-trigger aria-haspopup="dialog">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path stroke-linecap="round" d="M9.8 9.2a2.3 2.3 0 1 1 3.8 1.7c-.9.7-1.6 1.2-1.6 2.4M12 16.5h.01" /></svg>
+                        Tata cara pelaporan
+                    </button>
+                </div>
             </div>
-            <div class="flex flex-wrap gap-2">
-                @foreach ($user->roleLabels() as $roleLabel)
-                    <span class="inline-flex items-center rounded-full border border-[#79bfd4] bg-[#376b81] px-2.5 py-1 text-xs font-bold text-white">{{ $roleLabel }}</span>
-                @endforeach
+        @else
+            <div class="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+                <div>
+                    <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.16em] text-[#ffe98f]">{{ $branding['tagline'] ?: 'Portal layanan' }} · {{ $branding['application_name'] }}</p>
+                    <h1 id="dashboard-title" class="mt-2 text-2xl font-extrabold tracking-[-0.04em] sm:text-3xl">Selamat datang, {{ $user->name }}</h1>
+                    <p class="mt-2 max-w-2xl text-sm leading-6 text-[#d7e8ed]">Pantau pekerjaan yang menjadi cakupan peran Anda dalam satu tampilan.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    @foreach ($user->roleLabels() as $roleLabel)
+                        <span class="inline-flex items-center rounded-full border border-[#79bfd4] bg-[#376b81] px-2.5 py-1 text-xs font-bold text-white">{{ $roleLabel }}</span>
+                    @endforeach
+                </div>
             </div>
-        </div>
+        @endif
     </section>
 
-    @if (! $isSuperAdmin)
+    @if (! $isSuperAdmin && ! $isRequesterOnly)
         <section class="ui-panel mt-6 p-4 sm:p-5" aria-labelledby="period-filter-heading">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -76,6 +100,41 @@
             </div>
         @endif
         </section>
+    @endif
+
+    @if ($isRequesterOnly)
+
+        <section class="mt-6" aria-labelledby="requester-summary-heading">
+            <dl class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div class="ui-stat-card items-start">
+                    <span class="ui-stat-icon" aria-hidden="true"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 7.5h14v11H5zM8 7.5V5h8v2.5M8.5 11h7M8.5 14.5h4" /></svg></span>
+                    <span><dt class="ui-stat-label">Total tiket</dt><dd class="ui-stat-value">{{ $requesterDashboard['total_ticket_count'] }}</dd><span class="mt-1 block text-xs leading-5 text-[#78909a]">Semua tiket yang Anda buat.</span></span>
+                </div>
+                <div class="ui-stat-card items-start">
+                    <span class="ui-stat-icon !bg-[#e8faf4] !text-[#087f5b]" aria-hidden="true"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M12 5v14M5 12h14" /></svg></span>
+                    <span><dt class="ui-stat-label">Tiket aktif</dt><dd class="ui-stat-value !text-[#087f5b]">{{ $requesterDashboard['total_active_ticket_count'] }}</dd><span class="mt-1 block text-xs leading-5 text-[#78909a]">Sedang diproses atau menunggu tindak lanjut.</span></span>
+                </div>
+                <div class="ui-stat-card items-start">
+                    <span class="ui-stat-icon !bg-[#fff4d7] !text-[#9a6700]" aria-hidden="true"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m5.5 12.5 4 4 9-9" /></svg></span>
+                    <span><dt class="ui-stat-label">Tiket selesai</dt><dd class="ui-stat-value !text-[#9a6700]">{{ $requesterDashboard['total_completed_ticket_count'] }}</dd><span class="mt-1 block text-xs leading-5 text-[#78909a]">Solusi tersedia, menunggu konfirmasi anda.</span></span>
+                </div>
+                <div class="ui-stat-card items-start">
+                    <span class="ui-stat-icon !bg-[#eef2f4] !text-[#657984]" aria-hidden="true"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m5.5 12.5 4 4 9-9" /><path stroke-linecap="round" d="M7 19h10" /></svg></span>
+                    <span><dt class="ui-stat-label">Tiket ditutup</dt><dd class="ui-stat-value !text-[#657984]">{{ $requesterDashboard['total_closed_ticket_count'] }}</dd><span class="mt-1 block text-xs leading-5 text-[#78909a]">Tiket sudah berstatus Ditutup.</span></span>
+                </div>
+            </dl>
+        </section>
+
+        <template data-reporting-guide-template>
+            <div class="text-left">
+                <ol class="mt-4 space-y-4">
+                    <li class="flex gap-3"><span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#d8f5ef] text-xs font-extrabold text-[#147a79]">1</span><div><p class="text-sm font-extrabold text-[#35505b]">Pilih layanan</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Pilih kategori yang paling mendekati kebutuhan Anda.</p></div></li>
+                    <li class="flex gap-3"><span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#d8f5ef] text-xs font-extrabold text-[#147a79]">2</span><div><p class="text-sm font-extrabold text-[#35505b]">Jelaskan kebutuhan</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Tuliskan kendala, dampak, lokasi, dan hasil yang diharapkan.</p></div></li>
+                    <li class="flex gap-3"><span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#d8f5ef] text-xs font-extrabold text-[#147a79]">3</span><div><p class="text-sm font-extrabold text-[#35505b]">Pantau dan konfirmasi</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Balas jika ada pertanyaan dan konfirmasi setelah solusi tersedia.</p></div></li>
+                </ol>
+            </div>
+        </template>
+
     @endif
 
     {{-- Approvals intentionally come first for the active Approver persona. --}}
@@ -116,7 +175,7 @@
         </section>
     @endif
 
-    @if ($announcements->isNotEmpty())
+    @if ($announcements->isNotEmpty() && ! $isRequesterOnly)
         <section class="mt-7" aria-labelledby="announcements-heading">
             <div class="flex items-end justify-between gap-4"><div><p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#e4a72c] !shadow-[0_0_0_4px_#fff4d7]" aria-hidden="true"></span>Informasi terbaru</p><h2 id="announcements-heading" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">Pengumuman layanan</h2></div><span class="text-xs font-bold text-[#86979e]">{{ $announcements->count() }} informasi aktif</span></div>
             <div class="mt-4 grid gap-3 lg:grid-cols-2">
@@ -130,7 +189,7 @@
         </section>
     @endif
 
-    @if ($requesterDashboard['visible'])
+    @if ($requesterDashboard['visible'] && ! $isRequesterOnly)
         <section class="mt-7" aria-labelledby="requester-dashboard-heading">
             <div class="flex flex-wrap items-end justify-between gap-4">
                 <div>
@@ -300,14 +359,6 @@
         </section>
     @endif
 
-    <section class="mt-8" aria-labelledby="access-summary-heading">
-        <div class="flex items-end justify-between gap-4"><div><p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Ringkasan</p><h2 id="access-summary-heading" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">Status akses Anda</h2></div></div>
-        <div class="mt-4 grid gap-3 md:grid-cols-3">
-            <article class="ui-stat-card items-start"><span class="ui-stat-icon !bg-[#e8faf4] !text-[#087f5b]" aria-hidden="true">✓</span><div><p class="ui-stat-label">Status akun</p><p class="mt-1 text-lg font-extrabold text-[#087f5b]">Aktif</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Sesi telah melewati pemeriksaan akses.</p></div></article>
-            <article class="ui-stat-card items-start"><span class="ui-stat-icon" aria-hidden="true">◫</span><div><p class="ui-stat-label">Tiket ditugaskan</p>@if ($assignedTicketCount !== null)<p class="ui-stat-value">{{ $assignedTicketCount }}</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Tanggung jawab Anda.</p>@else<p class="mt-1 text-lg font-extrabold text-[#607681]">Tidak berlaku</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Membutuhkan role operasional.</p>@endif</div></article>
-            <article class="ui-stat-card items-start"><span class="ui-stat-icon !bg-[#eef3ff] !text-[#4f63a6]" aria-hidden="true">▤</span><div><p class="ui-stat-label">Antrean Baru</p>@if ($newTicketCount !== null)<p class="ui-stat-value">{{ $newTicketCount }}</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Menunggu klaim Agen Tier 1.</p>@else<p class="mt-1 text-lg font-extrabold text-[#607681]">Terbatas</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Membutuhkan role Agen Tier 1.</p>@endif</div></article>
-        </div>
-    </section>
     @endif
 
 @endsection
