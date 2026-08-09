@@ -194,13 +194,7 @@ class TicketCreationService
      */
     private function resolveTicketClass(ServiceType $serviceType, array $fields): array
     {
-        if ($serviceType->code !== 'SVC-05') {
-            if (! in_array($serviceType->ticket_class, ServiceCatalogService::TICKET_CLASSES, true)) {
-                throw ValidationException::withMessages([
-                    'service_type_id' => 'Kelas nomor layanan belum dikonfigurasi.',
-                ]);
-            }
-
+        if (in_array($serviceType->ticket_class, ServiceCatalogService::TICKET_CLASSES, true)) {
             return [$serviceType->ticket_class, null];
         }
 
@@ -209,7 +203,7 @@ class TicketCreationService
 
         if ($variant === null) {
             throw ValidationException::withMessages([
-                'fields.request_subtype' => 'Subjenis layanan hardware wajib dipilih.',
+                'service_type_id' => 'Kelas nomor layanan belum dikonfigurasi.',
             ]);
         }
 

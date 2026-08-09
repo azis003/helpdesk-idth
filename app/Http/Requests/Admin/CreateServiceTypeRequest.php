@@ -15,13 +15,6 @@ class CreateServiceTypeRequest extends FormRequest
         if ($this->filled('code')) {
             $code = strtoupper(trim((string) $this->input('code')));
             $this->merge(['code' => $code]);
-
-            if ($code === 'SVC-07') {
-                $this->merge([
-                    'uses_sla' => false,
-                    'target_working_days' => null,
-                ]);
-            }
         }
     }
 
@@ -82,7 +75,7 @@ class CreateServiceTypeRequest extends FormRequest
     public function payload(): array
     {
         $data = $this->validated();
-        $data['uses_sla'] = $data['code'] === 'SVC-07' ? false : (bool) $data['uses_sla'];
+        $data['uses_sla'] = (bool) $data['uses_sla'];
         $data['target_working_days'] = $data['uses_sla']
             ? (int) $data['target_working_days']
             : null;

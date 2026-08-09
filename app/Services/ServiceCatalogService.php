@@ -57,12 +57,9 @@ class ServiceCatalogService
                 ]);
             }
 
-            if ($serviceType->code === 'SVC-05') {
-                $this->syncHardwareVariants($serviceType, $data['variants'] ?? []);
-                $ticketClass = null;
-            } elseif ($ticketClass === null) {
+            if ($ticketClass === null) {
                 throw ValidationException::withMessages([
-                    'ticket_class' => 'Kelas nomor wajib dipilih untuk layanan ini.',
+                    'ticket_class' => 'Kelas nomor wajib dipilih.',
                 ]);
             }
 
@@ -74,7 +71,6 @@ class ServiceCatalogService
 
             if (array_key_exists('uses_sla', $data)) {
                 $usesSla = filter_var($data['uses_sla'], FILTER_VALIDATE_BOOLEAN);
-                $usesSla = $serviceType->code === 'SVC-07' ? false : $usesSla;
                 $targetWorkingDays = $usesSla
                     && array_key_exists('target_working_days', $data)
                     && $data['target_working_days'] !== null
@@ -131,7 +127,6 @@ class ServiceCatalogService
             $usesSla = array_key_exists('uses_sla', $data)
                 ? filter_var($data['uses_sla'], FILTER_VALIDATE_BOOLEAN)
                 : false;
-            $usesSla = $code === 'SVC-07' ? false : $usesSla;
             $targetWorkingDays = $usesSla
                 && array_key_exists('target_working_days', $data)
                 && $data['target_working_days'] !== null
@@ -389,46 +384,6 @@ class ServiceCatalogService
 
             return $field;
         });
-    }
-
-    /**
-     * @param  array<int, mixed>  $variants
-     */
-    private function syncHardwareVariants(ServiceType $serviceType, array $variants): void
-    {
-        $byCode = collect($variants)
-            ->filter(fn ($variant): bool => is_array($variant) && isset($variant['code']))
-            ->keyBy('code');
-
-        foreach (['repair', 'request'] as $requiredCode) {
-            if (! $byCode->has($requiredCode)) {
-                throw ValidationException::withMessages([
-                    'variants' => 'SVC-05 wajib memiliki subjenis Perbaikan dan Permintaan.',
-                ]);
-            }
-        }
-
-        $mapping = ['repair' => 'INC', 'request' => 'REQ'];
-
-        foreach ($mapping as $code => $ticketClass) {
-            $variant = $byCode->get($code);
-
-            if (trim((string) ($variant['label'] ?? '')) === '') {
-                throw ValidationException::withMessages([
-                    'variants' => 'Label setiap subjenis SVC-05 wajib diisi.',
-                ]);
-            }
-
-            ServiceTypeVariant::query()->updateOrCreate(
-                ['service_type_id' => $serviceType->getKey(), 'code' => $code],
-                [
-                    'label' => trim((string) $variant['label']),
-                    'ticket_class' => $ticketClass,
-                    'sort_order' => (int) ($variant['sort_order'] ?? ($code === 'repair' ? 1 : 2)),
-                    'is_active' => true,
-                ],
-            );
-        }
     }
 
     /**

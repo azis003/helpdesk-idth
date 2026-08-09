@@ -42,7 +42,7 @@
                         <div class="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
                             <div>
                                 <label for="new-service-code" class="ui-field-label">Kode layanan <span class="text-rose-600">*</span></label>
-                                <input id="new-service-code" name="code" value="{{ old('code') }}" required maxlength="20" class="ui-input mt-2 uppercase" placeholder="Contoh: SVC-08" data-service-sla-code>
+                                <input id="new-service-code" name="code" value="{{ old('code') }}" required maxlength="20" class="ui-input mt-2 uppercase" placeholder="Contoh: SVC-08">
                                 <p class="ui-field-help">Gunakan kode singkat dan unik, misalnya SVC-08.</p>
                                 @error('code')<p class="mt-1 text-xs font-semibold text-rose-700">{{ $message }}</p>@enderror
                             </div>

@@ -183,8 +183,19 @@ class CatalogManagementTest extends TestCase
                 'uses_sla' => '1',
                 'target_working_days' => 6,
             ])
-            ->assertRedirect()
+            ->assertRedirect(route('admin.services.index', [
+                'service' => $service->id,
+                'service_tab' => 'detail',
+            ]))
             ->assertSessionHasNoErrors();
+
+        $this->actingAs($admin)
+            ->get(route('admin.services.index', [
+                'service' => $service->id,
+                'service_tab' => 'detail',
+            ]))
+            ->assertOk()
+            ->assertSee('id="service-edit-modal-'.$service->id.'" data-ui-modal data-auto-open="true"', false);
 
         $this->assertDatabaseHas('service_types', [
             'id' => $service->id,
@@ -281,9 +292,12 @@ class CatalogManagementTest extends TestCase
         ]);
     }
 
-    public function test_hardware_subtypes_keep_inc_req_mapping(): void
+    public function test_super_admin_can_configure_any_service_class_and_sla(): void
     {
-        $this->seed(ServiceCatalogSeeder::class);
+        $this->seed([
+            ServiceCatalogSeeder::class,
+            OperationalPolicySeeder::class,
+        ]);
 
         $admin = $this->createUser([Role::SuperAdmin]);
         $service = ServiceType::query()->where('code', 'SVC-05')->firstOrFail();
@@ -291,38 +305,48 @@ class CatalogManagementTest extends TestCase
         $this->actingAs($admin)
             ->put(route('admin.catalog.services.update', $service), [
                 'name' => 'Permintaan atau perbaikan perangkat',
-                'ticket_class' => null,
-                'variants' => [
-                    ['code' => 'repair', 'label' => 'Perbaikan perangkat', 'sort_order' => 1],
-                    ['code' => 'request', 'label' => 'Permintaan perangkat', 'sort_order' => 2],
-                ],
+                'ticket_class' => 'REQ',
+                'uses_sla' => '1',
+                'target_working_days' => 4,
             ])
-            ->assertRedirect()
+            ->assertRedirect(route('admin.services.index', [
+                'service' => $service->id,
+                'service_tab' => 'detail',
+            ]))
             ->assertSessionHasNoErrors();
 
-        $this->assertDatabaseHas('service_type_variants', [
-            'service_type_id' => $service->id,
-            'code' => 'repair',
-            'ticket_class' => 'INC',
-            'label' => 'Perbaikan perangkat',
-        ]);
-        $this->assertDatabaseHas('service_type_variants', [
-            'service_type_id' => $service->id,
-            'code' => 'request',
+        $this->assertDatabaseHas('service_types', [
+            'id' => $service->id,
             'ticket_class' => 'REQ',
-            'label' => 'Permintaan perangkat',
+        ]);
+        $this->assertDatabaseHas('sla_policies', [
+            'service_type_id' => $service->id,
+            'uses_sla' => true,
+            'target_working_days' => 4,
+            'is_active' => true,
         ]);
 
+        $proposalService = ServiceType::query()->where('code', 'SVC-07')->firstOrFail();
+
         $this->actingAs($admin)
-            ->put(route('admin.catalog.services.update', $service), [
-                'name' => 'Permintaan atau perbaikan perangkat',
-                'ticket_class' => null,
-                'variants' => [
-                    ['code' => 'repair', 'label' => 'Perbaikan perangkat', 'sort_order' => 1],
-                ],
+            ->put(route('admin.catalog.services.update', $proposalService), [
+                'name' => $proposalService->name,
+                'ticket_class' => 'CHG',
+                'uses_sla' => '1',
+                'target_working_days' => 9,
             ])
-            ->assertRedirect()
-            ->assertSessionHasErrors('variants');
+            ->assertRedirect(route('admin.services.index', [
+                'service' => $proposalService->id,
+                'service_tab' => 'detail',
+            ]))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('sla_policies', [
+            'service_type_id' => $proposalService->id,
+            'uses_sla' => true,
+            'target_working_days' => 9,
+            'is_active' => true,
+        ]);
     }
 
     public function test_super_admin_can_manage_location_hierarchy_and_attachment_policy(): void

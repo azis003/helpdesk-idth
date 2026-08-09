@@ -1,18 +1,19 @@
 @php
+    $serviceRequestMatches = (string) request()->query('service') === (string) $serviceType->id;
     $servicePanel = (string) old('_service_edit') === (string) $serviceType->id
         ? old('_service_tab', 'detail')
-        : 'detail';
+        : ($serviceRequestMatches ? request()->query('service_tab', 'detail') : 'detail');
+    $servicePanel = in_array($servicePanel, ['detail', 'skills', 'formulir'], true) ? $servicePanel : 'detail';
     $autoOpen = (string) $autoOpenService === (string) $serviceType->id && ($errors->any() || request()->query('service') !== null);
     $oldServiceMatches = (string) old('_service_edit') === (string) $serviceType->id;
     $serviceName = $oldServiceMatches ? old('name', $serviceType->name) : $serviceType->name;
     $serviceDescription = $oldServiceMatches ? old('description', $serviceType->description) : $serviceType->description;
     $serviceTicketClass = $oldServiceMatches ? old('ticket_class', $serviceType->ticket_class) : $serviceType->ticket_class;
     $activeSlaPolicy = $serviceType->activeSlaPolicy;
-    $defaultUsesSla = $activeSlaPolicy?->uses_sla ?? $serviceType->code !== 'SVC-07';
+    $defaultUsesSla = (bool) ($activeSlaPolicy?->uses_sla ?? false);
     $serviceUsesSla = $oldServiceMatches && old('uses_sla') !== null
         ? filter_var(old('uses_sla'), FILTER_VALIDATE_BOOLEAN)
         : (bool) $defaultUsesSla;
-    $serviceUsesSla = $serviceType->code === 'SVC-07' ? false : $serviceUsesSla;
     $serviceTargetWorkingDays = $oldServiceMatches
         ? old('target_working_days', $activeSlaPolicy?->target_working_days)
         : $activeSlaPolicy?->target_working_days;
@@ -53,7 +54,7 @@
                             <div class="grid gap-4 sm:grid-cols-2">
                                 <div>
                                     <label for="edit-service-code-{{ $serviceType->id }}" class="ui-field-label">Kode layanan</label>
-                                    <input id="edit-service-code-{{ $serviceType->id }}" value="{{ $serviceType->code }}" readonly class="ui-input mt-2 cursor-not-allowed border-dashed bg-[#f8fbfc] text-[#607681]" data-service-sla-code>
+                                    <input id="edit-service-code-{{ $serviceType->id }}" value="{{ $serviceType->code }}" readonly class="ui-input mt-2 cursor-not-allowed border-dashed bg-[#f8fbfc] text-[#607681]">
                                     <p class="ui-field-help">Kode adalah identitas sistem dan tidak diubah setelah layanan digunakan.</p>
                                 </div>
                                 <div>
@@ -62,32 +63,27 @@
                                     @error('name')<p class="mt-1 text-xs font-semibold text-rose-700">{{ $message }}</p>@enderror
                                 </div>
                                 <div>
-                                    @if ($serviceType->code === 'SVC-05')
-                                        <p class="ui-field-label">Kategori layanan</p>
-                                        <p class="mt-2 rounded-lg border border-[#f2dfab] bg-[#fffaf0] p-3 text-xs leading-5 text-[#7a5a12]">INC untuk Perbaikan dan REQ untuk Permintaan hardware.</p>
-                                    @else
-                                        <label for="edit-service-category-{{ $serviceType->id }}" class="ui-field-label">Kategori layanan <span class="text-rose-600">*</span></label>
-                                        <select id="edit-service-category-{{ $serviceType->id }}" name="ticket_class" required class="ui-select mt-2">
-                                            @foreach ($ticketClasses as $ticketClass)
-                                                <option value="{{ $ticketClass }}" @selected($serviceTicketClass === $ticketClass)>{{ $ticketClass }}</option>
-                                            @endforeach
-                                        </select>
-                                        @error('ticket_class')<p class="mt-1 text-xs font-semibold text-rose-700">{{ $message }}</p>@enderror
-                                    @endif
+                                    <label for="edit-service-category-{{ $serviceType->id }}" class="ui-field-label">Kategori layanan <span class="text-rose-600">*</span></label>
+                                    <select id="edit-service-category-{{ $serviceType->id }}" name="ticket_class" required class="ui-select mt-2">
+                                        @foreach ($ticketClasses as $ticketClass)
+                                            <option value="{{ $ticketClass }}" @selected($serviceTicketClass === $ticketClass)>{{ $ticketClass }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('ticket_class')<p class="mt-1 text-xs font-semibold text-rose-700">{{ $message }}</p>@enderror
                                 </div>
                                 <div class="rounded-xl border border-[#cfe4e8] bg-[#f8fbfc] p-4 sm:col-span-2" data-service-sla-panel>
                                     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                         <div class="flex items-start gap-3">
                                             <input type="hidden" name="uses_sla" value="0">
-                                            <input id="edit-service-uses-sla-{{ $serviceType->id }}" name="uses_sla" value="1" type="checkbox" class="ui-checkbox mt-0.5" @checked($serviceUsesSla) data-service-sla-toggle @disabled($serviceType->code === 'SVC-07')>
+                                            <input id="edit-service-uses-sla-{{ $serviceType->id }}" name="uses_sla" value="1" type="checkbox" class="ui-checkbox mt-0.5" @checked($serviceUsesSla) data-service-sla-toggle>
                                             <div>
                                                 <label for="edit-service-uses-sla-{{ $serviceType->id }}" class="ui-field-label">Gunakan target SLA</label>
-                                                <p class="mt-1 text-xs leading-5 text-[#78909a]" data-service-sla-status>{{ $serviceType->code === 'SVC-07' ? 'Layanan ini menggunakan mekanisme usulan dan tidak memiliki target SLA tetap.' : 'Target penyelesaian dihitung dalam hari kerja dan tersimpan sebagai versi kebijakan.' }}</p>
+                                                <p class="mt-1 text-xs leading-5 text-[#78909a]" data-service-sla-status>Target penyelesaian dihitung dalam hari kerja dan tersimpan sebagai versi kebijakan.</p>
                                             </div>
                                         </div>
                                         <div class="w-full sm:max-w-xs" data-service-sla-target>
                                             <label for="edit-service-target-sla-{{ $serviceType->id }}" class="ui-field-label">Target SLA (hari kerja)</label>
-                                            <input id="edit-service-target-sla-{{ $serviceType->id }}" name="target_working_days" type="number" min="1" max="365" value="{{ $serviceTargetWorkingDays }}" class="ui-input mt-2" data-service-sla-target-input @disabled(! $serviceUsesSla || $serviceType->code === 'SVC-07')>
+                                            <input id="edit-service-target-sla-{{ $serviceType->id }}" name="target_working_days" type="number" min="1" max="365" value="{{ $serviceTargetWorkingDays }}" class="ui-input mt-2" data-service-sla-target-input @disabled(! $serviceUsesSla)>
                                             <p class="ui-field-help">Minimal 1 dan maksimal 365 hari kerja.</p>
                                             @error('target_working_days')<p class="mt-1 text-xs font-semibold text-rose-700">{{ $message }}</p>@enderror
                                         </div>

@@ -159,7 +159,8 @@ class ServiceCatalogController extends Controller
         $this->authorization->authorize($actor, 'update', $serviceType, 'admin.service_type.update');
         $this->catalog->updateServiceType($actor, $serviceType, $request->validated());
 
-        return back()->with('success', "Layanan {$serviceType->code} berhasil diperbarui.");
+        return $this->redirectToServiceEditor($request, $serviceType)
+            ->with('success', "Layanan {$serviceType->code} berhasil diperbarui.");
     }
 
     public function updateServiceSkills(UpdateServiceSkillsRequest $request, ServiceType $serviceType): RedirectResponse
@@ -168,7 +169,8 @@ class ServiceCatalogController extends Controller
         $this->authorization->authorize($actor, 'update', $serviceType, 'admin.service_type.skills.update');
         $this->catalog->syncServiceSkills($actor, $serviceType, $request->validated()['skill_ids'] ?? []);
 
-        return back()->with('success', "Keahlian penanganan layanan {$serviceType->code} berhasil diperbarui.");
+        return $this->redirectToServiceEditor($request, $serviceType, 'skills')
+            ->with('success', "Keahlian penanganan layanan {$serviceType->code} berhasil diperbarui.");
     }
 
     public function setServiceStatus(Request $request, ServiceType $serviceType, string $status): RedirectResponse
@@ -177,7 +179,8 @@ class ServiceCatalogController extends Controller
         $this->authorization->authorize($actor, 'update', $serviceType, 'admin.service_type.status');
         $this->catalog->setServiceStatus($actor, $serviceType, $status === 'activate');
 
-        return back()->with('success', $status === 'activate' ? "Layanan {$serviceType->code} berhasil diaktifkan." : "Layanan {$serviceType->code} dinonaktifkan.");
+        return $this->redirectToServiceEditor($request, $serviceType)
+            ->with('success', $status === 'activate' ? "Layanan {$serviceType->code} berhasil diaktifkan." : "Layanan {$serviceType->code} dinonaktifkan.");
     }
 
     public function storeField(ServiceFieldRequest $request, ServiceType $serviceType): RedirectResponse
@@ -186,7 +189,8 @@ class ServiceCatalogController extends Controller
         $this->authorization->authorize($actor, 'create', ServiceFieldDefinition::class, 'admin.service_field.create');
         $this->catalog->createField($actor, $serviceType, $request->payload());
 
-        return back()->with('success', "Field baru untuk {$serviceType->code} berhasil dibuat.");
+        return $this->redirectToServiceEditor($request, $serviceType, 'formulir')
+            ->with('success', "Field baru untuk {$serviceType->code} berhasil dibuat.");
     }
 
     public function storeFieldVersion(ServiceFieldRequest $request, ServiceFieldDefinition $serviceFieldDefinition): RedirectResponse
@@ -194,8 +198,10 @@ class ServiceCatalogController extends Controller
         $actor = $request->user();
         $this->authorization->authorize($actor, 'update', $serviceFieldDefinition, 'admin.service_field.version');
         $this->catalog->createFieldVersion($actor, $serviceFieldDefinition, $request->payload());
+        $serviceType = $serviceFieldDefinition->serviceType;
 
-        return back()->with('success', "Versi baru field {$serviceFieldDefinition->label} berhasil dibuat.");
+        return $this->redirectToServiceEditor($request, $serviceType, 'formulir')
+            ->with('success', "Versi baru field {$serviceFieldDefinition->label} berhasil dibuat.");
     }
 
     public function activateField(Request $request, ServiceFieldDefinition $serviceFieldDefinition): RedirectResponse
@@ -203,8 +209,10 @@ class ServiceCatalogController extends Controller
         $actor = $request->user();
         $this->authorization->authorize($actor, 'update', $serviceFieldDefinition, 'admin.service_field.activate');
         $this->catalog->setFieldStatus($actor, $serviceFieldDefinition, true);
+        $serviceType = $serviceFieldDefinition->serviceType;
 
-        return back()->with('success', 'Field formulir berhasil diaktifkan.');
+        return $this->redirectToServiceEditor($request, $serviceType, 'formulir')
+            ->with('success', 'Field formulir berhasil diaktifkan.');
     }
 
     public function deactivateField(Request $request, ServiceFieldDefinition $serviceFieldDefinition): RedirectResponse
@@ -212,8 +220,10 @@ class ServiceCatalogController extends Controller
         $actor = $request->user();
         $this->authorization->authorize($actor, 'update', $serviceFieldDefinition, 'admin.service_field.deactivate');
         $this->catalog->setFieldStatus($actor, $serviceFieldDefinition, false);
+        $serviceType = $serviceFieldDefinition->serviceType;
 
-        return back()->with('success', 'Field formulir dinonaktifkan. Definisi historis tetap tersedia.');
+        return $this->redirectToServiceEditor($request, $serviceType, 'formulir')
+            ->with('success', 'Field formulir dinonaktifkan. Definisi historis tetap tersedia.');
     }
 
     public function removeField(Request $request, ServiceFieldDefinition $serviceFieldDefinition): RedirectResponse
@@ -221,7 +231,40 @@ class ServiceCatalogController extends Controller
         $actor = $request->user();
         $this->authorization->authorize($actor, 'update', $serviceFieldDefinition, 'admin.service_field.deactivate');
         $this->catalog->setFieldStatus($actor, $serviceFieldDefinition, false);
+        $serviceType = $serviceFieldDefinition->serviceType;
 
-        return back()->with('success', "Field {$serviceFieldDefinition->label} dihapus dari formulir. Histori tiket tetap aman.");
+        return $this->redirectToServiceEditor($request, $serviceType, 'formulir')
+            ->with('success', "Field {$serviceFieldDefinition->label} dihapus dari formulir. Histori tiket tetap aman.");
+    }
+
+    private function redirectToServiceEditor(Request $request, ServiceType $serviceType, string $defaultTab = 'detail'): RedirectResponse
+    {
+        $requestedTab = $request->string('_service_tab')->toString();
+        $tab = in_array($requestedTab, ['detail', 'skills', 'formulir'], true)
+            ? $requestedTab
+            : $defaultTab;
+        $query = [];
+        $referer = $request->headers->get('referer');
+
+        if (is_string($referer) && $referer !== '') {
+            $refererQuery = parse_url($referer, PHP_URL_QUERY);
+            $refererParameters = [];
+
+            if (is_string($refererQuery)) {
+                parse_str($refererQuery, $refererParameters);
+            }
+
+            foreach (['q', 'per_page', 'page'] as $parameter) {
+                if (isset($refererParameters[$parameter]) && is_scalar($refererParameters[$parameter])) {
+                    $query[$parameter] = $refererParameters[$parameter];
+                }
+            }
+        }
+
+        return redirect()->route('admin.services.index', [
+            ...$query,
+            'service' => $serviceType->getKey(),
+            'service_tab' => $tab,
+        ]);
     }
 }

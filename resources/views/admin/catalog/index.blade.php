@@ -95,15 +95,7 @@
                                 </div>
                             </td>
                             <td>
-                                @if ($serviceType->code === 'SVC-05')
-                                    <div class="flex min-w-[10rem] flex-wrap gap-1.5">
-                                        @foreach ($serviceType->variants as $variant)
-                                            <span class="ui-chip !border-[#dfe8ec] !bg-[#f7fafb] !text-[#607681]">{{ $variant->ticket_class }} · {{ $variant->label }}</span>
-                                        @endforeach
-                                    </div>
-                                @else
-                                    <span class="ui-chip">{{ $serviceType->ticket_class ?? 'Belum diatur' }}</span>
-                                @endif
+                                <span class="ui-chip">{{ $serviceType->ticket_class ?? 'Belum diatur' }}</span>
                             </td>
                             <td>
                                 <span class="ui-status {{ $serviceType->is_active ? 'ui-status-active' : 'ui-status-inactive' }}">{{ $serviceType->is_active ? 'Aktif' : 'Nonaktif' }}</span>
@@ -141,7 +133,7 @@
                     <dl class="mt-4 grid grid-cols-2 gap-3 border-t border-[#edf2f4] pt-3 text-xs">
                         <div><dt class="text-[#8aa0a8]">Field aktif</dt><dd class="mt-1 font-extrabold text-[#35505b]">{{ $serviceType->activeFieldDefinitions->count() }}</dd></div>
                         <div><dt class="text-[#8aa0a8]">Keahlian aktif</dt><dd class="mt-1 font-extrabold text-[#35505b]">{{ $serviceType->skills->where('is_active', true)->count() }}</dd></div>
-                        <div><dt class="text-[#8aa0a8]">Kelas tiket</dt><dd class="mt-1 font-extrabold text-[#35505b]">{{ $serviceType->ticket_class ?? ($serviceType->code === 'SVC-05' ? 'INC / REQ' : 'Belum diatur') }}</dd></div>
+                        <div><dt class="text-[#8aa0a8]">Kelas tiket</dt><dd class="mt-1 font-extrabold text-[#35505b]">{{ $serviceType->ticket_class ?? 'Belum diatur' }}</dd></div>
                     </dl>
                     <div class="mt-4 flex flex-wrap gap-2 border-t border-[#edf2f4] pt-3">
                         <button type="button" data-ui-modal-open="service-edit-modal-{{ $serviceType->id }}" class="ui-btn ui-btn-ghost !min-h-9 !px-3 !text-xs" aria-label="Buka editor formulir {{ $serviceType->name }}">Buka editor</button>
@@ -199,16 +191,9 @@
                             </div>
                             <div class="mt-4 grid gap-4 lg:grid-cols-2">
                                 <div><label for="service-name-{{ $serviceType->id }}" class="ui-field-label">Nama layanan <span class="text-rose-600">*</span></label><input id="service-name-{{ $serviceType->id }}" name="name" value="{{ $serviceType->name }}" required class="ui-input mt-2"></div>
-                                @if ($serviceType->code !== 'SVC-05')
-                                    <div><label for="service-class-{{ $serviceType->id }}" class="ui-field-label">Kelas nomor <span class="text-rose-600">*</span></label><select id="service-class-{{ $serviceType->id }}" name="ticket_class" required class="ui-select mt-2"><option value="">Pilih kelas</option>@foreach ($ticketClasses as $ticketClass)<option value="{{ $ticketClass }}" @selected($serviceType->ticket_class === $ticketClass)>{{ $ticketClass }}</option>@endforeach</select></div>
-                                @else
-                                    <div><p class="ui-field-label">Mapping SVC-05</p><p class="mt-2 rounded-lg border border-[#f2dfab] bg-[#fffaf0] p-3 text-xs leading-5 text-[#7a5a12]">Perbaikan selalu menggunakan INC dan Permintaan selalu menggunakan REQ.</p></div>
-                                @endif
+                                <div><label for="service-class-{{ $serviceType->id }}" class="ui-field-label">Kelas nomor <span class="text-rose-600">*</span></label><select id="service-class-{{ $serviceType->id }}" name="ticket_class" required class="ui-select mt-2"><option value="">Pilih kelas</option>@foreach ($ticketClasses as $ticketClass)<option value="{{ $ticketClass }}" @selected($serviceType->ticket_class === $ticketClass)>{{ $ticketClass }}</option>@endforeach</select></div>
                             </div>
                             <div class="mt-4"><label for="service-description-{{ $serviceType->id }}" class="ui-field-label">Deskripsi</label><textarea id="service-description-{{ $serviceType->id }}" name="description" rows="2" class="ui-textarea mt-2">{{ $serviceType->description }}</textarea></div>
-                            @if ($serviceType->code === 'SVC-05')
-                                <fieldset class="mt-4 rounded-lg border border-[#e2ebee] bg-white p-3"><legend class="px-1 text-xs font-extrabold text-[#526f79]">Subjenis dan kelas nomor</legend><div class="grid gap-3 sm:grid-cols-2">@foreach ($serviceType->variants as $variant)<div><label for="variant-label-{{ $serviceType->id }}-{{ $variant->code }}" class="ui-field-label">{{ $variant->code === 'repair' ? 'Perbaikan' : 'Permintaan' }}</label><input type="hidden" name="variants[{{ $loop->index }}][code]" value="{{ $variant->code }}"><input id="variant-label-{{ $serviceType->id }}-{{ $variant->code }}" name="variants[{{ $loop->index }}][label]" value="{{ $variant->label }}" required class="ui-input mt-2"><p class="mt-1 text-[0.68rem] text-[#78909a]">Kelas: {{ $variant->ticket_class }}</p><input type="hidden" name="variants[{{ $loop->index }}][sort_order]" value="{{ $variant->sort_order }}"></div>@endforeach</div></fieldset>
-                            @endif
                             <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#e3ecef] pt-4">
                                 <p class="text-xs leading-5 text-[#78909a]">Layanan nonaktif tidak tampil pada katalog pengguna.</p>
                                 <button type="submit" data-ui-modal-submit class="ui-btn ui-btn-primary !min-h-9 !text-xs"><span data-ui-modal-label>Simpan detail layanan</span><span data-ui-modal-loading class="hidden">Menyimpan...</span></button>

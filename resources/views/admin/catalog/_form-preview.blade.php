@@ -35,13 +35,7 @@
                 <span class="shrink-0 rounded-lg bg-[#eef8fc] px-2 py-1 text-[0.65rem] font-extrabold text-[#26677b]">{{ $serviceType->code }}</span>
             </div>
             <div class="mt-3 flex flex-wrap gap-1.5 text-[0.65rem] font-bold text-[#607681]">
-                @if ($serviceType->code === 'SVC-05')
-                    @foreach ($serviceType->variants->where('is_active', true) as $variant)
-                        <span class="rounded-full border border-[#dfe8ec] bg-[#f7fafb] px-2 py-1">{{ $variant->ticket_class }} &mdash; {{ $variant->label }}</span>
-                    @endforeach
-                @else
-                    <span class="rounded-full border border-[#dfe8ec] bg-[#f7fafb] px-2 py-1">Kelas {{ $serviceType->ticket_class ?? 'belum diatur' }}</span>
-                @endif
+                <span class="rounded-full border border-[#dfe8ec] bg-[#f7fafb] px-2 py-1">Kelas {{ $serviceType->ticket_class ?? 'belum diatur' }}</span>
             </div>
         </div>
 
