@@ -31,7 +31,9 @@ class AnnouncementRequest extends FormRequest
             'body.required' => 'Isi pengumuman wajib diisi.',
             'starts_at.required' => 'Waktu mulai wajib diisi.',
             'starts_at.date_format' => 'Format waktu mulai tidak valid.',
+            'ends_at.date_format' => 'Format waktu berakhir tidak valid.',
             'ends_at.after_or_equal' => 'Waktu berakhir harus setelah waktu mulai.',
+            'is_active.boolean' => 'Status pengumuman tidak valid.',
         ];
     }
 }

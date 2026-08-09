@@ -566,6 +566,168 @@
         line-height: 1.7;
     }
 
+    .ui-announcement-hero {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #c8e7ee;
+        border-radius: 1rem;
+        background: #eaf8fb;
+        padding: 1.25rem;
+    }
+
+    .ui-announcement-hero::after {
+        position: absolute;
+        top: -4.5rem;
+        right: -3.5rem;
+        height: 12rem;
+        width: 12rem;
+        border: 1px solid #b8e1ea;
+        border-radius: 9999px;
+        box-shadow: 0 0 0 1rem rgba(184, 225, 234, 0.38), 0 0 0 2rem rgba(184, 225, 234, 0.18);
+        content: '';
+        pointer-events: none;
+    }
+
+    .ui-announcement-hero-label {
+        color: #1d6b7c;
+        font-size: 0.67rem;
+        font-weight: 850;
+        letter-spacing: 0.14em;
+        line-height: 1.25;
+        text-transform: uppercase;
+    }
+
+    .ui-announcement-hero-title {
+        max-width: 42rem;
+        margin-top: 0.65rem;
+        color: #173f4d;
+        font-size: clamp(1.25rem, 2vw, 1.7rem);
+        font-weight: 800;
+        letter-spacing: -0.035em;
+        line-height: 1.15;
+    }
+
+    .ui-announcement-hero-copy {
+        max-width: 38rem;
+        margin-top: 0.7rem;
+        color: #55747f;
+        font-size: 0.83rem;
+        line-height: 1.65;
+    }
+
+    .ui-announcement-signal {
+        position: relative;
+        z-index: 1;
+        border: 1px solid #c8e4ea;
+        border-radius: 0.85rem;
+        background: rgba(255, 255, 255, 0.78);
+        padding: 0.9rem 1rem;
+    }
+
+    .ui-announcement-signal-label {
+        color: #7b969f;
+        font-size: 0.64rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+
+    .ui-announcement-signal-list {
+        display: grid;
+        gap: 0.55rem;
+        margin-top: 0.75rem;
+        color: #355966;
+        font-size: 0.75rem;
+        font-weight: 750;
+    }
+
+    .ui-announcement-signal-list li {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+    }
+
+    .ui-announcement-signal-list li::before {
+        height: 0.45rem;
+        width: 0.45rem;
+        flex: 0 0 auto;
+        border-radius: 9999px;
+        background: #2bb8aa;
+        box-shadow: 0 0 0 3px #d8f5ef;
+        content: '';
+    }
+
+    .ui-announcement-stat {
+        align-items: flex-start;
+    }
+
+    .ui-announcement-stat-meta {
+        margin-top: 0.2rem;
+        color: #8aa0a8;
+        font-size: 0.68rem;
+        line-height: 1.4;
+    }
+
+    .ui-announcement-item {
+        border: 1px solid #e1eaed;
+        border-radius: 0.9rem;
+        background: #ffffff;
+        transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .ui-announcement-item:hover {
+        border-color: #b9e5f2;
+    }
+
+    .ui-announcement-item[open] {
+        border-color: #98dff3;
+        box-shadow: 0 12px 24px -22px rgba(48, 134, 165, 0.8);
+    }
+
+    .ui-announcement-item-marker {
+        display: inline-flex;
+        height: 2.2rem;
+        width: 2.2rem;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.7rem;
+        background: #fff4d7;
+        color: #9a6a00;
+    }
+
+    .ui-announcement-item-marker svg {
+        height: 1.1rem;
+        width: 1.1rem;
+    }
+
+    .ui-announcement-preview {
+        border: 1px solid #dcebef;
+        border-radius: 0.75rem;
+        background: #f7fbfc;
+        padding: 0.9rem 1rem;
+    }
+
+    .ui-announcement-preview-label {
+        color: #7b969f;
+        font-size: 0.64rem;
+        font-weight: 850;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+
+    .ui-announcement-count {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid #dcebef;
+        border-radius: 9999px;
+        background: #f7fbfc;
+        color: #55747f;
+        font-size: 0.68rem;
+        font-weight: 800;
+        padding: 0.32rem 0.58rem;
+    }
+
     .ui-panel {
         border: 1px solid #dfe8ec;
         border-radius: 0.9rem;
