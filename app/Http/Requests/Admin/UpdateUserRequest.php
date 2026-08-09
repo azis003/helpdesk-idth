@@ -32,9 +32,25 @@ class UpdateUserRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:80', 'alpha_dash', Rule::unique('users', 'username')->ignore($user)],
-            'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user)],
-            'nip' => ['nullable', 'string', 'max:32', Rule::unique('users', 'nip')->ignore($user)],
+            'username' => [
+                'required',
+                'string',
+                'max:80',
+                'alpha_dash',
+                Rule::unique('users', 'username')->ignore($user)->whereNull('deleted_at'),
+            ],
+            'email' => [
+                'nullable',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($user)->whereNull('deleted_at'),
+            ],
+            'nip' => [
+                'nullable',
+                'string',
+                'max:32',
+                Rule::unique('users', 'nip')->ignore($user)->whereNull('deleted_at'),
+            ],
             'role_ids' => ['required', 'array', 'min:1'],
             'role_ids.*' => ['integer', 'distinct', 'exists:roles,id'],
             'team_id' => ['required', 'integer', 'exists:work_teams,id'],

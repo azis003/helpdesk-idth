@@ -20,9 +20,25 @@ class StoreUserRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:80', 'alpha_dash', Rule::unique('users', 'username')],
-            'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')],
-            'nip' => ['nullable', 'string', 'max:32', Rule::unique('users', 'nip')],
+            'username' => [
+                'required',
+                'string',
+                'max:80',
+                'alpha_dash',
+                Rule::unique('users', 'username')->whereNull('deleted_at'),
+            ],
+            'email' => [
+                'nullable',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->whereNull('deleted_at'),
+            ],
+            'nip' => [
+                'nullable',
+                'string',
+                'max:32',
+                Rule::unique('users', 'nip')->whereNull('deleted_at'),
+            ],
             'temporary_password' => [
                 'required',
                 'confirmed',

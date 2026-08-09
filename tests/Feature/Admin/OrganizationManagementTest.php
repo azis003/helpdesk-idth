@@ -358,6 +358,48 @@ class OrganizationManagementTest extends TestCase
         ]);
     }
 
+    public function test_soft_deleted_user_identifiers_can_be_reused_but_active_duplicates_are_rejected(): void
+    {
+        $admin = $this->createUser([Role::SuperAdmin], ['username' => 'reuse-admin']);
+        $target = $this->createUser([Role::Pemohon], [
+            'username' => 'reuse-target',
+            'email' => 'reuse-target@example.test',
+            'nip' => '9876543210',
+        ]);
+        $role = RoleModel::query()->where('slug', Role::Pemohon->value)->firstOrFail();
+        $team = WorkTeam::factory()->create(['name' => 'Tim Reuse']);
+
+        $this->actingAs($admin)->delete(route('admin.users.destroy', $target))
+            ->assertRedirect();
+
+        $payload = [
+            'name' => 'Pengguna Pengganti',
+            'username' => 'reuse-target',
+            'email' => 'reuse-target@example.test',
+            'nip' => '9876543210',
+            'temporary_password' => 'Initial-Password-123!',
+            'temporary_password_confirmation' => 'Initial-Password-123!',
+            'role_ids' => [$role->id],
+            'team_id' => $team->id,
+            'team_position' => TeamPosition::Member->value,
+        ];
+
+        $this->actingAs($admin)->post(route('admin.users.store'), $payload)
+            ->assertRedirectToRoute('admin.users.index');
+
+        $this->assertDatabaseHas('users', [
+            'name' => 'Pengguna Pengganti',
+            'username' => 'reuse-target',
+            'email' => 'reuse-target@example.test',
+            'nip' => '9876543210',
+            'deleted_at' => null,
+        ]);
+        $this->assertSame(2, User::withTrashed()->where('username', 'reuse-target')->count());
+
+        $this->actingAs($admin)->post(route('admin.users.store'), $payload)
+            ->assertSessionHasErrors(['username', 'email', 'nip']);
+    }
+
     public function test_user_transfer_keeps_one_active_team_and_records_history(): void
     {
         $admin = $this->createUser([Role::SuperAdmin], ['username' => 'team-admin']);
