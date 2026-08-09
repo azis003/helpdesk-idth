@@ -19,7 +19,7 @@ class AttachmentRetentionService
         $deleted = 0;
 
         Attachment::withTrashed()
-            ->where('type_key', 'data_export_result')
+            ->where('type_key', Attachment::DATA_EXPORT_RESULT_TYPE)
             ->whereHas('ticket', function ($query) use ($cutoff): void {
                 $query
                     ->where(function ($ticketQuery): void {

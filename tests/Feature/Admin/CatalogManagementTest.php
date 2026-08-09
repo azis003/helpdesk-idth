@@ -13,6 +13,7 @@ use App\Models\ServiceFieldDefinition;
 use App\Models\ServiceType;
 use App\Models\Skill;
 use Carbon\CarbonImmutable;
+use Database\Seeders\OperationalPolicySeeder;
 use Database\Seeders\ServiceCatalogSeeder;
 use Tests\TestCase;
 
@@ -30,6 +31,7 @@ class CatalogManagementTest extends TestCase
             ->assertOk()
             ->assertSee('SVC-01')
             ->assertSee('SVC-07')
+            ->assertSee('Target SLA')
             ->assertSee('Field formulir aktif');
 
         $this->actingAs($pemohon)
@@ -67,9 +69,7 @@ class CatalogManagementTest extends TestCase
 
         $this->actingAs($admin)
             ->get(route('admin.catalog.index', ['section' => 'attachments']))
-            ->assertOk()
-            ->assertSee('Kebijakan lampiran')
-            ->assertDontSee('Daftar layanan');
+            ->assertRedirect(route('admin.services.index'));
 
         $service = ServiceType::query()->where('code', 'SVC-04')->firstOrFail();
 
@@ -79,6 +79,7 @@ class CatalogManagementTest extends TestCase
             ->assertSee('Manajemen Layanan')
             ->assertSee('Buat layanan')
             ->assertSee('Kode Layanan')
+            ->assertSee('Target SLA')
             ->assertSee('Preview formulir');
 
         $this->actingAs($admin)
@@ -97,6 +98,8 @@ class CatalogManagementTest extends TestCase
             'code' => 'SVC-08',
             'name' => 'Permintaan akses aplikasi',
             'ticket_class' => 'REQ',
+            'uses_sla' => '1',
+            'target_working_days' => 4,
             'skill_ids' => [$skill->id],
             'description' => 'Membutuhkan keahlian pengelolaan akses aplikasi.',
             'fields' => [
@@ -135,6 +138,13 @@ class CatalogManagementTest extends TestCase
             'service_type_id' => $service->id,
             'skill_id' => $skill->id,
         ]);
+        $this->assertDatabaseHas('sla_policies', [
+            'service_type_id' => $service->id,
+            'target_working_days' => 4,
+            'uses_sla' => 1,
+            'version' => 1,
+            'is_active' => 1,
+        ]);
 
         $field = ServiceFieldDefinition::query()
             ->where('service_type_id', $service->id)
@@ -148,11 +158,19 @@ class CatalogManagementTest extends TestCase
             'action' => 'admin.service_type.created',
             'outcome' => 'succeeded',
         ]);
+        $this->assertDatabaseHas('audit_logs', [
+            'user_id' => $admin->id,
+            'action' => 'admin.sla_policy.created',
+            'outcome' => 'succeeded',
+        ]);
     }
 
     public function test_super_admin_can_update_service_and_version_dynamic_fields(): void
     {
-        $this->seed(ServiceCatalogSeeder::class);
+        $this->seed([
+            ServiceCatalogSeeder::class,
+            OperationalPolicySeeder::class,
+        ]);
 
         $admin = $this->createUser([Role::SuperAdmin]);
         $service = ServiceType::query()->where('code', 'SVC-04')->firstOrFail();
@@ -162,6 +180,8 @@ class CatalogManagementTest extends TestCase
                 'name' => 'Perubahan pada aplikasi bisnis',
                 'description' => 'Perubahan yang dikelola melalui katalog.',
                 'ticket_class' => 'CHG',
+                'uses_sla' => '1',
+                'target_working_days' => 6,
             ])
             ->assertRedirect()
             ->assertSessionHasNoErrors();
@@ -170,6 +190,18 @@ class CatalogManagementTest extends TestCase
             'id' => $service->id,
             'name' => 'Perubahan pada aplikasi bisnis',
             'ticket_class' => 'CHG',
+        ]);
+        $this->assertDatabaseHas('sla_policies', [
+            'service_type_id' => $service->id,
+            'target_working_days' => 6,
+            'version' => 2,
+            'is_active' => 1,
+        ]);
+        $this->assertDatabaseHas('sla_policies', [
+            'service_type_id' => $service->id,
+            'target_working_days' => 7,
+            'version' => 1,
+            'is_active' => 0,
         ]);
 
         $this->assertDatabaseHas('audit_logs', [

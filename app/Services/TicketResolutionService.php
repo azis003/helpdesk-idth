@@ -6,6 +6,7 @@ use App\Enums\TicketStatus;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Database\DatabaseManager;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 
@@ -19,10 +20,11 @@ class TicketResolutionService
         private readonly WorkingCalendarService $calendar,
         private readonly OperationalPolicyService $policies,
         private readonly DatabaseChangeControlService $specialControls,
+        private readonly TicketAttachmentService $attachments,
         private readonly TicketNotificationService $notifications,
     ) {}
 
-    public function complete(User $actor, Ticket $ticket, string $solution): Ticket
+    public function complete(User $actor, Ticket $ticket, string $solution, ?UploadedFile $dataExportResult = null): Ticket
     {
         $this->authorization->authorize($actor, 'complete', $ticket, 'ticket.complete');
         $solution = trim($solution);
@@ -41,13 +43,18 @@ class TicketResolutionService
         $confirmationDueAt = $this->calendar->deadlineAfterWorkingDays($now, $waitDays, $calendar);
         $failure = null;
 
-        $result = $this->database->transaction(function () use ($actor, $ticket, $solution, $now, $confirmationDueAt, $waitDays, $calendar, &$failure): ?Ticket {
+        $result = $this->database->transaction(function () use ($actor, $ticket, $solution, $dataExportResult, $now, $confirmationDueAt, $waitDays, $calendar, &$failure): ?Ticket {
             $lockedTicket = $this->lockTicket($ticket, $actor, 'ticket.resolution');
             $this->authorization->authorize($actor, 'complete', $lockedTicket, 'ticket.complete');
 
             if ($lockedTicket->status !== TicketStatus::Dikerjakan
                 || (int) $lockedTicket->assigned_to_id !== (int) $actor->getKey()) {
                 $this->deny($actor, $lockedTicket, 'Tiket hanya dapat diselesaikan oleh penanggung jawab pada status Dikerjakan.');
+            }
+
+            if ($this->specialControls->serviceCode($lockedTicket) === DatabaseChangeControlService::SVC_DATA_EXPORT
+                && $dataExportResult !== null) {
+                $this->attachments->storeDataExportResult($lockedTicket, $actor, $dataExportResult);
             }
 
             $specialControlFailure = $this->specialControls->completionFailure($lockedTicket);

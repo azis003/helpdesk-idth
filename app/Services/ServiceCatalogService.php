@@ -36,6 +36,7 @@ class ServiceCatalogService
     public function __construct(
         private readonly DatabaseManager $database,
         private readonly AuditLogger $auditLogger,
+        private readonly OperationalPolicyService $operationalPolicies,
     ) {}
 
     /**
@@ -71,7 +72,25 @@ class ServiceCatalogService
                 'ticket_class' => $ticketClass,
             ])->save();
 
-            $fresh = $serviceType->fresh(['variants', 'activeFieldDefinitions.options']);
+            if (array_key_exists('uses_sla', $data)) {
+                $usesSla = filter_var($data['uses_sla'], FILTER_VALIDATE_BOOLEAN);
+                $usesSla = $serviceType->code === 'SVC-07' ? false : $usesSla;
+                $targetWorkingDays = $usesSla
+                    && array_key_exists('target_working_days', $data)
+                    && $data['target_working_days'] !== null
+                    && $data['target_working_days'] !== ''
+                    ? (int) $data['target_working_days']
+                    : null;
+
+                $this->operationalPolicies->syncSlaPolicyForService(
+                    $actor,
+                    $serviceType,
+                    $usesSla,
+                    $targetWorkingDays,
+                );
+            }
+
+            $fresh = $serviceType->fresh(['variants', 'activeFieldDefinitions.options', 'activeSlaPolicy']);
 
             $this->auditLogger->succeeded(
                 $actor,
@@ -109,13 +128,31 @@ class ServiceCatalogService
                 'is_active' => true,
             ]);
 
+            $usesSla = array_key_exists('uses_sla', $data)
+                ? filter_var($data['uses_sla'], FILTER_VALIDATE_BOOLEAN)
+                : false;
+            $usesSla = $code === 'SVC-07' ? false : $usesSla;
+            $targetWorkingDays = $usesSla
+                && array_key_exists('target_working_days', $data)
+                && $data['target_working_days'] !== null
+                && $data['target_working_days'] !== ''
+                ? (int) $data['target_working_days']
+                : null;
+
+            $this->operationalPolicies->syncSlaPolicyForService(
+                $actor,
+                $serviceType,
+                $usesSla,
+                $targetWorkingDays,
+            );
+
             $this->syncServiceSkillsWithinTransaction($actor, $serviceType, $data['skill_ids'] ?? []);
 
             foreach ($data['fields'] ?? [] as $fieldData) {
                 $this->createFieldRecord($actor, $serviceType, $fieldData);
             }
 
-            $fresh = $serviceType->fresh(['variants', 'skills', 'activeFieldDefinitions.options']);
+            $fresh = $serviceType->fresh(['variants', 'skills', 'activeFieldDefinitions.options', 'activeSlaPolicy']);
 
             $this->auditLogger->succeeded(
                 $actor,

@@ -12,6 +12,12 @@ class Attachment extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const DATA_EXPORT_RESULT_TYPE = 'data_export_result';
+
+    public const DATA_EXPORT_RESULT_LABEL = 'Hasil tarik data';
+
+    public const DATA_EXPORT_RESULT_MAX_SIZE_KB = 10240;
+
     protected $fillable = [
         'ticket_id',
         'ticket_comment_id',

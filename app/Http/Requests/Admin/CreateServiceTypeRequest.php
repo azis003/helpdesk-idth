@@ -13,7 +13,15 @@ class CreateServiceTypeRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         if ($this->filled('code')) {
-            $this->merge(['code' => strtoupper(trim((string) $this->input('code')))]);
+            $code = strtoupper(trim((string) $this->input('code')));
+            $this->merge(['code' => $code]);
+
+            if ($code === 'SVC-07') {
+                $this->merge([
+                    'uses_sla' => false,
+                    'target_working_days' => null,
+                ]);
+            }
         }
     }
 
@@ -28,6 +36,8 @@ class CreateServiceTypeRequest extends FormRequest
             'code' => ['required', 'string', 'max:20', 'alpha_dash', Rule::unique('service_types', 'code')],
             'name' => ['required', 'string', 'max:150'],
             'ticket_class' => ['required', Rule::in(['INC', 'REQ', 'CHG'])],
+            'uses_sla' => ['required', 'boolean'],
+            'target_working_days' => ['required_if:uses_sla,1', 'nullable', 'integer', 'min:1', 'max:365'],
             'skill_ids' => ['nullable', 'array'],
             'skill_ids.*' => ['integer', 'distinct', 'exists:skills,id'],
             'description' => ['nullable', 'string', 'max:1000'],
@@ -53,6 +63,11 @@ class CreateServiceTypeRequest extends FormRequest
             'name.required' => 'Jenis layanan wajib diisi.',
             'ticket_class.required' => 'Kategori layanan wajib dipilih.',
             'ticket_class.in' => 'Kategori layanan harus INC, REQ, atau CHG.',
+            'uses_sla.required' => 'Status SLA wajib ditentukan.',
+            'target_working_days.required_if' => 'Target SLA wajib diisi jika SLA digunakan.',
+            'target_working_days.integer' => 'Target SLA harus berupa jumlah hari kerja.',
+            'target_working_days.min' => 'Target SLA minimal 1 hari kerja.',
+            'target_working_days.max' => 'Target SLA maksimal 365 hari kerja.',
             'skill_ids.array' => 'Daftar keahlian tidak valid.',
             'skill_ids.*.exists' => 'Salah satu keahlian tidak ditemukan.',
             'fields.*.key.required' => 'Kunci teknis field wajib diisi.',
@@ -67,6 +82,10 @@ class CreateServiceTypeRequest extends FormRequest
     public function payload(): array
     {
         $data = $this->validated();
+        $data['uses_sla'] = $data['code'] === 'SVC-07' ? false : (bool) $data['uses_sla'];
+        $data['target_working_days'] = $data['uses_sla']
+            ? (int) $data['target_working_days']
+            : null;
         $data['skill_ids'] = collect($data['skill_ids'] ?? [])->map(fn ($id): int => (int) $id)->values()->all();
         $data['fields'] = collect($data['fields'] ?? [])
             ->values()

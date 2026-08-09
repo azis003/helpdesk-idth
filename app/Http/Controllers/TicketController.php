@@ -19,6 +19,7 @@ use App\Http\Requests\TriageTicketRequest;
 use App\Http\Requests\VerifyDatabaseChangeRequest;
 use App\Models\Announcement;
 use App\Models\ApprovalRequest;
+use App\Models\Attachment;
 use App\Models\AttachmentPolicy;
 use App\Models\Building;
 use App\Models\ServiceType;
@@ -147,6 +148,7 @@ class TicketController extends Controller
         $includeInternal = $actor->hasRole(Role::AgenTier1);
         $attachmentPolicies = AttachmentPolicy::query()
             ->active()
+            ->where('type_key', '!=', Attachment::DATA_EXPORT_RESULT_TYPE)
             ->when(! $includeInternal, fn ($query) => $query->whereIn('visibility', ['requester', 'both']))
             ->with('serviceType')
             ->orderByRaw('service_type_id IS NOT NULL')
@@ -379,6 +381,7 @@ class TicketController extends Controller
             $request->user(),
             $ticket,
             (string) $request->validated('solution'),
+            $request->file('data_export_result'),
         );
 
         return redirect()

@@ -44,6 +44,10 @@ class ServiceCatalogController extends Controller
             return $this->forms($request);
         }
 
+        if ($activeSection === 'attachments') {
+            return redirect()->route('admin.services.index');
+        }
+
         $this->authorizeCatalog($request);
 
         return view('admin.catalog.index', [
@@ -111,7 +115,7 @@ class ServiceCatalogController extends Controller
 
     private function serviceTypeQuery(): Builder
     {
-        return ServiceType::query()->with(['variants', 'activeFieldDefinitions.options', 'skills']);
+        return ServiceType::query()->with(['variants', 'activeFieldDefinitions.options', 'activeSlaPolicy', 'skills']);
     }
 
     /** @return array<string, mixed> */

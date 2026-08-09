@@ -557,7 +557,7 @@
                     <div class="ui-panel-header">
                         <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#2bb8aa] !shadow-[0_0_0_4px_#d7f7f1]" aria-hidden="true"></span>Hasil tarik data</p>
                         <h2 id="data-export-heading" class="mt-2 ui-section-title">Ketersediaan hasil SVC-02</h2>
-                        <p class="ui-section-description">Minimal satu lampiran bertipe Hasil tarik data dengan akses Pemohon wajib tersedia sebelum penyelesaian.</p>
+                        <p class="ui-section-description">Hasil tarik data diunggah bersama penyelesaian tiket dan harus dapat diakses Pemohon.</p>
                     </div>
                     <div class="p-5 sm:p-6">
                         <p class="rounded-lg border {{ ($specialControlReadiness['ready'] ?? false) ? 'border-[#bfe8d8] bg-[#f2fcf7] text-[#087f5b]' : 'border-[#f0d28c] bg-[#fffaf0] text-[#8a5a00]' }} p-3 text-sm leading-6">
@@ -569,19 +569,30 @@
 
             @if ($canComplete)
                 <section class="ui-panel border-l-4 border-l-[#2bb8aa]" aria-labelledby="complete-heading">
+                    @php
+                        $isDataExport = ($specialControlReadiness['kind'] ?? null) === 'data_export';
+                    @endphp
                     <div class="ui-panel-header">
                         <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#2bb8aa] !shadow-[0_0_0_4px_#d7f7f1]" aria-hidden="true"></span>Penyelesaian</p>
-                        <h2 id="complete-heading" class="mt-2 ui-section-title">Simpan solusi</h2>
-                        <p class="ui-section-description">Solusi wajib diisi. Setelah disimpan, tiket masuk Menunggu Konfirmasi dan SLA berhenti.</p>
+                        <h2 id="complete-heading" class="mt-2 ui-section-title">{{ $isDataExport ? 'Simpan solusi dan hasil tarik data' : 'Simpan solusi' }}</h2>
+                        <p class="ui-section-description">{{ $isDataExport ? 'Isi solusi dan unggah hasil tarik data. Setelah disimpan, tiket masuk Menunggu Konfirmasi dan SLA berhenti.' : 'Solusi wajib diisi. Setelah disimpan, tiket masuk Menunggu Konfirmasi dan SLA berhenti.' }}</p>
                     </div>
-                    <form method="POST" action="{{ route('tickets.complete', $ticket) }}" class="space-y-4 p-5 sm:p-6" data-ticket-resolution-form>
+                    <form method="POST" action="{{ route('tickets.complete', $ticket) }}" class="space-y-4 p-5 sm:p-6" data-ticket-resolution-form @if ($isDataExport) enctype="multipart/form-data" @endif>
                         @csrf
                         <div>
                             <label for="ticket-solution" class="ui-field-label">Solusi <span class="text-rose-600" aria-hidden="true">*</span></label>
                             <textarea id="ticket-solution" name="solution" rows="6" required maxlength="20000" class="ui-textarea mt-2" placeholder="Jelaskan tindakan dan hasil penyelesaian tiket.">{{ old('solution') }}</textarea>
                             @error('solution')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
                         </div>
-                        <button type="submit" class="ui-btn ui-btn-primary w-full" data-ticket-resolution-submit>Simpan solusi dan minta konfirmasi</button>
+                        @if ($isDataExport)
+                            <div class="rounded-xl border border-[#b9e4ed] bg-[#f5fcfe] p-4">
+                                <label for="data-export-result" class="ui-field-label">Hasil tarik data <span class="text-rose-600" aria-hidden="true">*</span></label>
+                                <p id="data-export-result-help" class="ui-field-help">Unggah satu berkas hasil yang dapat diakses Pemohon. Ukuran maksimal 10 MB.</p>
+                                <input id="data-export-result" name="data_export_result" type="file" required class="ui-file-input mt-2" aria-describedby="data-export-result-help">
+                                @error('data_export_result')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+                            </div>
+                        @endif
+                        <button type="submit" class="ui-btn ui-btn-primary w-full" data-ticket-resolution-submit>{{ $isDataExport ? 'Simpan solusi dan unggah hasil' : 'Simpan solusi dan minta konfirmasi' }}</button>
                     </form>
                 </section>
             @endif

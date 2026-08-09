@@ -24,24 +24,25 @@ class OperationalPolicyManagementTest extends TestCase
         ]);
     }
 
-    public function test_super_admin_can_open_operational_policy_page_and_non_admin_is_denied(): void
+    public function test_sla_is_managed_from_service_catalog_and_standalone_menu_is_removed(): void
     {
         $admin = $this->createUser([Role::SuperAdmin]);
         $pemohon = $this->createUser([Role::Pemohon]);
 
         $this->actingAs($admin)
-            ->get(route('admin.operational-policies.index'))
+            ->get(route('admin.services.index'))
             ->assertOk()
-            ->assertSee('Manajemen SLA')
-            ->assertSee('Daftar SLA')
+            ->assertSee('Manajemen Layanan')
+            ->assertSee('Target SLA')
+            ->assertSee('Gunakan target SLA')
             ->assertSee('SVC-01')
-            ->assertSee('Simpan versi SLA')
-            ->assertDontSee('id="calendar-heading"', false)
-            ->assertDontSee('id="settings-heading"', false)
-            ->assertDontSee('id="approver-heading"', false);
+            ->assertDontSee('Manajemen SLA');
+
+        $this->get('/admin/operational-policies')
+            ->assertNotFound();
 
         $this->actingAs($pemohon)
-            ->get(route('admin.operational-policies.index'))
+            ->get(route('admin.services.index'))
             ->assertForbidden();
 
         $this->assertDatabaseHas('audit_logs', [
@@ -54,25 +55,19 @@ class OperationalPolicyManagementTest extends TestCase
     public function test_super_admin_can_update_versioned_sla_calendar_and_operational_settings(): void
     {
         $admin = $this->createUser([Role::SuperAdmin]);
-        $services = ServiceType::query()->orderBy('id')->get();
-        $policies = $services->map(function (ServiceType $service): array {
-            $current = $service->activeSlaPolicy;
-
-            return [
-                'service_type_id' => $service->id,
-                'uses_sla' => $service->code === 'SVC-07' ? 0 : 1,
-                'target_working_days' => $service->code === 'SVC-01'
-                    ? 2
-                    : ($current?->target_working_days ?? 1),
-            ];
-        })->values()->all();
+        $svc01 = ServiceType::query()->where('code', 'SVC-01')->firstOrFail();
 
         $this->actingAs($admin)
-            ->put(route('admin.operational-policies.sla.update'), ['policies' => $policies])
+            ->put(route('admin.catalog.services.update', $svc01), [
+                'name' => $svc01->name,
+                'description' => $svc01->description,
+                'ticket_class' => $svc01->ticket_class,
+                'uses_sla' => 1,
+                'target_working_days' => 2,
+            ])
             ->assertRedirect()
             ->assertSessionHasNoErrors();
 
-        $svc01 = ServiceType::query()->where('code', 'SVC-01')->firstOrFail();
         $this->assertDatabaseHas('sla_policies', [
             'service_type_id' => $svc01->id,
             'target_working_days' => 2,

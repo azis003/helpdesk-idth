@@ -19,6 +19,8 @@ class ServiceTypeRequest extends FormRequest
             'name' => ['required', 'string', 'max:150'],
             'description' => ['nullable', 'string', 'max:1000'],
             'ticket_class' => ['nullable', Rule::in(['INC', 'REQ', 'CHG'])],
+            'uses_sla' => ['sometimes', 'boolean'],
+            'target_working_days' => ['required_if:uses_sla,1', 'nullable', 'integer', 'min:1', 'max:365'],
             'variants' => ['nullable', 'array'],
             'variants.*.code' => ['required', Rule::in(['repair', 'request'])],
             'variants.*.label' => ['required', 'string', 'max:150'],
@@ -31,6 +33,10 @@ class ServiceTypeRequest extends FormRequest
         return [
             'name.required' => 'Nama layanan wajib diisi.',
             'ticket_class.in' => 'Kelas nomor harus INC, REQ, atau CHG.',
+            'target_working_days.required_if' => 'Target SLA wajib diisi jika SLA digunakan.',
+            'target_working_days.integer' => 'Target SLA harus berupa jumlah hari kerja.',
+            'target_working_days.min' => 'Target SLA minimal 1 hari kerja.',
+            'target_working_days.max' => 'Target SLA maksimal 365 hari kerja.',
             'variants.*.label.required' => 'Label subjenis wajib diisi.',
             'variants.*.code.in' => 'Subjenis layanan tidak dikenali.',
         ];

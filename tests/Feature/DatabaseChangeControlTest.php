@@ -142,33 +142,31 @@ class DatabaseChangeControlTest extends TestCase
         $agent = $this->createUser([Role::AgenTier1]);
         $service = ServiceType::query()->where('code', 'SVC-02')->firstOrFail();
         $ticket = $this->assignedTicket($requester->id, $agent->id, $service, 'REQ-2026-00001');
-        $policy = AttachmentPolicy::query()
-            ->where('service_type_id', $service->id)
-            ->where('type_key', 'data_export_result')
-            ->firstOrFail();
+
+        $this->actingAs($agent)
+            ->get(route('tickets.show', $ticket))
+            ->assertOk()
+            ->assertSee('name="data_export_result"', false)
+            ->assertSee('Hasil tarik data')
+            ->assertDontSee('Tambah lampiran kerja');
 
         $this->actingAs($agent)
             ->post(route('tickets.complete', $ticket), ['solution' => 'Hasil data sedang disiapkan.'])
-            ->assertSessionHasErrors('ticket');
+            ->assertSessionHasErrors('data_export_result');
         $this->assertSame(TicketStatus::Dikerjakan, $ticket->refresh()->status);
-        $this->assertDatabaseHas('audit_logs', [
-            'user_id' => $agent->id,
-            'action' => 'ticket.resolution',
-            'outcome' => 'denied',
-        ]);
 
-        $this->upload($ticket, $agent, [
-            $policy->id => UploadedFile::fake()->create('hasil-ekspor.csv', 10, 'text/csv'),
-        ]);
+        $this->actingAs($agent)
+            ->post(route('tickets.complete', $ticket), [
+                'solution' => 'Hasil tarik data tersedia untuk Pemohon.',
+                'data_export_result' => UploadedFile::fake()->create('hasil-ekspor.csv', 10, 'text/csv'),
+            ])
+            ->assertRedirect(route('tickets.show', $ticket))
+            ->assertSessionHasNoErrors();
 
         $attachment = Attachment::query()->where('ticket_id', $ticket->id)->firstOrFail();
         $this->assertSame('data_export_result', $attachment->type_key);
         $this->assertSame('both', $attachment->visibility);
-
-        $this->actingAs($agent)
-            ->post(route('tickets.complete', $ticket), ['solution' => 'Hasil tarik data tersedia untuk Pemohon.'])
-            ->assertRedirect(route('tickets.show', $ticket))
-            ->assertSessionHasNoErrors();
+        $this->assertNull($attachment->attachment_policy_id);
 
         $ticket->forceFill(['status' => TicketStatus::Ditutup, 'closed_at' => now()->subDays(91)])->save();
         $storagePath = $attachment->storage_path;

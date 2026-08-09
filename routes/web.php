@@ -124,8 +124,6 @@ Route::middleware(['auth', 'active'])->group(function () {
             Route::get('/branding', [BrandingController::class, 'index'])->name('branding.index');
             Route::put('/branding', [BrandingController::class, 'update'])->name('branding.update');
 
-            Route::get('/operational-policies', [OperationalPolicyController::class, 'index'])->name('operational-policies.index');
-            Route::put('/operational-policies/sla', [OperationalPolicyController::class, 'updateSla'])->name('operational-policies.sla.update');
             Route::put('/operational-policies/calendar', [OperationalPolicyController::class, 'updateCalendar'])->name('operational-policies.calendar.update');
             Route::put('/operational-policies/settings', [OperationalPolicyController::class, 'updateSettings'])->name('operational-policies.settings.update');
             Route::put('/operational-policies/approver', [OperationalPolicyController::class, 'replaceApprover'])->name('operational-policies.approver.update');

@@ -6,8 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ApproverAssignmentRequest;
 use App\Http\Requests\Admin\OperationalSettingRequest;
 use App\Http\Requests\Admin\ServiceCalendarRequest;
-use App\Http\Requests\Admin\SlaPolicyRequest;
-use App\Models\ServiceType;
 use App\Models\SlaPolicy;
 use App\Services\ApproverAssignmentService;
 use App\Services\DomainAuthorization;
@@ -22,27 +20,6 @@ class OperationalPolicyController extends Controller
         private readonly OperationalPolicyService $policies,
         private readonly ApproverAssignmentService $approvers,
     ) {}
-
-    public function index(Request $request): mixed
-    {
-        $this->authorizeView($request);
-
-        return view('admin.operational-policies.index', [
-            'serviceTypes' => ServiceType::query()
-                ->with('activeSlaPolicy.changedBy')
-                ->orderBy('sort_order')
-                ->orderBy('code')
-                ->get(),
-        ]);
-    }
-
-    public function updateSla(SlaPolicyRequest $request): RedirectResponse
-    {
-        $this->authorizeView($request);
-        $this->policies->updateSlaPolicies($request->user(), $request->payload());
-
-        return back()->with('success', 'Target SLA layanan berhasil disimpan sebagai versi kebijakan baru.');
-    }
 
     public function updateCalendar(ServiceCalendarRequest $request): RedirectResponse
     {

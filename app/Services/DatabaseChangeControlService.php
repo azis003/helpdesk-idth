@@ -246,7 +246,7 @@ class DatabaseChangeControlService
         }
 
         if ($serviceCode === self::SVC_DATA_EXPORT && ! $this->hasRequesterAccessibleExport($ticket)) {
-            return 'SVC-02 harus memiliki minimal satu hasil data export yang dapat diakses Pemohon sebelum tiket menunggu konfirmasi.';
+            return 'SVC-02 harus memiliki minimal satu hasil tarik data yang dapat diakses Pemohon sebelum tiket menunggu konfirmasi.';
         }
 
         return null;
@@ -334,7 +334,7 @@ class DatabaseChangeControlService
     {
         return Attachment::query()
             ->where('ticket_id', $ticket->getKey())
-            ->where('type_key', 'data_export_result')
+            ->where('type_key', Attachment::DATA_EXPORT_RESULT_TYPE)
             ->get();
     }
 

@@ -1,5 +1,8 @@
 @php
     $autoOpen = old('_service_create') === '1';
+    $createUsesSla = old('uses_sla') === null
+        ? true
+        : filter_var(old('uses_sla'), FILTER_VALIDATE_BOOLEAN);
     $selectedSkillIds = collect(old('skill_ids', []))->map(fn ($id): int => (int) $id)->all();
 @endphp
 
@@ -18,7 +21,7 @@
                 </button>
             </div>
 
-            <form method="POST" action="{{ route('admin.services.store') }}" data-submit-feedback data-service-field-builder>
+            <form method="POST" action="{{ route('admin.services.store') }}" data-submit-feedback data-service-field-builder data-service-sla-form>
                 @csrf
                 <input type="hidden" name="_service_create" value="1">
 
@@ -39,7 +42,7 @@
                         <div class="grid gap-4 p-4 sm:grid-cols-2 sm:p-5">
                             <div>
                                 <label for="new-service-code" class="ui-field-label">Kode layanan <span class="text-rose-600">*</span></label>
-                                <input id="new-service-code" name="code" value="{{ old('code') }}" required maxlength="20" class="ui-input mt-2 uppercase" placeholder="Contoh: SVC-08">
+                                <input id="new-service-code" name="code" value="{{ old('code') }}" required maxlength="20" class="ui-input mt-2 uppercase" placeholder="Contoh: SVC-08" data-service-sla-code>
                                 <p class="ui-field-help">Gunakan kode singkat dan unik, misalnya SVC-08.</p>
                                 @error('code')<p class="mt-1 text-xs font-semibold text-rose-700">{{ $message }}</p>@enderror
                             </div>
@@ -59,6 +62,24 @@
                                 </select>
                                 <p class="ui-field-help">INC untuk gangguan, REQ untuk permintaan, CHG untuk perubahan.</p>
                                 @error('ticket_class')<p class="mt-1 text-xs font-semibold text-rose-700">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="rounded-xl border border-[#cfe4e8] bg-[#f8fbfc] p-4 sm:col-span-2" data-service-sla-panel>
+                                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                    <div class="flex items-start gap-3">
+                                        <input type="hidden" name="uses_sla" value="0">
+                                        <input id="new-service-uses-sla" name="uses_sla" value="1" type="checkbox" class="ui-checkbox mt-0.5" @checked($createUsesSla) data-service-sla-toggle>
+                                        <div>
+                                            <label for="new-service-uses-sla" class="ui-field-label">Gunakan target SLA</label>
+                                            <p class="mt-1 text-xs leading-5 text-[#78909a]" data-service-sla-status>Target penyelesaian dihitung dalam hari kerja dan tersimpan sebagai versi kebijakan.</p>
+                                        </div>
+                                    </div>
+                                    <div class="w-full sm:max-w-xs" data-service-sla-target>
+                                        <label for="new-service-target-sla" class="ui-field-label">Target SLA (hari kerja)</label>
+                                        <input id="new-service-target-sla" name="target_working_days" type="number" min="1" max="365" value="{{ old('target_working_days') }}" class="ui-input mt-2" data-service-sla-target-input @disabled(! $createUsesSla)>
+                                        <p class="ui-field-help">Minimal 1 dan maksimal 365 hari kerja.</p>
+                                        @error('target_working_days')<p class="mt-1 text-xs font-semibold text-rose-700">{{ $message }}</p>@enderror
+                                    </div>
+                                </div>
                             </div>
                             <div class="sm:col-span-2">
                                 <label for="new-service-description" class="ui-field-label">Deskripsi keahlian</label>

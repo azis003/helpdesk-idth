@@ -32,14 +32,9 @@
             || (request()->routeIs('admin.catalog.*') && $catalogSection === 'services');
         $isCatalogLocations = request()->routeIs('admin.locations.*')
             || (request()->routeIs('admin.catalog.*') && $catalogSection === 'locations');
-        $isCatalogAttachments = request()->routeIs('admin.catalog.*') && $catalogSection === 'attachments';
         $locationMenuUrl = request()->routeIs('admin.catalog.*') && $catalogSection === 'locations'
             ? route('admin.catalog.index', ['section' => 'locations'])
             : route('admin.locations.index');
-        $isOperationalPolicies = request()->routeIs('admin.operational-policies.*');
-        $operationalSection = request()->query('section', 'sla');
-        $parameterMenuOpen = $isCatalogAttachments
-            || ($isOperationalPolicies && in_array($operationalSection, ['deadline', 'service-hours'], true));
         $applicationMenuOpen = request()->routeIs('admin.branding.*');
         $unreadNotificationCount = $currentUser->unreadNotifications()->count();
         $latestNotifications = $currentUser->notifications()->latest()->limit(5)->get();
@@ -91,36 +86,6 @@
 
                 <nav class="mt-5 flex flex-col gap-2" aria-label="Konfigurasi">
                     <p class="ui-sidebar-label">Konfigurasi</p>
-                    <a href="{{ route('admin.operational-policies.index', ['section' => 'sla']) }}#sla-heading" class="ui-nav-link {{ $isOperationalPolicies && $operationalSection === 'sla' ? 'is-active' : '' }}" aria-label="Manajemen SLA" title="Manajemen SLA">
-                        <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.5 19 6v5.3c0 4.1-2.8 7.5-7 9.2-4.2-1.7-7-5.1-7-9.2V6l7-2.5Z" /><path stroke-linecap="round" stroke-linejoin="round" d="m9.2 12 1.8 1.8 3.9-4" /></svg></span>
-                        <span class="ui-nav-label">Manajemen SLA</span>
-                    </a>
-                    <div class="ui-sidebar-dropdown{{ $parameterMenuOpen ? ' is-open' : '' }}" data-nav-disclosure data-nav-open="{{ $parameterMenuOpen ? 'true' : 'false' }}" data-nav-label="Manajemen Parameter">
-                        <div class="ui-nav-disclosure-row">
-                            <button type="button" class="ui-nav-link ui-nav-disclosure-link" data-nav-disclosure-toggle aria-controls="sidebar-parameter-submenu" aria-expanded="{{ $parameterMenuOpen ? 'true' : 'false' }}" aria-label="{{ $parameterMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Parameter" title="{{ $parameterMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Parameter">
-                                <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" /><circle cx="8" cy="7" r="1.25" fill="currentColor" stroke="none" /><circle cx="15" cy="12" r="1.25" fill="currentColor" stroke="none" /><circle cx="10" cy="17" r="1.25" fill="currentColor" stroke="none" /></svg></span>
-                                <span class="ui-nav-label">Manajemen Parameter</span>
-                            </button>
-                            <button type="button" class="ui-nav-disclosure-toggle" data-nav-disclosure-toggle aria-controls="sidebar-parameter-submenu" aria-expanded="{{ $parameterMenuOpen ? 'true' : 'false' }}" aria-label="{{ $parameterMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Parameter" title="{{ $parameterMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Parameter">
-                                <span class="ui-nav-disclosure-chevron" aria-hidden="true"></span>
-                                <span class="sr-only">{{ $parameterMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Parameter</span>
-                            </button>
-                        </div>
-                        <div id="sidebar-parameter-submenu" class="ui-nav-subgroup" data-nav-disclosure-panel role="group" aria-label="Submenu Manajemen Parameter" @unless ($parameterMenuOpen) hidden @endunless>
-                            <a href="{{ route('admin.operational-policies.index', ['section' => 'deadline']) }}#settings-heading" class="ui-nav-link ui-nav-sublink {{ $isOperationalPolicies && $operationalSection === 'deadline' ? 'is-active' : '' }}" aria-label="Parameter Batas Waktu" title="Parameter Batas Waktu">
-                                <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5" /><path stroke-linecap="round" d="M12 7.5v5l3.5 2" /></svg></span>
-                                <span class="ui-nav-label">Parameter Batas Waktu</span>
-                            </a>
-                            <a href="{{ route('admin.operational-policies.index', ['section' => 'service-hours']) }}#calendar-heading" class="ui-nav-link ui-nav-sublink {{ $isOperationalPolicies && $operationalSection === 'service-hours' ? 'is-active' : '' }}" aria-label="Parameter Jam Layanan" title="Parameter Jam Layanan">
-                                <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4.5" y="5.5" width="15" height="14" rx="1.5" /><path stroke-linecap="round" d="M8 3.5v4M16 3.5v4M4.5 10h15M8 13.5h.01M12 13.5h.01M16 13.5h.01M8 16.5h.01M12 16.5h.01" /></svg></span>
-                                <span class="ui-nav-label">Parameter Jam Layanan</span>
-                            </a>
-                            <a href="{{ route('admin.catalog.index', ['section' => 'attachments']) }}" class="ui-nav-link ui-nav-sublink {{ $isCatalogAttachments ? 'is-active' : '' }}" aria-label="Kebijakan Lampiran" title="Kebijakan Lampiran">
-                                <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m8.5 12.5 5.8-5.8a3 3 0 0 1 4.2 4.2l-7.7 7.7a4.5 4.5 0 0 1-6.4-6.4l7.3-7.3a2 2 0 0 1 2.8 2.8l-6.8 6.8a.75.75 0 0 0 1.1 1.1l6.1-6.1" /></svg></span>
-                                <span class="ui-nav-label">Kebijakan Lampiran</span>
-                            </a>
-                        </div>
-                    </div>
                     <a href="{{ route('admin.announcements.index') }}" class="ui-nav-link {{ request()->routeIs('admin.announcements.*') ? 'is-active' : '' }}" aria-label="Manajemen Pengumuman" title="Manajemen Pengumuman">
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 11.5h3l8-4v9l-8-4h-3a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1Z" /><path stroke-linecap="round" d="M8 16.5 9.5 20h2L10 16.5M18.5 10a3 3 0 0 1 0 4" /></svg></span>
                         <span class="ui-nav-label">Manajemen Pengumuman</span>
@@ -232,10 +197,6 @@
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 20.5h14M6.5 20.5V6.2a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v14.3M9 8.5h6M9 12h6M9 15.5h3" /><path stroke-linecap="round" d="M4 20.5h16" /></svg></span>
                         <span class="ui-nav-label">Manajemen lokasi</span>
                     </a>
-                    <a href="{{ route('admin.catalog.index', ['section' => 'attachments']) }}" class="ui-nav-link {{ $isCatalogAttachments ? 'is-active' : '' }}" aria-label="Kebijakan lampiran" title="Kebijakan lampiran">
-                        <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m8.5 12.5 5.8-5.8a3 3 0 0 1 4.2 4.2l-7.7 7.7a4.5 4.5 0 0 1-6.4-6.4l7.3-7.3a2 2 0 0 1 2.8 2.8l-6.8 6.8a.75.75 0 0 0 1.1 1.1l6.1-6.1" /></svg></span>
-                        <span class="ui-nav-label">Kebijakan lampiran</span>
-                    </a>
                 </nav>
             @endif
 
@@ -344,21 +305,6 @@
                                 <a href="{{ $locationMenuUrl }}" class="ui-mobile-nav-link {{ $isCatalogLocations ? 'is-active' : '' }}">Manajemen Lokasi</a>
 
                                 <div class="ui-mobile-nav-group-label">Konfigurasi</div>
-                                <a href="{{ route('admin.operational-policies.index', ['section' => 'sla']) }}#sla-heading" class="ui-mobile-nav-link {{ $isOperationalPolicies && $operationalSection === 'sla' ? 'is-active' : '' }}">Manajemen SLA</a>
-                                <div class="ui-mobile-nav-dropdown{{ $parameterMenuOpen ? ' is-open' : '' }}" data-nav-disclosure data-nav-open="{{ $parameterMenuOpen ? 'true' : 'false' }}" data-nav-label="Manajemen Parameter">
-                                    <div class="ui-mobile-nav-disclosure-row">
-                                        <button type="button" class="ui-mobile-nav-link ui-mobile-nav-disclosure-link" data-nav-disclosure-toggle aria-controls="mobile-parameter-submenu" aria-expanded="{{ $parameterMenuOpen ? 'true' : 'false' }}" aria-label="{{ $parameterMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Parameter" title="{{ $parameterMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Parameter">Manajemen Parameter</button>
-                                        <button type="button" class="ui-mobile-nav-disclosure-toggle" data-nav-disclosure-toggle aria-controls="mobile-parameter-submenu" aria-expanded="{{ $parameterMenuOpen ? 'true' : 'false' }}" aria-label="{{ $parameterMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Parameter" title="{{ $parameterMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Parameter">
-                                            <span class="ui-mobile-nav-disclosure-chevron" aria-hidden="true"></span>
-                                            <span class="sr-only">{{ $parameterMenuOpen ? 'Tutup' : 'Buka' }} submenu Manajemen Parameter</span>
-                                        </button>
-                                    </div>
-                                    <div id="mobile-parameter-submenu" class="ui-mobile-nav-dropdown-panel" data-nav-disclosure-panel @unless ($parameterMenuOpen) hidden @endunless>
-                                        <a href="{{ route('admin.operational-policies.index', ['section' => 'deadline']) }}#settings-heading" class="ui-mobile-nav-link {{ $isOperationalPolicies && $operationalSection === 'deadline' ? 'is-active' : '' }}">Parameter Batas Waktu</a>
-                                        <a href="{{ route('admin.operational-policies.index', ['section' => 'service-hours']) }}#calendar-heading" class="ui-mobile-nav-link {{ $isOperationalPolicies && $operationalSection === 'service-hours' ? 'is-active' : '' }}">Parameter Jam Layanan</a>
-                                        <a href="{{ route('admin.catalog.index', ['section' => 'attachments']) }}" class="ui-mobile-nav-link {{ $isCatalogAttachments ? 'is-active' : '' }}">Kebijakan Lampiran</a>
-                                    </div>
-                                </div>
                                 <a href="{{ route('admin.announcements.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.announcements.*') ? 'is-active' : '' }}">Manajemen Pengumuman</a>
                                 <div class="ui-mobile-nav-dropdown{{ $applicationMenuOpen ? ' is-open' : '' }}" data-nav-disclosure data-nav-open="{{ $applicationMenuOpen ? 'true' : 'false' }}" data-nav-label="Manajemen Aplikasi">
                                     <div class="ui-mobile-nav-disclosure-row">
@@ -411,7 +357,6 @@
                                 <a href="{{ route('admin.skills.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.skills.*') ? 'is-active' : '' }}">Data keahlian</a>
                                 <a href="{{ route('admin.catalog.index', ['section' => 'services']) }}" class="ui-mobile-nav-link {{ $isCatalogServices ? 'is-active' : '' }}">Manajemen layanan</a>
                                 <a href="{{ $locationMenuUrl }}" class="ui-mobile-nav-link {{ $isCatalogLocations ? 'is-active' : '' }}">Manajemen lokasi</a>
-                                <a href="{{ route('admin.catalog.index', ['section' => 'attachments']) }}" class="ui-mobile-nav-link {{ $isCatalogAttachments ? 'is-active' : '' }}">Kebijakan lampiran</a>
                             @endif
                             @if ($canManageAnnouncements)
                                 <div class="ui-mobile-nav-group-label">Komunikasi</div>

@@ -29,6 +29,7 @@ class TicketAttachmentService
     {
         return AttachmentPolicy::query()
             ->active()
+            ->where('type_key', '!=', Attachment::DATA_EXPORT_RESULT_TYPE)
             ->where(function ($query) use ($serviceType): void {
                 $query->whereNull('service_type_id')
                     ->orWhere('service_type_id', $serviceType->getKey());
@@ -135,6 +136,77 @@ class TicketAttachmentService
     public function storeForComment(TicketComment $comment, User $actor, array $files): array
     {
         return $this->storeItems($comment->ticket, $actor, $files, $comment);
+    }
+
+    public function storeDataExportResult(Ticket $ticket, User $actor, UploadedFile $file): Attachment
+    {
+        if (! $file->isValid()) {
+            throw ValidationException::withMessages([
+                'data_export_result' => 'Berkas hasil tarik data gagal diunggah.',
+            ]);
+        }
+
+        $size = (int) ($file->getSize() ?: 0);
+
+        if ($size <= 0) {
+            throw ValidationException::withMessages([
+                'data_export_result' => 'Berkas hasil tarik data tidak valid.',
+            ]);
+        }
+
+        if ($size > (Attachment::DATA_EXPORT_RESULT_MAX_SIZE_KB * 1024)) {
+            throw ValidationException::withMessages([
+                'data_export_result' => 'Ukuran hasil tarik data maksimal 10 MB.',
+            ]);
+        }
+
+        $disk = (string) config('filesystems.attachment_disk', 'local');
+        $extension = strtolower($file->getClientOriginalExtension());
+        $mime = strtolower((string) ($file->getMimeType() ?: $file->getClientMimeType()));
+        $fileName = (string) Str::uuid().($extension !== '' ? ".{$extension}" : '');
+        $path = null;
+
+        try {
+            $path = $file->storeAs("tickets/{$ticket->getKey()}/resolution", $fileName, $disk);
+
+            if ($path === false) {
+                throw new \RuntimeException('Penyimpanan hasil tarik data gagal.');
+            }
+
+            $attachment = Attachment::query()->create([
+                'ticket_id' => $ticket->getKey(),
+                'ticket_comment_id' => null,
+                'attachment_policy_id' => null,
+                'uploaded_by_id' => $actor->getKey(),
+                'type_key' => Attachment::DATA_EXPORT_RESULT_TYPE,
+                'type_label_snapshot' => Attachment::DATA_EXPORT_RESULT_LABEL,
+                'original_name' => $file->getClientOriginalName(),
+                'storage_disk' => $disk,
+                'storage_path' => $path,
+                'size_bytes' => $size,
+                'mime_type' => $mime !== '' ? $mime : null,
+                'extension' => $extension !== '' ? $extension : null,
+                'sha256' => $file->getRealPath() ? hash_file('sha256', $file->getRealPath()) : null,
+                'visibility' => 'both',
+            ]);
+
+            $this->auditLogger->succeeded(
+                $actor,
+                'attachment.uploaded',
+                $attachment,
+                'Hasil tarik data disimpan sebagai lampiran privat yang dapat diakses Pemohon.',
+                null,
+                $this->metadata($attachment),
+            );
+
+            return $attachment;
+        } catch (Throwable $exception) {
+            if ($path !== null) {
+                Storage::disk($disk)->delete($path);
+            }
+
+            throw $exception;
+        }
     }
 
     /**

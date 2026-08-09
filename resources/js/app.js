@@ -876,6 +876,45 @@ serviceFieldBuilders.forEach((form) => {
     });
 });
 
+const serviceSlaForms = [...document.querySelectorAll('[data-service-sla-form]')];
+
+serviceSlaForms.forEach((form) => {
+    const codeInput = form.querySelector('[data-service-sla-code]');
+    const toggle = form.querySelector('[data-service-sla-toggle]');
+    const targetPanel = form.querySelector('[data-service-sla-target]');
+    const targetInput = form.querySelector('[data-service-sla-target-input]');
+    const status = form.querySelector('[data-service-sla-status]');
+
+    if (!codeInput || !toggle || !targetPanel || !targetInput) {
+        return;
+    }
+
+    const syncSlaFields = () => {
+        const isProposalService = codeInput.value.trim().toUpperCase() === 'SVC-07';
+
+        if (isProposalService) {
+            toggle.checked = false;
+        }
+
+        toggle.disabled = isProposalService;
+        targetInput.disabled = isProposalService || !toggle.checked;
+        targetInput.required = !targetInput.disabled;
+        targetPanel.classList.toggle('opacity-60', targetInput.disabled);
+
+        if (status) {
+            status.textContent = isProposalService
+                ? 'Layanan ini menggunakan mekanisme usulan dan tidak memiliki target SLA tetap.'
+                : (toggle.checked
+                    ? 'Target penyelesaian dihitung dalam hari kerja dan tersimpan sebagai versi kebijakan.'
+                    : 'SLA tidak digunakan untuk layanan ini.');
+        }
+    };
+
+    codeInput.addEventListener('input', syncSlaFields);
+    toggle.addEventListener('change', syncSlaFields);
+    syncSlaFields();
+});
+
 const skillPickers = [...document.querySelectorAll('[data-skill-picker]')];
 
 skillPickers.forEach((picker) => {

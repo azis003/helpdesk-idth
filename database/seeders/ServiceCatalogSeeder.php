@@ -242,12 +242,6 @@ class ServiceCatalogSeeder extends Seeder
 
         $specialAttachmentPolicies = [
             [
-                'service' => 'SVC-02',
-                'type_key' => 'data_export_result',
-                'label' => 'Hasil tarik data',
-                'visibility' => 'both',
-            ],
-            [
                 'service' => 'SVC-03',
                 'type_key' => 'change_script',
                 'label' => 'Change script',

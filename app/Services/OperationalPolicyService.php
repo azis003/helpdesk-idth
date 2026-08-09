@@ -47,60 +47,91 @@ class OperationalPolicyService
             foreach ($services as $serviceType) {
                 /** @var array{service_type_id:int,uses_sla:bool,target_working_days:int|null} $data */
                 $data = $requested->get($serviceType->getKey());
-
-                if ($data['uses_sla'] && ($data['target_working_days'] ?? 0) < 1) {
-                    throw ValidationException::withMessages([
-                        "policies.{$serviceType->getKey()}.target_working_days" => "Target SLA {$serviceType->code} harus minimal 1 hari kerja.",
-                    ]);
-                }
-
-                $current = SlaPolicy::query()
-                    ->with('serviceType')
-                    ->where('service_type_id', $serviceType->getKey())
-                    ->active()
-                    ->lockForUpdate()
-                    ->first();
-                $before = $this->slaSnapshot($current);
-                $nextValues = [
-                    'target_working_days' => $data['uses_sla'] ? $data['target_working_days'] : null,
-                    'uses_sla' => $data['uses_sla'],
-                ];
-
-                if ($current !== null
-                    && $current->target_working_days === $nextValues['target_working_days']
-                    && $current->uses_sla === $nextValues['uses_sla']) {
-                    continue;
-                }
-
-                $version = ((int) SlaPolicy::query()
-                    ->where('service_type_id', $serviceType->getKey())
-                    ->lockForUpdate()
-                    ->max('version')) + 1;
-
-                if ($current !== null) {
-                    $current->forceFill(['is_active' => false])->save();
-                }
-
-                $policy = SlaPolicy::query()->create([
-                    'service_type_id' => $serviceType->getKey(),
-                    'target_working_days' => $nextValues['target_working_days'],
-                    'uses_sla' => $nextValues['uses_sla'],
-                    'version' => $version,
-                    'effective_from' => now(),
-                    'is_active' => true,
-                    'changed_by' => $actor->getKey(),
-                ])->load('serviceType');
-
-                $this->auditLogger->succeeded(
+                $this->syncSlaPolicyWithinTransaction(
                     $actor,
-                    'admin.sla_policy.updated',
-                    $policy,
-                    "Kebijakan SLA {$serviceType->code} diperbarui; versi sebelumnya dipertahankan.",
-                    $before,
-                    $this->slaSnapshot($policy),
+                    $serviceType,
+                    (bool) $data['uses_sla'],
+                    $data['target_working_days'] === null ? null : (int) $data['target_working_days'],
                 );
             }
         });
+    }
+
+    public function syncSlaPolicyForService(
+        User $actor,
+        ServiceType $serviceType,
+        bool $usesSla,
+        ?int $targetWorkingDays,
+    ): ?SlaPolicy {
+        return $this->database->transaction(fn (): ?SlaPolicy => $this->syncSlaPolicyWithinTransaction(
+            $actor,
+            $serviceType,
+            $usesSla,
+            $targetWorkingDays,
+        ));
+    }
+
+    private function syncSlaPolicyWithinTransaction(
+        User $actor,
+        ServiceType $serviceType,
+        bool $usesSla,
+        ?int $targetWorkingDays,
+    ): ?SlaPolicy {
+        if ($usesSla && ($targetWorkingDays ?? 0) < 1) {
+            throw ValidationException::withMessages([
+                'target_working_days' => "Target SLA {$serviceType->code} harus minimal 1 hari kerja.",
+            ]);
+        }
+
+        $nextValues = [
+            'target_working_days' => $usesSla ? $targetWorkingDays : null,
+            'uses_sla' => $usesSla,
+        ];
+        $current = SlaPolicy::query()
+            ->with('serviceType')
+            ->where('service_type_id', $serviceType->getKey())
+            ->active()
+            ->lockForUpdate()
+            ->first();
+
+        if ($current !== null
+            && $current->target_working_days === $nextValues['target_working_days']
+            && $current->uses_sla === $nextValues['uses_sla']) {
+            return $current;
+        }
+
+        $before = $this->slaSnapshot($current);
+        $version = ((int) SlaPolicy::query()
+            ->where('service_type_id', $serviceType->getKey())
+            ->lockForUpdate()
+            ->max('version')) + 1;
+
+        if ($current !== null) {
+            $current->forceFill(['is_active' => false])->save();
+        }
+
+        $policy = SlaPolicy::query()->create([
+            'service_type_id' => $serviceType->getKey(),
+            'target_working_days' => $nextValues['target_working_days'],
+            'uses_sla' => $nextValues['uses_sla'],
+            'version' => $version,
+            'effective_from' => now(),
+            'is_active' => true,
+            'changed_by' => $actor->getKey(),
+        ])->load('serviceType');
+
+        $this->auditLogger->succeeded(
+            $actor,
+            $current === null ? 'admin.sla_policy.created' : 'admin.sla_policy.updated',
+            $policy,
+            $current === null
+                ? "Kebijakan SLA {$serviceType->code} dibuat."
+                : "Kebijakan SLA {$serviceType->code} diperbarui; versi sebelumnya dipertahankan.",
+            $before,
+            $this->slaSnapshot($policy),
+        );
+
+        return $policy;
     }
 
     /** @param array{timezone:string,working_days:list<int>,opens_at:string,closes_at:string,holidays:list<array{holiday_date:string,name:string}>} $data */

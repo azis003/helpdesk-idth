@@ -2,6 +2,7 @@
     $categoryLabel = $serviceType->ticket_class
         ?: $serviceType->variants->where('is_active', true)->pluck('ticket_class')->unique()->implode(' / ');
     $categoryLabel = $categoryLabel ?: 'Belum diatur';
+    $activeSlaPolicy = $serviceType->activeSlaPolicy;
     $requesterFields = $serviceType->activeFieldDefinitions->filter(fn ($field) => in_array($field->visibility, ['requester', 'both'], true));
     $internalFields = $serviceType->activeFieldDefinitions->filter(fn ($field) => $field->visibility === 'internal');
 @endphp
@@ -22,9 +23,10 @@
             </div>
 
             <div class="space-y-5 p-5 sm:p-7">
-                <dl class="grid gap-3 sm:grid-cols-3">
+                <dl class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <div class="rounded-xl border border-[#dfe8ec] bg-[#f8fbfc] p-4"><dt class="text-[0.65rem] font-extrabold uppercase tracking-wide text-[#78909a]">Kode layanan</dt><dd class="mt-1 text-lg font-extrabold text-[#17313c]">{{ $serviceType->code }}</dd></div>
                     <div class="rounded-xl border border-[#dfe8ec] bg-[#f8fbfc] p-4"><dt class="text-[0.65rem] font-extrabold uppercase tracking-wide text-[#78909a]">Kategori</dt><dd class="mt-1 text-lg font-extrabold text-[#17313c]">{{ $categoryLabel }}</dd></div>
+                    <div class="rounded-xl border border-[#dfe8ec] bg-[#f8fbfc] p-4"><dt class="text-[0.65rem] font-extrabold uppercase tracking-wide text-[#78909a]">Target SLA</dt><dd class="mt-1 text-lg font-extrabold text-[#17313c]">@if ($activeSlaPolicy?->uses_sla && $activeSlaPolicy->target_working_days){{ $activeSlaPolicy->target_working_days }} hari kerja @elseif ($activeSlaPolicy)Tidak digunakan @else Belum diatur @endif</dd></div>
                     <div class="rounded-xl border border-[#dfe8ec] bg-[#f8fbfc] p-4"><dt class="text-[0.65rem] font-extrabold uppercase tracking-wide text-[#78909a]">Status</dt><dd class="mt-1"><span class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold {{ $serviceType->is_active ? 'bg-[#e8faf4] text-[#087f5b]' : 'bg-[#eef2f4] text-[#657984]' }}">{{ $serviceType->is_active ? 'Aktif' : 'Nonaktif' }}</span></dd></div>
                 </dl>
 
