@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\ServiceFieldDefinition;
 use App\Models\ServiceType;
-use App\Models\ServiceTypeVariant;
 use App\Models\Skill;
 use App\Models\User;
 use Illuminate\Database\DatabaseManager;
@@ -48,7 +47,7 @@ class ServiceCatalogService
         array $data,
     ): ServiceType {
         return $this->database->transaction(function () use ($actor, $serviceType, $data): ServiceType {
-            $before = $this->serviceTypeSnapshot($serviceType->load('variants'));
+            $before = $this->serviceTypeSnapshot($serviceType);
             $ticketClass = $data['ticket_class'] ?? null;
 
             if ($ticketClass !== null && ! in_array($ticketClass, self::TICKET_CLASSES, true)) {
@@ -86,7 +85,7 @@ class ServiceCatalogService
                 );
             }
 
-            $fresh = $serviceType->fresh(['variants', 'activeFieldDefinitions.options', 'activeSlaPolicy']);
+            $fresh = $serviceType->fresh(['activeFieldDefinitions.options', 'activeSlaPolicy']);
 
             $this->auditLogger->succeeded(
                 $actor,
@@ -147,7 +146,7 @@ class ServiceCatalogService
                 $this->createFieldRecord($actor, $serviceType, $fieldData);
             }
 
-            $fresh = $serviceType->fresh(['variants', 'skills', 'activeFieldDefinitions.options', 'activeSlaPolicy']);
+            $fresh = $serviceType->fresh(['skills', 'activeFieldDefinitions.options', 'activeSlaPolicy']);
 
             $this->auditLogger->succeeded(
                 $actor,
@@ -168,9 +167,9 @@ class ServiceCatalogService
         bool $active,
     ): ServiceType {
         return $this->database->transaction(function () use ($actor, $serviceType, $active): ServiceType {
-            $before = $this->serviceTypeSnapshot($serviceType->load('variants'));
+            $before = $this->serviceTypeSnapshot($serviceType);
             $serviceType->forceFill(['is_active' => $active])->save();
-            $serviceType = $serviceType->fresh(['variants', 'activeFieldDefinitions.options']);
+            $serviceType = $serviceType->fresh(['activeFieldDefinitions.options']);
 
             $this->auditLogger->succeeded(
                 $actor,
@@ -226,7 +225,7 @@ class ServiceCatalogService
             ]);
         }
 
-        $fresh = $serviceType->fresh(['variants', 'skills']);
+        $fresh = $serviceType->fresh(['skills']);
         $this->auditLogger->succeeded(
             $actor,
             'admin.service_type.skills.updated',
@@ -509,12 +508,6 @@ class ServiceCatalogService
                 'slug' => $skill->slug,
                 'name' => $skill->name,
                 'is_active' => $skill->is_active,
-            ])->values()->all(),
-            'variants' => $serviceType->variants->map(fn (ServiceTypeVariant $variant): array => [
-                'code' => $variant->code,
-                'label' => $variant->label,
-                'ticket_class' => $variant->ticket_class,
-                'is_active' => $variant->is_active,
             ])->values()->all(),
         ];
     }

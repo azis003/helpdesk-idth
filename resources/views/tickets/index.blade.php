@@ -41,7 +41,6 @@
         <div class="flex flex-col gap-2 bg-[#075998] px-5 py-5 text-white sm:flex-row sm:items-center sm:justify-between sm:px-8">
             <div>
                 <h2 id="tickets-list-heading" class="text-xl font-extrabold tracking-tight">Daftar tiket</h2>
-                <p class="mt-1 text-sm text-white/75">{{ $tickets->total() }} tiket dalam daftar.</p>
             </div>
             @if ($search !== '')
                 <span class="inline-flex w-fit items-center rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white">Pencarian aktif</span>

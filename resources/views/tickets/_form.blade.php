@@ -101,22 +101,6 @@
                 <div class="mb-5 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700" role="alert">{{ $message }}</div>
             @enderror
 
-            @if ($announcements->isNotEmpty())
-                <div class="mb-6 rounded-xl border border-[#f0d89a] bg-[#fffaf0] p-4" role="status" aria-label="Pengumuman layanan">
-                    @foreach ($announcements as $announcement)
-                        <div class="flex items-start gap-3 {{ $loop->last ? '' : 'border-b border-[#f0d89a] pb-3 mb-3' }}">
-                            <span class="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#fff0b9] text-[#9a6700]" aria-hidden="true">
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 11.5h3l8-4v9l-8-4h-3a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1Z" /><path stroke-linecap="round" d="M8 16.5 9.5 20h2L10 16.5M18.5 10a3 3 0 0 1 0 4" /></svg>
-                            </span>
-                            <div class="min-w-0">
-                                <p class="text-sm font-extrabold text-[#6f5300]">{{ $announcement->title }}</p>
-                                <p class="mt-1 whitespace-pre-line text-sm leading-6 text-[#806f3f]">{{ $announcement->body }}</p>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-
             <div class="space-y-5">
                 <div>
                     <label for="subject" class="ui-field-label">Judul <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only">wajib</span></label>
@@ -169,8 +153,6 @@
                         <x-tickets.dynamic-field :field="$field" :service="$selectedServiceType" />
                     @endforeach
                 </div>
-            @else
-                <p class="ui-empty mt-6 !p-6">Belum ada field tambahan untuk layanan ini.</p>
             @endif
 
             @if ($serviceAttachmentPolicies->isNotEmpty())

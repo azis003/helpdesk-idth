@@ -17,7 +17,6 @@ use App\Http\Requests\StoreTicketAttachmentRequest;
 use App\Http\Requests\StoreTicketRequest;
 use App\Http\Requests\TriageTicketRequest;
 use App\Http\Requests\VerifyDatabaseChangeRequest;
-use App\Models\Announcement;
 use App\Models\ApprovalRequest;
 use App\Models\Attachment;
 use App\Models\AttachmentPolicy;
@@ -222,7 +221,7 @@ class TicketController extends Controller
 
         $serviceTypes = ServiceType::query()
             ->active()
-            ->with(['activeFieldDefinitions.options', 'activeVariants'])
+            ->with(['activeFieldDefinitions.options'])
             ->orderBy('sort_order')
             ->orderBy('code')
             ->get();
@@ -268,13 +267,6 @@ class TicketController extends Controller
             'buildings' => $buildings,
             'requesters' => $requesters,
             'canCreateForOthers' => $actor->hasRole(Role::AgenTier1),
-            'announcements' => $selectedServiceType !== null
-                ? Announcement::query()
-                    ->activeAt(now())
-                    ->orderByDesc('starts_at')
-                    ->orderByDesc('id')
-                    ->get()
-                : collect(),
         ]);
     }
 

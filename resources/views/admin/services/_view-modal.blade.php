@@ -1,7 +1,5 @@
 @php
-    $categoryLabel = $serviceType->ticket_class
-        ?: $serviceType->variants->where('is_active', true)->pluck('ticket_class')->unique()->implode(' / ');
-    $categoryLabel = $categoryLabel ?: 'Belum diatur';
+    $categoryLabel = $serviceType->ticket_class ?: 'Belum diatur';
     $activeSlaPolicy = $serviceType->activeSlaPolicy;
     $requesterFields = $serviceType->activeFieldDefinitions->filter(fn ($field) => in_array($field->visibility, ['requester', 'both'], true));
     $internalFields = $serviceType->activeFieldDefinitions->filter(fn ($field) => $field->visibility === 'internal');

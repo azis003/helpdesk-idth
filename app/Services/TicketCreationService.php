@@ -7,7 +7,6 @@ use App\Enums\Role;
 use App\Enums\TicketStatus;
 use App\Models\Room;
 use App\Models\ServiceType;
-use App\Models\ServiceTypeVariant;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Database\DatabaseManager;
@@ -38,7 +37,7 @@ class TicketCreationService
         $requester = $this->resolveRequester($actor, $data['requester_id'] ?? null);
         $serviceType = $this->resolveServiceType($data['service_type_id'] ?? null);
         $fields = $this->fieldValidator->validate($serviceType, is_array($data['fields'] ?? null) ? $data['fields'] : []);
-        [$ticketClass, $variant] = $this->resolveTicketClass($serviceType, $fields);
+        $ticketClass = $this->resolveTicketClass($serviceType);
         $room = $this->resolveRoom($data['room_id'] ?? null, $serviceType);
         $priority = $this->resolvePriority($data['priority'] ?? null);
         $policies = $this->attachmentService->policiesFor(
@@ -59,7 +58,6 @@ class TicketCreationService
             $serviceType,
             $fields,
             $ticketClass,
-            $variant,
             $room,
             $priority,
             $attachments,
@@ -87,11 +85,11 @@ class TicketCreationService
                 'assigned_to_id' => null,
                 'assigned_tier' => null,
                 'service_type_id' => $serviceType->getKey(),
-                'service_type_variant_id' => $variant?->getKey(),
+                'service_type_variant_id' => null,
                 'service_type_code_snapshot' => $serviceType->code,
                 'service_type_name_snapshot' => $serviceType->name,
-                'service_type_variant_code_snapshot' => $variant?->code,
-                'service_type_variant_label_snapshot' => $variant?->label,
+                'service_type_variant_code_snapshot' => null,
+                'service_type_variant_label_snapshot' => null,
                 'priority' => $priority,
                 'description' => trim((string) $data['description']),
                 'room_id' => $room?->getKey(),
@@ -176,7 +174,7 @@ class TicketCreationService
     {
         $serviceType = ServiceType::query()
             ->active()
-            ->with(['activeFieldDefinitions.options', 'activeVariants', 'activeSlaPolicy'])
+            ->with(['activeFieldDefinitions.options', 'activeSlaPolicy'])
             ->find((int) $serviceTypeId);
 
         if ($serviceType === null) {
@@ -188,26 +186,16 @@ class TicketCreationService
         return $serviceType;
     }
 
-    /**
-     * @param  array<string, array{definition:mixed,value:mixed}>  $fields
-     * @return array{0:string,1:ServiceTypeVariant|null}
-     */
-    private function resolveTicketClass(ServiceType $serviceType, array $fields): array
+    private function resolveTicketClass(ServiceType $serviceType): string
     {
-        if (in_array($serviceType->ticket_class, ServiceCatalogService::TICKET_CLASSES, true)) {
-            return [$serviceType->ticket_class, null];
-        }
-
-        $subtype = $fields['request_subtype']['value'] ?? null;
-        $variant = $serviceType->activeVariants->firstWhere('code', $subtype);
-
-        if ($variant === null) {
+        if (! is_string($serviceType->ticket_class)
+            || ! in_array($serviceType->ticket_class, ServiceCatalogService::TICKET_CLASSES, true)) {
             throw ValidationException::withMessages([
                 'service_type_id' => 'Kelas nomor layanan belum dikonfigurasi.',
             ]);
         }
 
-        return [$variant->ticket_class, $variant];
+        return $serviceType->ticket_class;
     }
 
     private function resolveRoom(mixed $roomId, ServiceType $serviceType): ?Room

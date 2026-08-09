@@ -87,6 +87,18 @@ class CatalogManagementTest extends TestCase
             ->assertRedirect(route('admin.services.index', ['service' => $service->id]));
     }
 
+    public function test_each_seeded_service_has_one_ticket_class(): void
+    {
+        $this->seed(ServiceCatalogSeeder::class);
+
+        $this->assertSame(7, ServiceType::query()->count());
+        $this->assertSame(0, ServiceType::query()->whereNull('ticket_class')->count());
+        $this->assertSame(
+            'REQ',
+            ServiceType::query()->where('code', 'SVC-05')->value('ticket_class'),
+        );
+    }
+
     public function test_super_admin_can_create_service_with_skills_and_template(): void
     {
         $this->seed(ServiceCatalogSeeder::class);

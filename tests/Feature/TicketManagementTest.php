@@ -74,11 +74,12 @@ class TicketManagementTest extends TestCase
             ->assertSee('Data Pelapor')
             ->assertSee('Formulir Permintaan')
             ->assertSee($pemohon->name)
+            ->assertDontSee('Gangguan terjadwal')
             ->assertSee($pemohon->email)
             ->assertSee($pemohon->nip)
             ->assertSee('Jenis gangguan')
             ->assertSee('name="room_id"', false)
-            ->assertSee('Gangguan terjadwal');
+            ->assertDontSee('Gangguan terjadwal');
 
         $svc02 = ServiceType::query()->where('code', 'SVC-02')->firstOrFail();
 
@@ -178,6 +179,25 @@ class TicketManagementTest extends TestCase
         $this->assertMatchesRegularExpression('/^INC-\d{4}-00002$/', $replacement->ticket_number);
     }
 
+    public function test_ticket_form_hides_the_empty_optional_fields_message(): void
+    {
+        $pemohon = $this->createUser([Role::Pemohon]);
+        $service = ServiceType::query()->create([
+            'code' => 'SVC-99',
+            'name' => 'Layanan tanpa field tambahan',
+            'ticket_class' => 'REQ',
+            'sort_order' => 99,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($pemohon)
+            ->get(route('tickets.create', ['service_type_id' => $service->id]))
+            ->assertOk()
+            ->assertSee('Layanan tanpa field tambahan')
+            ->assertSee('Kirim tiket')
+            ->assertDontSee('Belum ada field tambahan untuk layanan ini.');
+    }
+
     public function test_svc01_and_svc05_require_a_location(): void
     {
         $pemohon = $this->createUser([Role::Pemohon]);
@@ -200,6 +220,27 @@ class TicketManagementTest extends TestCase
             ->assertSessionHasErrors('room_id');
 
         $this->assertDatabaseCount('tickets', 0);
+    }
+
+    public function test_hardware_subtype_cannot_override_the_service_ticket_class(): void
+    {
+        $pemohon = $this->createUser([Role::Pemohon]);
+        $room = $this->createRoom();
+        $service = ServiceType::query()->where('code', 'SVC-05')->firstOrFail();
+
+        $this->actingAs($pemohon)
+            ->post(route('tickets.store'), $this->payloadFor($service, [
+                'subject' => 'Perbaikan laptop kantor',
+                'room_id' => $room->id,
+                'fields' => array_merge($this->fieldsFor($service), ['request_subtype' => 'repair']),
+            ]))
+            ->assertRedirect();
+
+        $ticket = Ticket::query()->firstOrFail();
+
+        $this->assertSame('REQ', $ticket->ticket_class);
+        $this->assertMatchesRegularExpression('/^REQ-\d{4}-00001$/', $ticket->ticket_number);
+        $this->assertNull($ticket->service_type_variant_id);
     }
 
     public function test_agent_tier_one_can_create_a_ticket_for_another_employee_with_snapshots(): void

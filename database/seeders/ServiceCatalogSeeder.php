@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\AttachmentPolicy;
 use App\Models\ServiceFieldDefinition;
 use App\Models\ServiceType;
-use App\Models\ServiceTypeVariant;
 use Illuminate\Database\Seeder;
 
 class ServiceCatalogSeeder extends Seeder
@@ -118,10 +117,10 @@ class ServiceCatalogSeeder extends Seeder
             [
                 'code' => 'SVC-05',
                 'name' => 'Permintaan atau perbaikan hardware',
-                'ticket_class' => null,
+                'ticket_class' => 'REQ',
                 'sort_order' => 5,
                 'fields' => [
-                    $this->field('request_subtype', 'Subjenis layanan', 'select', true, 1, 'Subjenis menentukan kelas nomor tiket.', options: [
+                    $this->field('request_subtype', 'Jenis kebutuhan', 'select', true, 1, 'Pilih jenis kebutuhan hardware.', options: [
                         ['value' => 'repair', 'label' => 'Perbaikan'],
                         ['value' => 'request', 'label' => 'Permintaan'],
                     ]),
@@ -210,17 +209,6 @@ class ServiceCatalogSeeder extends Seeder
                     'is_active' => true,
                 ],
             );
-
-            if ($service->code === 'SVC-05') {
-                ServiceTypeVariant::query()->updateOrCreate(
-                    ['service_type_id' => $service->id, 'code' => 'repair'],
-                    ['label' => 'Perbaikan', 'ticket_class' => 'INC', 'sort_order' => 1, 'is_active' => true],
-                );
-                ServiceTypeVariant::query()->updateOrCreate(
-                    ['service_type_id' => $service->id, 'code' => 'request'],
-                    ['label' => 'Permintaan', 'ticket_class' => 'REQ', 'sort_order' => 2, 'is_active' => true],
-                );
-            }
 
             foreach ($fields as $fieldData) {
                 $options = $fieldData['options'] ?? [];

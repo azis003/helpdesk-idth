@@ -74,7 +74,7 @@
                     <tbody>
                         @forelse ($serviceTypes as $serviceType)
                             @php
-                                $categoryLabel = $serviceType->ticket_class ?: $serviceType->variants->where('is_active', true)->pluck('ticket_class')->unique()->implode(' / ');
+                                $categoryLabel = $serviceType->ticket_class ?: 'Belum diatur';
                             @endphp
                             <tr class="odd:bg-[#f8fafb] even:bg-white hover:bg-[#eef7fc]">
                                 <td class="align-middle border-b border-[#e5eaed] px-4 py-5 text-center font-semibold text-[#172d45]">{{ ($serviceTypes->firstItem() ?? 1) + $loop->index }}</td>
@@ -120,7 +120,7 @@
         <div class="divide-y divide-[#e5eaed] md:hidden">
             @forelse ($serviceTypes as $serviceType)
                 @php
-                    $categoryLabel = $serviceType->ticket_class ?: $serviceType->variants->where('is_active', true)->pluck('ticket_class')->unique()->implode(' / ');
+                    $categoryLabel = $serviceType->ticket_class ?: 'Belum diatur';
                 @endphp
                 <article class="p-5">
                     <div class="flex items-start justify-between gap-3"><div class="min-w-0"><p class="text-xs font-bold uppercase tracking-wide text-[#78909a]">No. {{ ($serviceTypes->firstItem() ?? 1) + $loop->index }}</p><p class="mt-1 text-xs font-extrabold tracking-[0.08em] text-[#26677b]">{{ $serviceType->code }}</p><h3 class="mt-1 font-bold text-[#112b49]">{{ $serviceType->name }}</h3></div><span class="shrink-0 rounded-full px-2 py-1 text-[0.65rem] font-bold {{ $serviceType->is_active ? 'bg-[#e8faf4] text-[#087f5b]' : 'bg-[#eef2f4] text-[#657984]' }}">{{ $serviceType->is_active ? 'Aktif' : 'Nonaktif' }}</span></div>
