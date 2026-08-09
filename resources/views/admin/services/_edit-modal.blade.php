@@ -94,9 +94,9 @@
                                     </div>
                                 </div>
                                 <div class="sm:col-span-2">
-                                    <label for="edit-service-description-{{ $serviceType->id }}" class="ui-field-label">Deskripsi keahlian</label>
-                                    <textarea id="edit-service-description-{{ $serviceType->id }}" name="description" rows="3" maxlength="1000" class="ui-textarea mt-2" placeholder="Jelaskan konteks layanan dan kebutuhan keahliannya.">{{ $serviceDescription }}</textarea>
-                                    <p class="ui-field-help">Tampil sebagai penjelasan layanan dan membantu Tim TI memahami kebutuhan penanganan.</p>
+                                    <label for="edit-service-description-{{ $serviceType->id }}" class="ui-field-label">Deskripsi layanan</label>
+                                    <textarea id="edit-service-description-{{ $serviceType->id }}" name="description" rows="3" maxlength="1000" class="ui-textarea mt-2" placeholder="Jelaskan layanan, tujuan, dan cakupan permintaan yang dapat diajukan pemohon.">{{ $serviceDescription }}</textarea>
+                                    <p class="ui-field-help">Deskripsi ini tampil sebagai penjelasan layanan di katalog pemohon dan membantu Tim TI memahami cakupannya.</p>
                                 </div>
                             </div>
                             <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#e3ecef] pt-4">

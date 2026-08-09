@@ -1116,7 +1116,9 @@
         border: 1px solid #dfe7eb;
         border-radius: 0.85rem;
         background: #ffffff;
+        color: inherit;
         padding: 1.15rem;
+        text-decoration: none;
         box-shadow: 0 1px 3px rgba(33, 57, 67, 0.08);
         transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
     }

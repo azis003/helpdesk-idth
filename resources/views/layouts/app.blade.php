@@ -16,8 +16,6 @@
         $isTeamChair = $currentUser->hasRole(\App\Enums\Role::KetuaTimKerja);
         $canAccessTickets = ! $isTeamChair
             && $currentUser->hasAnyRole([\App\Enums\Role::Pemohon, \App\Enums\Role::AgenTier1, \App\Enums\Role::AgenTier2]);
-        $canCreateTickets = ! $isTeamChair
-            && $currentUser->hasAnyRole([\App\Enums\Role::Pemohon, \App\Enums\Role::AgenTier1]);
         $ticketListLabel = $isTeamChair && $canAccessTickets
             ? 'Tiket saya dan tim'
             : ($isTeamChair ? 'Tiket tim' : 'Tiket saya');
@@ -115,12 +113,6 @@
                     <a href="{{ route('tickets.queue') }}" class="ui-nav-link {{ request()->routeIs('tickets.queue') ? 'is-active' : '' }}" aria-label="Antrean Tier 1" title="Antrean Tier 1">
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 6.5h14M5 12h14M5 17.5h9" /><path stroke-linecap="round" d="M18 17.5h.01" /></svg></span>
                         <span class="ui-nav-label">Antrean Tier 1</span>
-                    </a>
-                @endif
-                @if ($canCreateTickets)
-                    <a href="{{ route('tickets.create') }}" class="ui-nav-link {{ request()->routeIs('tickets.create', 'tickets.store') ? 'is-active' : '' }}" aria-label="Buat tiket" title="Buat tiket">
-                        <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M12 5v14M5 12h14" /></svg></span>
-                        <span class="ui-nav-label">Buat tiket</span>
                     </a>
                 @endif
                 @if ($canReviewApprovals)
@@ -299,9 +291,6 @@
                             @endif
                             @if ($isTier1)
                                 <a href="{{ route('tickets.queue') }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.queue') ? 'is-active' : '' }}">Antrean Tier 1</a>
-                            @endif
-                            @if ($canCreateTickets)
-                                <a href="{{ route('tickets.create') }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.create', 'tickets.store') ? 'is-active' : '' }}">Buat tiket</a>
                             @endif
                             @if ($canReviewApprovals)
                                 <a href="{{ route('approvals.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('approvals.*') ? 'is-active' : '' }}">Persetujuan</a>

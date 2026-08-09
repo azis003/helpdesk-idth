@@ -82,9 +82,9 @@
                                 </div>
                             </div>
                             <div class="sm:col-span-2">
-                                <label for="new-service-description" class="ui-field-label">Deskripsi keahlian</label>
-                                <textarea id="new-service-description" name="description" rows="3" maxlength="1000" class="ui-textarea mt-2" placeholder="Jelaskan konteks layanan dan kemampuan yang biasanya dibutuhkan untuk menanganinya.">{{ old('description') }}</textarea>
-                                <p class="ui-field-help">Deskripsi ini membantu pemohon dan Tim TI memahami cakupan layanan.</p>
+                                <label for="new-service-description" class="ui-field-label">Deskripsi layanan</label>
+                                <textarea id="new-service-description" name="description" rows="3" maxlength="1000" class="ui-textarea mt-2" placeholder="Jelaskan layanan, tujuan, dan cakupan permintaan yang dapat diajukan pemohon.">{{ old('description') }}</textarea>
+                                <p class="ui-field-help">Deskripsi ini tampil sebagai penjelasan layanan di katalog pemohon dan membantu Tim TI memahami cakupannya.</p>
                                 @error('description')<p class="mt-1 text-xs font-semibold text-rose-700">{{ $message }}</p>@enderror
                             </div>
                         </div>

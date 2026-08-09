@@ -69,7 +69,17 @@ class TicketController extends Controller
                 'canViewQueue' => false,
                 'isTeamChair' => true,
                 'canAccessTickets' => false,
+                'showFilters' => false,
+                'search' => '',
+                'perPage' => 15,
             ]);
+        }
+
+        $search = trim((string) $request->query('q', ''));
+        $perPage = (int) $request->query('per_page', 10);
+
+        if (! in_array($perPage, [10, 25, 50], true)) {
+            $perPage = 10;
         }
 
         $query = Ticket::query()
@@ -105,8 +115,34 @@ class TicketController extends Controller
 
         });
 
+        $query->when($search !== '', function (Builder $ticketQuery) use ($search): void {
+            $like = "%{$search}%";
+
+            $ticketQuery->where(function (Builder $searchQuery) use ($like): void {
+                $searchQuery
+                    ->where('ticket_number', 'like', $like)
+                    ->orWhere('subject', 'like', $like)
+                    ->orWhere('service_type_code_snapshot', 'like', $like)
+                    ->orWhere('service_type_name_snapshot', 'like', $like)
+                    ->orWhere('requester_name_snapshot', 'like', $like)
+                    ->orWhere('requester_nip_snapshot', 'like', $like)
+                    ->orWhereHas('serviceType', function (Builder $serviceQuery) use ($like): void {
+                        $serviceQuery
+                            ->where('code', 'like', $like)
+                            ->orWhere('name', 'like', $like);
+                    });
+            });
+        });
+
+        $tickets = $query->paginate($perPage)->withQueryString();
+        $requesterActions = $tickets->getCollection()
+            ->mapWithKeys(fn (Ticket $ticket): array => [
+                $ticket->getKey() => $this->requesterActionFor($actor, $ticket),
+            ])
+            ->all();
+
         return view('tickets.index', [
-            'tickets' => $query->paginate(15)->withQueryString(),
+            'tickets' => $tickets,
             'canViewQueue' => $actor->hasRole(Role::AgenTier1),
             'isTeamChair' => $actor->hasRole(Role::KetuaTimKerja),
             'canAccessTickets' => $actor->hasAnyRole([
@@ -114,7 +150,51 @@ class TicketController extends Controller
                 Role::AgenTier1,
                 Role::AgenTier2,
             ]),
+            'showFilters' => true,
+            'search' => $search,
+            'perPage' => $perPage,
+            'requesterActions' => $requesterActions,
         ]);
+    }
+
+    /**
+     * Return the first requester action that needs a focused follow-up from
+     * the ticket list. The detail page remains the source of the full action
+     * form and its validation.
+     *
+     * @return array{label: string, description: string}|null
+     */
+    private function requesterActionFor(User $actor, Ticket $ticket): ?array
+    {
+        if ($actor->can('replyRequester', $ticket)) {
+            return [
+                'label' => 'Balas',
+                'description' => 'Balas informasi yang diminta agen.',
+            ];
+        }
+
+        if ($actor->can('confirm', $ticket)) {
+            return [
+                'label' => 'Tinjau hasil',
+                'description' => 'Tinjau hasil pekerjaan dan pilih konfirmasi.',
+            ];
+        }
+
+        if ($actor->can('reopen', $ticket)) {
+            return [
+                'label' => 'Buka kembali',
+                'description' => 'Tinjau opsi untuk membuka kembali tiket.',
+            ];
+        }
+
+        if ($actor->can('cancel', $ticket)) {
+            return [
+                'label' => 'Batalkan',
+                'description' => 'Tinjau pembatalan tiket yang masih Baru.',
+            ];
+        }
+
+        return null;
     }
 
     public function queue(Request $request): mixed
@@ -138,6 +218,7 @@ class TicketController extends Controller
     {
         $actor = $request->user();
         $this->authorization->authorize($actor, 'create', Ticket::class, 'ticket.create');
+        $actor->loadMissing('currentTeamMembership.workTeam');
 
         $serviceTypes = ServiceType::query()
             ->active()
@@ -145,36 +226,55 @@ class TicketController extends Controller
             ->orderBy('sort_order')
             ->orderBy('code')
             ->get();
+
+        $selectedServiceId = $request->session()->getOldInput('service_type_id');
+
+        if (! filled($selectedServiceId)) {
+            $selectedServiceId = $request->query('service_type_id');
+        }
+
+        $selectedServiceType = $serviceTypes->first(
+            fn (ServiceType $serviceType): bool => (string) $serviceType->getKey() === (string) $selectedServiceId,
+        );
         $includeInternal = $actor->hasRole(Role::AgenTier1);
-        $attachmentPolicies = AttachmentPolicy::query()
-            ->active()
-            ->where('type_key', '!=', Attachment::DATA_EXPORT_RESULT_TYPE)
-            ->when(! $includeInternal, fn ($query) => $query->whereIn('visibility', ['requester', 'both']))
-            ->with('serviceType')
-            ->orderByRaw('service_type_id IS NOT NULL')
-            ->orderBy('type_key')
-            ->get();
-        $buildings = Building::query()
-            ->active()
-            ->with(['floors' => fn ($query) => $query->active()->with(['rooms' => fn ($roomQuery) => $roomQuery->active()])])
-            ->orderBy('name')
-            ->get();
-        $requesters = $actor->hasRole(Role::AgenTier1)
-            ? User::query()->where('is_active', true)->orderBy('name')->get()
-            : collect([$actor->loadMissing('currentTeamMembership.workTeam')]);
+        $attachmentPolicies = collect();
+        $buildings = collect();
+        $requesters = collect();
+
+        if ($selectedServiceType !== null) {
+            $attachmentPolicies = AttachmentPolicy::query()
+                ->active()
+                ->where('type_key', '!=', Attachment::DATA_EXPORT_RESULT_TYPE)
+                ->when(! $includeInternal, fn ($query) => $query->whereIn('visibility', ['requester', 'both']))
+                ->with('serviceType')
+                ->orderByRaw('service_type_id IS NOT NULL')
+                ->orderBy('type_key')
+                ->get();
+            $buildings = Building::query()
+                ->active()
+                ->with(['floors' => fn ($query) => $query->active()->with(['rooms' => fn ($roomQuery) => $roomQuery->active()])])
+                ->orderBy('name')
+                ->get();
+            $requesters = $actor->hasRole(Role::AgenTier1)
+                ? User::query()->where('is_active', true)->orderBy('name')->get()
+                : collect([$actor]);
+        }
 
         return view('tickets.create', [
             'actor' => $actor,
             'serviceTypes' => $serviceTypes,
+            'selectedServiceType' => $selectedServiceType,
             'attachmentPolicies' => $attachmentPolicies,
             'buildings' => $buildings,
             'requesters' => $requesters,
             'canCreateForOthers' => $actor->hasRole(Role::AgenTier1),
-            'announcements' => Announcement::query()
-                ->activeAt(now())
-                ->orderByDesc('starts_at')
-                ->orderByDesc('id')
-                ->get(),
+            'announcements' => $selectedServiceType !== null
+                ? Announcement::query()
+                    ->activeAt(now())
+                    ->orderByDesc('starts_at')
+                    ->orderByDesc('id')
+                    ->get()
+                : collect(),
         ]);
     }
 

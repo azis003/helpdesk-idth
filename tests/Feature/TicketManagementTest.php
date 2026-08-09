@@ -63,8 +63,31 @@ class TicketManagementTest extends TestCase
         $this->actingAs($pemohon)
             ->get(route('tickets.create'))
             ->assertOk()
-            ->assertSee('Gangguan terjadwal')
-            ->assertSee('Kendala jaringan atau konektivitas');
+            ->assertSee('Katalog layanan')
+            ->assertSee('Kendala jaringan atau konektivitas')
+            ->assertDontSee('Gangguan terjadwal')
+            ->assertDontSee('Data pelapor');
+
+        $this->actingAs($pemohon)
+            ->get(route('tickets.create', ['service_type_id' => $service->id]))
+            ->assertOk()
+            ->assertSee('Data Pelapor')
+            ->assertSee('Formulir Permintaan')
+            ->assertSee($pemohon->name)
+            ->assertSee($pemohon->email)
+            ->assertSee($pemohon->nip)
+            ->assertSee('Jenis gangguan')
+            ->assertSee('name="room_id"', false)
+            ->assertSee('Gangguan terjadwal');
+
+        $svc02 = ServiceType::query()->where('code', 'SVC-02')->firstOrFail();
+
+        $this->actingAs($pemohon)
+            ->get(route('tickets.create', ['service_type_id' => $svc02->id]))
+            ->assertOk()
+            ->assertSee('Nama data atau laporan')
+            ->assertDontSee('Jenis gangguan')
+            ->assertDontSee('name="room_id"', false);
 
         $response = $this->actingAs($pemohon)->post(route('tickets.store'), [
             'requester_id' => $pemohon->id,
@@ -359,6 +382,34 @@ class TicketManagementTest extends TestCase
             ->assertOk()
             ->assertSee('Tiket milik pertama')
             ->assertDontSee('Tiket milik kedua');
+    }
+
+    public function test_requester_list_shows_contextual_actions_for_owned_tickets(): void
+    {
+        $pemohon = $this->createUser([Role::Pemohon]);
+
+        foreach ([
+            [TicketStatus::MenungguPemohon, 'Balas informasi'],
+            [TicketStatus::MenungguKonfirmasi, 'Tinjau hasil'],
+            [TicketStatus::Ditutup, 'Buka kembali'],
+            [TicketStatus::Baru, 'Batalkan'],
+        ] as [$status, $subject]) {
+            Ticket::factory()->create([
+                'requester_id' => $pemohon->id,
+                'created_by_id' => $pemohon->id,
+                'status' => $status,
+                'subject' => $subject,
+            ]);
+        }
+
+        $this->actingAs($pemohon)
+            ->get(route('tickets.index'))
+            ->assertOk()
+            ->assertSee('No Tiket')
+            ->assertSee('Balas')
+            ->assertSee('Tinjau hasil')
+            ->assertSee('Buka kembali')
+            ->assertSee('Batalkan');
     }
 
     public function test_requester_cannot_cancel_after_ticket_is_claimed(): void

@@ -31,8 +31,8 @@
                 </dl>
 
                 <section class="rounded-xl border border-[#dfe8ec] bg-white" aria-labelledby="service-view-description-{{ $serviceType->id }}">
-                    <div class="border-b border-[#edf2f4] px-4 py-3"><h3 id="service-view-description-{{ $serviceType->id }}" class="text-sm font-extrabold text-[#35505b]">Deskripsi keahlian</h3></div>
-                    <p class="px-4 py-4 text-sm leading-6 text-[#607681]">{{ $serviceType->description ?: 'Belum ada deskripsi keahlian untuk layanan ini.' }}</p>
+                    <div class="border-b border-[#edf2f4] px-4 py-3"><h3 id="service-view-description-{{ $serviceType->id }}" class="text-sm font-extrabold text-[#35505b]">Deskripsi layanan</h3></div>
+                    <p class="px-4 py-4 text-sm leading-6 text-[#607681]">{{ $serviceType->description ?: 'Belum ada deskripsi layanan untuk layanan ini.' }}</p>
                 </section>
 
                 <section class="rounded-xl border border-[#dfe8ec] bg-white" aria-labelledby="service-view-skills-{{ $serviceType->id }}">

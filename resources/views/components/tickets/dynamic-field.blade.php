@@ -5,7 +5,10 @@
     $fieldName = 'fields['.$field->key.']';
     $oldValue = old('fields.'.$field->key);
     $hasError = $errors->has('fields.'.$field->key);
-    $describedBy = $fieldId.'-help'.($hasError ? ' '.$fieldId.'-error' : '');
+    $describedBy = collect([
+        $field->help_text ? $fieldId.'-help' : null,
+        $hasError ? $fieldId.'-error' : null,
+    ])->filter()->implode(' ');
 @endphp
 
 <div data-ticket-field class="rounded-xl border border-[#e5edef] bg-[#fbfdfd] p-4 sm:p-5">
