@@ -9,14 +9,18 @@
 @section('header_title', 'Pengguna')
 
 @section('content')
-    <div class="mb-6">
-        <h1 class="text-2xl font-extrabold tracking-tight text-[#18252b]">Pengguna</h1>
-        <p class="mt-2 text-sm text-[#718088]">Pengguna dan akses dikelola dari satu daftar sederhana.</p>
-    </div>
+    <x-page-header
+        eyebrow="Data Master · Akses pengguna"
+        title="Manajemen Pengguna"
+        description="Pengguna dan akses dikelola dari satu daftar terpusat. Kelola akun, peran, dan status aktif dengan jelas."
+    />
 
-    <section class="overflow-hidden rounded-lg border border-[#d7dde0] bg-white shadow-[0_2px_8px_rgba(36,57,67,0.06)]" aria-labelledby="users-heading">
+    <section class="mt-7 overflow-hidden rounded-lg border border-[#d7dde0] bg-white shadow-[0_2px_8px_rgba(36,57,67,0.06)]" aria-labelledby="users-heading">
         <div class="flex flex-col gap-4 bg-[#075998] px-5 py-5 text-white sm:flex-row sm:items-center sm:justify-between sm:px-8">
-            <h2 id="users-heading" class="text-xl font-extrabold tracking-tight">Daftar Pengguna</h2>
+            <div>
+                <h2 id="users-heading" class="text-xl font-extrabold tracking-tight">Daftar Pengguna</h2>
+                <p class="mt-1 text-xs leading-5 text-blue-100">Kelola akun, peran, dan status akses dari daftar ini.</p>
+            </div>
             <button type="button" data-ui-modal-open="user-create-modal" class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#7138e8] px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-[#6229d5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#075998]">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" d="M12 5v14M5 12h14" /></svg>
                 Tambah
@@ -36,7 +40,7 @@
                 </div>
 
                 <div class="flex w-full items-center gap-2 sm:w-auto">
-                    <label for="user-search" class="shrink-0 text-sm font-bold text-[#17212b]">Search:</label>
+                    <label for="user-search" class="shrink-0 text-sm font-bold text-[#17212b]">Cari:</label>
                     <input id="user-search" name="q" type="search" value="{{ $search }}" class="h-10 w-full min-w-0 rounded-lg border border-[#d7e0e4] bg-[#f8fafb] px-3 text-sm text-[#17212b] outline-none placeholder:text-[#9baab0] focus:border-[#0a87c9] focus:bg-white focus:ring-2 focus:ring-[#0a87c9]/15 sm:w-56" placeholder="Cari pengguna" aria-label="Cari pengguna">
                     <button type="submit" class="sr-only">Cari pengguna</button>
                 </div>

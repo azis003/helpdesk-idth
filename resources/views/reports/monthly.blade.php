@@ -4,11 +4,11 @@
 @section('header_title', 'Laporan Bulanan')
 
 @section('content')
-    <div class="ui-page-header">
-        <div>
-            <h1 class="ui-page-title">Laporan Bulanan</h1>
-        </div>
-    </div>
+    <x-page-header
+        eyebrow="Pelaporan · Rekap operasional"
+        title="Laporan Bulanan"
+        description="Pilih periode untuk meninjau, mengunduh, dan membandingkan rekap operasional layanan TI."
+    />
 
     <section class="ui-panel mt-8 overflow-hidden" aria-label="Filter laporan">
         <div class="p-5 sm:p-6">

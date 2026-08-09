@@ -7,10 +7,13 @@
 
 @section('content')
     <div class="max-w-2xl">
-        <a href="{{ route('admin.users.index') }}" class="text-sm font-semibold text-cyan-700 underline decoration-cyan-300 underline-offset-4 hover:text-cyan-900">← Kembali ke daftar pengguna</a>
-        <p class="ui-eyebrow mt-8"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Data Master · akses</p>
-        <h1 class="ui-page-title">Atur ulang password pengguna</h1>
-        <p class="ui-page-description">Reset untuk <span class="font-bold text-[#35505b]">{{ $user->name }}</span> ({{ $user->username }}).</p>
+        <x-page-header
+            eyebrow="Data Master · Akses"
+            title="Atur ulang password pengguna"
+            description="Reset untuk {{ $user->name }} ({{ $user->username }})."
+            :back-url="route('admin.users.index')"
+            back-label="Kembali ke daftar pengguna"
+        />
 
         <div class="mt-6 rounded-2xl border border-[#f1d49a] bg-[#fff9e9] p-5 text-sm leading-6 text-[#7a4d07]">
             <p class="font-extrabold">Perhatikan prosedur distribusi.</p>

@@ -45,7 +45,7 @@
         @if ($isRequesterOnly)
             <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                    <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.16em] text-[#ffe98f]">Portal layanan TI</p>
+                    <p class="ui-eyebrow ui-eyebrow--inverse"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Portal layanan TI</p>
                     <h1 id="dashboard-title" class="mt-2 text-2xl font-extrabold tracking-[-0.04em] sm:text-3xl">Butuh bantuan TI?</h1>
                     <p class="mt-2 max-w-2xl text-sm leading-6 text-[#d7e8ed]">Buat tiket untuk melaporkan kendala atau mengajukan layanan TI</p>
                 </div>
@@ -59,7 +59,7 @@
         @else
             <div class="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
                 <div>
-                    <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.16em] text-[#ffe98f]">{{ $branding['tagline'] ?: 'Portal layanan' }} · {{ $branding['application_name'] }}</p>
+                    <p class="ui-eyebrow ui-eyebrow--inverse"><span class="ui-eyebrow-dot" aria-hidden="true"></span>{{ $branding['tagline'] ?: 'Portal layanan' }} · {{ $branding['application_name'] }}</p>
                     <h1 id="dashboard-title" class="mt-2 text-2xl font-extrabold tracking-[-0.04em] sm:text-3xl">Selamat datang, {{ $user->name }}</h1>
                     <p class="mt-2 max-w-2xl text-sm leading-6 text-[#d7e8ed]">Pantau pekerjaan yang menjadi cakupan peran Anda dalam satu tampilan.</p>
                 </div>
@@ -103,6 +103,17 @@
     @endif
 
     @if ($isRequesterOnly)
+
+        <section class="ui-panel mt-6 p-4 sm:p-5" aria-labelledby="access-status-heading">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#2bb8aa] !shadow-[0_0_0_4px_#d6f5ef]" aria-hidden="true"></span>Akses akun</p>
+                    <h2 id="access-status-heading" class="mt-2 text-lg font-extrabold tracking-tight text-[#263a43]">Status akses Anda</h2>
+                    <p class="mt-1 text-sm leading-6 text-[#6a8089]">Akun aktif dan dapat digunakan untuk mengajukan serta memantau tiket layanan TI.</p>
+                </div>
+                <span class="ui-status ui-status-active">Aktif</span>
+            </div>
+        </section>
 
         <section class="mt-6" aria-labelledby="requester-summary-heading">
             <dl class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -175,7 +186,7 @@
         </section>
     @endif
 
-    @if ($announcements->isNotEmpty() && ! $isRequesterOnly)
+    @if ($announcements->isNotEmpty())
         <section class="mt-7" aria-labelledby="announcements-heading">
             <div class="flex items-end justify-between gap-4"><div><p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#e4a72c] !shadow-[0_0_0_4px_#fff4d7]" aria-hidden="true"></span>Informasi terbaru</p><h2 id="announcements-heading" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">Pengumuman layanan</h2></div><span class="text-xs font-bold text-[#86979e]">{{ $announcements->count() }} informasi aktif</span></div>
             <div class="mt-4 grid gap-3 lg:grid-cols-2">

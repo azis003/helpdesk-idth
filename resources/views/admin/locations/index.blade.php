@@ -9,12 +9,13 @@
 @section('header_title', 'Lokasi')
 
 @section('content')
-    <div class="mb-6">
-        <h1 class="text-2xl font-extrabold tracking-tight text-[#18252b]">Manajemen Lokasi</h1>
-        <p class="mt-2 text-sm text-[#718088]">Kelola gedung dan lantai dalam satu daftar agar lokasi mudah dipilih saat membuat tiket.</p>
-    </div>
+    <x-page-header
+        eyebrow="Data Master · Struktur lokasi"
+        title="Manajemen Lokasi"
+        description="Kelola gedung dan lantai dalam satu daftar agar lokasi mudah dipilih saat membuat tiket."
+    />
 
-    <section class="overflow-hidden rounded-lg border border-[#d7dde0] bg-white shadow-[0_2px_8px_rgba(36,57,67,0.06)]" aria-labelledby="locations-heading">
+    <section class="mt-7 overflow-hidden rounded-lg border border-[#d7dde0] bg-white shadow-[0_2px_8px_rgba(36,57,67,0.06)]" aria-labelledby="locations-heading">
         <div class="flex flex-col gap-4 bg-[#075998] px-5 py-5 text-white sm:flex-row sm:items-center sm:justify-between sm:px-8">
             <div>
                 <h2 id="locations-heading" class="text-xl font-extrabold tracking-tight">Daftar Gedung</h2>
@@ -39,7 +40,7 @@
                 </div>
 
                 <div class="flex w-full items-center gap-2 sm:w-auto">
-                    <label for="location-search" class="shrink-0 text-sm font-bold text-[#17212b]">Search:</label>
+                    <label for="location-search" class="shrink-0 text-sm font-bold text-[#17212b]">Cari:</label>
                     <input id="location-search" name="q" type="search" value="{{ $search }}" class="h-10 w-full min-w-0 rounded-lg border border-[#d7e0e4] bg-[#f8fafb] px-3 text-sm text-[#17212b] outline-none placeholder:text-[#9baab0] focus:border-[#0a87c9] focus:bg-white focus:ring-2 focus:ring-[#0a87c9]/15 sm:w-64" placeholder="Cari gedung atau lantai" aria-label="Cari gedung atau lantai">
                     <button type="submit" class="sr-only">Cari gedung atau lantai</button>
                 </div>

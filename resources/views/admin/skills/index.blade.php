@@ -17,14 +17,18 @@
 @section('header_title', 'Keahlian')
 
 @section('content')
-    <div class="mb-6">
-        <h1 class="text-2xl font-extrabold tracking-tight text-[#18252b]">Keahlian</h1>
-        <p class="mt-2 text-sm text-[#718088]">Bidang keahlian dan pemetaannya dikelola dari satu daftar sederhana.</p>
-    </div>
+    <x-page-header
+        eyebrow="Data Master · Kapabilitas"
+        title="Manajemen Keahlian"
+        description="Kelola bidang keahlian dan pemetaannya untuk membantu triase serta penugasan tiket."
+    />
 
-    <section class="overflow-hidden rounded-lg border border-[#d7dde0] bg-white shadow-[0_2px_8px_rgba(36,57,67,0.06)]" aria-labelledby="skills-heading">
+    <section class="mt-7 overflow-hidden rounded-lg border border-[#d7dde0] bg-white shadow-[0_2px_8px_rgba(36,57,67,0.06)]" aria-labelledby="skills-heading">
         <div class="flex flex-col gap-4 bg-[#075998] px-5 py-5 text-white sm:flex-row sm:items-center sm:justify-between sm:px-8">
-            <h2 id="skills-heading" class="text-xl font-extrabold tracking-tight">Daftar Keahlian</h2>
+            <div>
+                <h2 id="skills-heading" class="text-xl font-extrabold tracking-tight">Daftar Keahlian</h2>
+                <p class="mt-1 text-xs leading-5 text-blue-100">Gunakan pemetaan ini untuk membantu triase dan penugasan.</p>
+            </div>
             <button type="button" data-ui-modal-open="skill-create-modal" class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#7138e8] px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-[#6229d5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#075998]" aria-label="Tambah keahlian">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" d="M12 5v14M5 12h14" /></svg>
                 Tambah

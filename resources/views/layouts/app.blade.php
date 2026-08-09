@@ -77,9 +77,9 @@
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 11.5h3l8-4v9l-8-4h-3a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1Z" /><path stroke-linecap="round" d="M8 16.5 9.5 20h2L10 16.5M18.5 10a3 3 0 0 1 0 4" /></svg></span>
                         <span class="ui-nav-label">Manajemen Pengumuman</span>
                     </a>
-                    <a href="{{ route('admin.branding.index') }}" class="ui-nav-link {{ request()->routeIs('admin.branding.*') ? 'is-active' : '' }}" aria-label="Identitas Aplikasi" title="Identitas Aplikasi">
+                    <a href="{{ route('admin.branding.index') }}" class="ui-nav-link {{ request()->routeIs('admin.branding.*') ? 'is-active' : '' }}" aria-label="Manajemen Aplikasi" title="Manajemen Aplikasi · Identitas Aplikasi">
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 8.5h8M8 12h5M8 15.5h7" /><path stroke-linecap="round" d="M16.5 3.5v3M7.5 3.5v3" /></svg></span>
-                        <span class="ui-nav-label">Identitas Aplikasi</span>
+                        <span class="ui-nav-label">Manajemen Aplikasi</span>
                     </a>
                 </nav>
 
@@ -132,9 +132,9 @@
             @if ($isSuperAdmin)
                 <nav class="mt-5 flex flex-col gap-2" aria-label="Navigasi administrasi">
                     <p class="ui-sidebar-label">Administrasi</p>
-                    <a href="{{ route('admin.branding.index') }}" class="ui-nav-link {{ request()->routeIs('admin.branding.*') ? 'is-active' : '' }}" aria-label="Identitas aplikasi" title="Identitas aplikasi">
+                    <a href="{{ route('admin.branding.index') }}" class="ui-nav-link {{ request()->routeIs('admin.branding.*') ? 'is-active' : '' }}" aria-label="Manajemen aplikasi" title="Manajemen aplikasi · Identitas Aplikasi">
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 8.5h8M8 12h5M8 15.5h7" /><path stroke-linecap="round" d="M16.5 3.5v3M7.5 3.5v3" /></svg></span>
-                        <span class="ui-nav-label">Identitas aplikasi</span>
+                        <span class="ui-nav-label">Manajemen aplikasi</span>
                     </a>
                     <a href="{{ route('admin.audit-logs.index') }}" class="ui-nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'is-active' : '' }}" aria-label="Audit log" title="Audit log">
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 3.5h9l3 3V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" /><path stroke-linecap="round" d="M14 3.5V7h4M8 11h8M8 14.5h8M8 18h5" /></svg></span>
@@ -271,7 +271,7 @@
 
                                 <div class="ui-mobile-nav-group-label">Konfigurasi</div>
                                 <a href="{{ route('admin.announcements.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.announcements.*') ? 'is-active' : '' }}">Manajemen Pengumuman</a>
-                                <a href="{{ route('admin.branding.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.branding.*') ? 'is-active' : '' }}">Identitas Aplikasi</a>
+                                <a href="{{ route('admin.branding.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.branding.*') ? 'is-active' : '' }}">Manajemen Aplikasi</a>
 
                                 <div class="ui-mobile-nav-group-label">Laporan</div>
                                 @if ($canViewReports)
@@ -300,7 +300,7 @@
                             @endif
                             @if ($isSuperAdmin)
                                 <div class="ui-mobile-nav-group-label">Administrasi</div>
-                                <a href="{{ route('admin.branding.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.branding.*') ? 'is-active' : '' }}">Identitas aplikasi</a>
+                                <a href="{{ route('admin.branding.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.branding.*') ? 'is-active' : '' }}">Manajemen aplikasi</a>
                                 <a href="{{ route('admin.audit-logs.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'is-active' : '' }}">Audit log</a>
                                 <div class="ui-mobile-nav-group-label">Data Master</div>
                                 <a href="{{ route('admin.users.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.users.*') ? 'is-active' : '' }}">Pengguna &amp; peran</a>

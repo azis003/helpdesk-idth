@@ -6,12 +6,17 @@
 
 @section('content')
     <div class="max-w-3xl">
-        <a href="{{ route('admin.users.index') }}" class="ui-action-link">← Kembali ke daftar pengguna</a>
-        <div class="ui-panel mt-5 overflow-hidden">
-            <div class="flex flex-col gap-3 border-b border-[#e7eef1] bg-[#6098c6] px-5 py-4 text-white sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <x-page-header
+            eyebrow="Data Master · Akses pengguna"
+            title="Edit Pengguna"
+            description="Perbarui data akun dan akses pengguna."
+            :back-url="route('admin.users.index')"
+            back-label="Kembali ke daftar pengguna"
+        />
+        <div class="ui-panel mt-7 overflow-hidden">
+            <div class="flex flex-col gap-3 border-b border-[#075998] bg-[#075998] px-5 py-4 text-white sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <div>
-                    <h1 class="text-lg font-extrabold">Edit Pengguna</h1>
-                    <p class="mt-1 text-xs text-white/80">Perbarui data akun dan akses pengguna.</p>
+                    <h2 class="text-lg font-extrabold">Data akun</h2>
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="rounded-full bg-white/15 px-2.5 py-1 text-xs font-bold">{{ $user->is_active ? 'Aktif' : 'Nonaktif' }}</span>

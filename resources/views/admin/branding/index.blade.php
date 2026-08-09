@@ -13,7 +13,7 @@
 @section('content')
     <div class="ui-page-header">
         <div>
-            <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#ffd44f] !shadow-[0_0_0_4px_#fff4cf]" aria-hidden="true"></span>Manajemen aplikasi</p>
+            <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#ffd44f] !shadow-[0_0_0_4px_#fff4cf]" aria-hidden="true"></span>Manajemen Aplikasi</p>
             <h1 class="ui-page-title">Identitas aplikasi</h1>
             <p class="ui-page-description">Kelola nama, logo, dan teks yang tampil di aplikasi.</p>
         </div>

@@ -545,6 +545,10 @@
         text-transform: uppercase;
     }
 
+    .ui-eyebrow--inverse {
+        color: #ffe98f;
+    }
+
     .ui-eyebrow-dot {
         height: 0.42rem;
         width: 0.42rem;
