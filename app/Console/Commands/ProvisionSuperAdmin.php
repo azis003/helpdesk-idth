@@ -72,8 +72,8 @@ class ProvisionSuperAdmin extends Command
             'username' => $username,
             'password' => Hash::make($password),
             'is_active' => true,
-            'must_change_password' => true,
-            'password_changed_at' => null,
+            'must_change_password' => false,
+            'password_changed_at' => now(),
         ]);
 
         $role = RoleModel::query()->firstOrCreate(
@@ -88,10 +88,10 @@ class ProvisionSuperAdmin extends Command
             $user,
             'Akun Super Admin awal dibuat melalui command provisioning.',
             null,
-            ['role' => Role::SuperAdmin->value, 'must_change_password' => true],
+            ['role' => Role::SuperAdmin->value],
         );
 
-        $this->components->info('Akun Super Admin berhasil dibuat. Password wajib diganti saat login pertama.');
+        $this->components->info('Akun Super Admin berhasil dibuat.');
 
         return self::SUCCESS;
     }

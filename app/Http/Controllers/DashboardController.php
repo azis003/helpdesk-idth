@@ -22,30 +22,24 @@ class DashboardController extends Controller
     {
         [$periodStart, $periodEnd] = $this->resolvePeriod($request);
         $user = $request->user()->load('roles');
-        $requiresPasswordChange = $user->requiresPasswordChange();
-        $dashboardData = $requiresPasswordChange
-            ? $this->dashboard->emptyData()
-            : $this->dashboard->build($user, $periodStart, $periodEnd);
-        $canReviewApprovals = ! $requiresPasswordChange
-            && ! $user->hasRole(Role::KetuaTimKerja)
+        $dashboardData = $this->dashboard->build($user, $periodStart, $periodEnd);
+        $canReviewApprovals = ! $user->hasRole(Role::KetuaTimKerja)
             && $this->approvers->isCurrentApprover($user);
         $agentDashboard = $dashboardData['agentDashboard'];
         $requesterDashboard = $dashboardData['requesterDashboard'];
 
         return view('dashboard', array_merge([
             'user' => $user,
-            'requiresPasswordChange' => $requiresPasswordChange,
             'periodStart' => $periodStart,
             'periodEnd' => $periodEnd,
             'periodTimezone' => DashboardService::TIMEZONE,
             'periodLabel' => $this->periodLabel($periodStart, $periodEnd),
-            'assignedTicketCount' => $agentDashboard['visible'] && ! $requiresPasswordChange
+            'assignedTicketCount' => $agentDashboard['visible']
                 ? $agentDashboard['assigned_count']
                 : null,
             'isSuperAdmin' => $user->hasRole(Role::SuperAdmin),
             'newTicketCount' => $agentDashboard['visible']
                 && $agentDashboard['is_tier_one']
-                && ! $requiresPasswordChange
                 ? $agentDashboard['queue_count']
                 : null,
             'canAccessTickets' => ! $user->hasRole(Role::KetuaTimKerja)
@@ -53,10 +47,9 @@ class DashboardController extends Controller
                     Role::Pemohon,
                     Role::AgenTier1,
                     Role::AgenTier2,
-                ]) && ! $requiresPasswordChange,
+                ]),
             'canCreateTickets' => ! $user->hasRole(Role::KetuaTimKerja)
-                && $user->hasAnyRole([Role::Pemohon, Role::AgenTier1])
-                && ! $requiresPasswordChange,
+                && $user->hasAnyRole([Role::Pemohon, Role::AgenTier1]),
             'myTicketCount' => $requesterDashboard['visible']
                 ? $requesterDashboard['ticket_count']
                 : ($agentDashboard['visible'] ? $agentDashboard['assigned_count'] : null),

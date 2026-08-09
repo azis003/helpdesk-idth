@@ -4,7 +4,7 @@
 
 @section('content')
     <h1 class="ui-login-title">Ganti kata sandi</h1>
-    <p class="ui-login-description">{{ $isInitialChange ? 'Kata sandi awal wajib diganti sebelum Anda dapat menggunakan fitur lain.' : 'Gunakan kata sandi baru yang hanya Anda ketahui.' }}</p>
+    <p class="ui-login-description">Gunakan kata sandi baru yang hanya Anda ketahui.</p>
 
     <form method="POST" action="{{ route('password.update') }}" class="ui-login-form">
         @csrf

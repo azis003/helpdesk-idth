@@ -15,7 +15,7 @@ Jika environment, data, atau infrastruktur berbeda dari target, lampirkan devias
 
 ## Menjalankan k6
 
-`tests/performance/k6.js` melakukan login per VU, membaca daftar tiket, dan—bila `K6_CREATE_FORM` diisi—mengukur POST pembuatan tiket. Form create harus berupa URL-encoded field yang valid untuk katalog pada environment uji; gunakan akun non-produksi yang sudah mengganti password awal.
+`tests/performance/k6.js` melakukan login per VU, membaca daftar tiket, dan—bila `K6_CREATE_FORM` diisi—mengukur POST pembuatan tiket. Form create harus berupa URL-encoded field yang valid untuk katalog pada environment uji; gunakan akun non-produksi yang aktif.
 
 ```bash
 k6 run \

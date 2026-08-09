@@ -66,7 +66,7 @@ class RoleAuthorizationTest extends TestCase
         ]);
     }
 
-    public function test_initial_password_user_cannot_claim_ticket_before_changing_password(): void
+    public function test_initial_password_user_can_claim_ticket_without_changing_password(): void
     {
         $agent = $this->createUser([Role::AgenTier1], array_merge(
             ['username' => 'agent.password.pending'],
@@ -77,12 +77,12 @@ class RoleAuthorizationTest extends TestCase
 
         $response = $this->actingAs($agent)->post(route('tickets.claim', $ticket));
 
-        $response->assertRedirect(route('dashboard'))
-            ->assertSessionHas('warning');
+        $response->assertRedirect();
         $this->assertDatabaseHas('tickets', [
             'id' => $ticket->id,
-            'status' => TicketStatus::Baru->value,
-            'assigned_to_id' => null,
+            'status' => TicketStatus::Diproses->value,
+            'assigned_to_id' => $agent->id,
+            'assigned_tier' => Role::AgenTier1->value,
         ]);
     }
 

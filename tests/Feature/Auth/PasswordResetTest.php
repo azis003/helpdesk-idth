@@ -9,7 +9,7 @@ use Tests\TestCase;
 
 class PasswordResetTest extends TestCase
 {
-    public function test_super_admin_can_reset_another_users_password_and_force_a_change(): void
+    public function test_super_admin_can_reset_another_users_password_without_forcing_a_change(): void
     {
         $admin = $this->createUser([Role::SuperAdmin], array_merge(
             ['username' => 'super.admin'],
@@ -29,8 +29,8 @@ class PasswordResetTest extends TestCase
         $response->assertRedirect(route('admin.users.index'))
             ->assertSessionHas('success');
         $target = $target->fresh();
-        $this->assertTrue($target->must_change_password);
-        $this->assertNull($target->password_changed_at);
+        $this->assertFalse($target->must_change_password);
+        $this->assertNotNull($target->password_changed_at);
         $this->assertTrue(Hash::check('Temporary-Password-789!', $target->password));
         $this->assertDatabaseHas('audit_logs', [
             'user_id' => $admin->id,
@@ -49,8 +49,8 @@ class PasswordResetTest extends TestCase
         $login->assertRedirect(route('dashboard'));
         $this->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Ganti password untuk melanjutkan')
-            ->assertSee('aria-modal="true"', false);
+            ->assertDontSee('Ganti password untuk melanjutkan')
+            ->assertDontSee('mandatory-password-modal', false);
     }
 
     public function test_super_admin_cannot_reset_own_password_through_reset_procedure(): void

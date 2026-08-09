@@ -63,7 +63,7 @@ Untuk PostgreSQL production, jalankan migrasi menggunakan owner database lalu se
 ## Fondasi yang tersedia
 
 - Login dengan username, rate limiting, session regeneration, logout, CSRF, dan audit login.
-- Forced password change untuk password awal atau password hasil reset melalui modal wajib di dashboard; fitur lain tetap diblokir di server sampai selesai.
+- Pengguna dapat mengganti password secara mandiri; password awal atau password hasil reset tidak memblokir akses saat login.
 - Password kuat minimal 12 karakter dengan huruf besar, huruf kecil, angka, dan simbol.
 - Akun nonaktif tidak dapat login; sesi aktif akun yang dinonaktifkan diputus sebelum akses berikutnya.
 - Enam role: Super Admin, Pemohon, Agen Tier 1, Agen Tier 2, Approver, dan Ketua Tim Kerja.

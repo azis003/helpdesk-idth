@@ -25,7 +25,7 @@ Matriks hak normatif tetap berada di [PRD bagian 2.3](../PRD-helpdesk-internal.m
 | Ketua Tim mencoba write, catatan internal, atau download lampiran | HTTP 403/404; projection hanya public/read-only | `tests/Feature/TeamChairAccessTest.php` |
 | Akun tanpa hak membuka URL lampiran atau disk public | Ditolak dan audit penolakan | `tests/Feature/AuditAndRetentionTest.php` |
 | Pengguna non-admin membuka endpoint administrasi | HTTP 403 | `tests/Feature/Authorization/RoleAuthorizationTest.php`, `tests/Feature/Admin/*ManagementTest.php` |
-| Approver tidak aktif atau akun password awal mencoba keputusan | Ditolak dan tidak mengubah status | `tests/Feature/TicketApprovalTest.php` |
+| Approver tidak aktif mencoba keputusan | Ditolak dan tidak mengubah status | `tests/Feature/TicketApprovalTest.php` |
 | Audit log di-update/delete oleh aplikasi | Exception append-only; SQL role aplikasi juga harus ditolak di staging | `tests/Feature/AuditAndRetentionTest.php`, `deploy/postgres/grant-app-privileges.sql` |
 
 ## Status baseline

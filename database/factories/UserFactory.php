@@ -48,15 +48,6 @@ class UserFactory extends Factory
         ]);
     }
 
-    public function withInitialPassword(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'password' => Hash::make('Initial-Password-123!'),
-            'must_change_password' => true,
-            'password_changed_at' => null,
-        ]);
-    }
-
     public function inactive(): static
     {
         return $this->state(fn (array $attributes) => [

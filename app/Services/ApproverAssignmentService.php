@@ -38,8 +38,7 @@ class ApproverAssignmentService
         if ($user === null
             || ! $user->isActive()
             || $user->hasRole(Role::KetuaTimKerja)
-            || ! $user->hasRole(Role::Approver)
-            || $user->requiresPasswordChange()) {
+            || ! $user->hasRole(Role::Approver)) {
             return null;
         }
 
@@ -223,9 +222,6 @@ class ApproverAssignmentService
             $this->deny($actor, 'admin.approver.replacement', $candidate, 'Pengguna pengganti wajib memiliki role Approver.');
         }
 
-        if ($candidate->requiresPasswordChange()) {
-            $this->deny($actor, 'admin.approver.replacement', $candidate, 'Pengguna pengganti harus mengganti password awal terlebih dahulu.');
-        }
     }
 
     private function deny(User $actor, string $action, ?User $subject, string $reason, string $field = 'replacement_user_id'): never

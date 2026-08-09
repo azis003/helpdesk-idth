@@ -52,10 +52,6 @@ class AuthController extends Controller
         $request->session()->regenerate();
         $this->auditLogger->succeeded($request->user(), 'auth.login');
 
-        if ($request->user()->requiresPasswordChange()) {
-            return redirect()->route('dashboard');
-        }
-
         return redirect()->intended(route('dashboard'));
     }
 

@@ -59,7 +59,7 @@ class AuthenticationTest extends TestCase
         ]);
     }
 
-    public function test_initial_password_user_is_forced_to_change_password(): void
+    public function test_initial_password_user_can_use_application_without_changing_password(): void
     {
         $user = $this->createUser([Role::Pemohon], array_merge(
             ['username' => 'pemohon.awal'],
@@ -76,13 +76,26 @@ class AuthenticationTest extends TestCase
 
         $dashboard = $this->get(route('dashboard'));
         $dashboard->assertOk()
-            ->assertSee('Ganti password untuk melanjutkan')
-            ->assertSee('Password awal wajib diganti sebelum Anda dapat menggunakan fitur SIHATI.')
-            ->assertSee('aria-modal="true"', false);
+            ->assertSee('Status akses Anda')
+            ->assertDontSee('Ganti password untuk melanjutkan')
+            ->assertDontSee('mandatory-password-modal', false);
 
-        $this->get(route('password.change'))->assertRedirect(route('dashboard'));
+        $this->get(route('tickets.index'))->assertOk();
+    }
 
-        $change = $this->put(route('password.update'), [
+    public function test_authenticated_user_can_change_password_voluntarily(): void
+    {
+        $user = $this->createUser([Role::Pemohon], array_merge(
+            ['username' => 'pemohon.ganti-password'],
+            $this->passwordAttributes('Initial-Password-123!'),
+        ));
+
+        $this->actingAs($user)
+            ->get(route('password.change'))
+            ->assertOk()
+            ->assertSee('Ganti kata sandi');
+
+        $change = $this->actingAs($user)->put(route('password.update'), [
             'current_password' => 'Initial-Password-123!',
             'password' => 'New-Password-456!',
             'password_confirmation' => 'New-Password-456!',
@@ -96,7 +109,7 @@ class AuthenticationTest extends TestCase
         $this->assertNotNull($user->fresh()->password_changed_at);
         $this->assertDatabaseHas('audit_logs', [
             'user_id' => $user->id,
-            'action' => 'auth.initial_password_changed',
+            'action' => 'auth.password_changed',
             'outcome' => 'succeeded',
         ]);
     }

@@ -33,7 +33,7 @@ Snapshot matrix berikut dicatat pada `2026-08-07T20:51:19+07:00`. `Lulus` berart
 
 | ID | Bukti otomatis/aktivitas | Status | Bukti, owner, timestamp, keputusan tindak lanjut |
 |---|---|---|---|
-| AC-01 | `tests/Feature/Auth/AuthenticationTest.php`; password awal hanya menuju ganti password | Lulus | Automated baseline; owner QA; `2026-08-07T20:51:19+07:00`; ulangi pada PostgreSQL/Redis staging. |
+| AC-01 | `tests/Feature/Auth/AuthenticationTest.php`; password awal dapat langsung memakai aplikasi sesuai role | Lulus | Automated baseline; owner QA; `2026-08-07T20:51:19+07:00`; ulangi pada PostgreSQL/Redis staging. |
 | AC-02 | `tests/Feature/Authorization/RoleAuthorizationTest.php`; Super Admin tanpa role operasional | Lulus | Automated baseline; owner QA/Keamanan; `2026-08-07T20:51:19+07:00`; lampirkan negative authorization staging. |
 | AC-03 | `tests/Feature/Admin/CatalogManagementTest.php`, `TicketManagementTest.php`; field dinamis dan lokasi | Lulus | Automated baseline; owner QA; `2026-08-07T20:51:19+07:00`; cocokkan dengan master data disahkan. |
 | AC-04 | `TicketManagementTest.php`; requester/creator/snapshot/self-created | Lulus | Automated baseline; owner QA; `2026-08-07T20:51:19+07:00`; lakukan satu UAT atas nama pegawai. |

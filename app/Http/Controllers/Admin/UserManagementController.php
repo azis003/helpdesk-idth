@@ -233,8 +233,8 @@ class UserManagementController extends Controller
 
         $user->forceFill([
             'password' => Hash::make($request->string('temporary_password')->toString()),
-            'must_change_password' => true,
-            'password_changed_at' => null,
+            'must_change_password' => false,
+            'password_changed_at' => now(),
             'remember_token' => null,
         ])->save();
 
@@ -244,7 +244,7 @@ class UserManagementController extends Controller
             $user,
             'Password sementara dibuat; distribusikan melalui prosedur aman.',
             $before,
-            ['must_change_password' => true, 'password_changed_at' => null],
+            ['must_change_password' => false, 'password_changed_at' => now()->toIso8601String()],
         );
 
         return redirect()

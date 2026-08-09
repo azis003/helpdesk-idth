@@ -22,7 +22,6 @@
             ? 'Tiket saya dan tim'
             : ($isTeamChair ? 'Tiket tim' : 'Tiket saya');
         $canReviewApprovals = ! $isTeamChair
-            && ! $currentUser->requiresPasswordChange()
             && $currentUser->hasRole(\App\Enums\Role::Approver)
             && \App\Models\ApproverAssignment::query()->active()->where('user_id', $currentUser->getKey())->exists();
         $canViewReports = $currentUser->can('viewAny', \App\Models\ReportExport::class);
@@ -246,6 +245,7 @@
                         <p class="text-xs font-bold text-[#344850]">{{ $currentUser->name }}</p>
                         <p class="mt-0.5 text-[0.68rem] text-[#89989e]">{{ $currentUser->username }}</p>
                     </div>
+                    <a href="{{ route('password.change') }}" class="hidden text-xs font-extrabold text-[#147a79] transition hover:text-[#0f5f5e] sm:block">Ganti password</a>
                     <span class="ui-avatar !h-9 !w-9 !rounded-full">{{ strtoupper(substr($currentUser->name, 0, 1)) }}</span>
                     <span class="ui-header-divider hidden sm:block" aria-hidden="true"></span>
                     <form method="POST" action="{{ route('logout') }}" class="hidden sm:block">
@@ -325,6 +325,7 @@
                                 <a href="{{ route('admin.announcements.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.announcements.*') ? 'is-active' : '' }}">Pengumuman</a>
                             @endif
                             @endif
+                            <a href="{{ route('password.change') }}" class="ui-mobile-nav-link">Ganti password</a>
                             <form method="POST" action="{{ route('logout') }}" class="mt-1 border-t border-[#edf2f4] pt-1">
                                 @csrf
                                 <button type="submit" class="ui-mobile-nav-link w-full text-left">Keluar</button>

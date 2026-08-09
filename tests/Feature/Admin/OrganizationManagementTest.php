@@ -40,7 +40,7 @@ class OrganizationManagementTest extends TestCase
         $user = User::query()->where('username', 'teknisi-baru')->firstOrFail();
 
         $this->assertTrue(Hash::check('Initial-Password-123!', $user->password));
-        $this->assertTrue($user->must_change_password);
+        $this->assertFalse($user->must_change_password);
         $this->assertTrue($user->hasRole(Role::AgenTier2));
         $this->assertTrue($user->skills()->whereKey($skill->id)->exists());
         $this->assertDatabaseHas('team_memberships', [

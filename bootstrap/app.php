@@ -2,7 +2,6 @@
 
 use App\Http\Middleware\AuditDeniedRequest;
 use App\Http\Middleware\EnsureActiveUser;
-use App\Http\Middleware\EnsurePasswordChanged;
 use App\Http\Middleware\RequireRole;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
@@ -21,7 +20,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->alias([
             'active' => EnsureActiveUser::class,
-            'password.changed' => EnsurePasswordChanged::class,
             'role' => RequireRole::class,
         ]);
     })

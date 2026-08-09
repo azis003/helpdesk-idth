@@ -68,18 +68,6 @@ class DashboardService
     }
 
     /** @return array<string, mixed> */
-    public function emptyData(): array
-    {
-        return [
-            'requesterDashboard' => $this->emptyRequesterDashboard(),
-            'agentDashboard' => $this->emptyAgentDashboard(),
-            'approverDashboard' => $this->emptyApproverDashboard(),
-            'teamDashboard' => $this->emptyTeamDashboard(),
-            'overallDashboard' => $this->emptyOverallDashboard(),
-        ];
-    }
-
-    /** @return array<string, mixed> */
     private function requesterDashboard(User $user, Carbon $start, Carbon $end): array
     {
         $baseQuery = Ticket::query()->where('requester_id', $user->getKey());

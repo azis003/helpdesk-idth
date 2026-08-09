@@ -263,7 +263,7 @@
                     <label for="temporary_password" class="ui-field-label">Password sementara</label>
                     <input id="temporary_password" name="temporary_password" type="password" autocomplete="new-password" required data-password-reset-input class="ui-input mt-2">
                     @error('temporary_password')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
-                    <p class="ui-field-help">Password wajib diganti oleh pengguna saat login berikutnya.</p>
+                    <p class="ui-field-help">Pengguna dapat mengganti password setelah login melalui halaman ganti password.</p>
                     <div class="mt-5 flex justify-end gap-2">
                         <button type="button" data-password-reset-close class="ui-btn ui-btn-ghost">Batal</button>
                         <button type="submit" data-password-reset-submit class="ui-btn ui-btn-warning">Simpan password</button>

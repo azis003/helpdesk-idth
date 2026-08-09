@@ -297,7 +297,6 @@ class TicketPolicy
     private function isCurrentApprover(User $actor): bool
     {
         return $actor->isActive()
-            && ! $actor->requiresPasswordChange()
             && ! $this->isReadOnlyTeamChair($actor)
             && $actor->hasRole(Role::Approver)
             && ApproverAssignment::query()

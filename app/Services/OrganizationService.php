@@ -38,8 +38,8 @@ class OrganizationService
                 'nip' => $data['nip'] ?? null,
                 'password' => Hash::make($data['temporary_password']),
                 'is_active' => true,
-                'must_change_password' => true,
-                'password_changed_at' => null,
+                'must_change_password' => false,
+                'password_changed_at' => now(),
             ]);
 
             $teamPosition = TeamPosition::from($data['team_position']);
@@ -56,7 +56,7 @@ class OrganizationService
                 $actor,
                 'admin.user.created',
                 $freshUser,
-                'Pengguna baru dibuat dengan password awal yang wajib diganti.',
+                'Pengguna baru dibuat dengan password awal.',
                 null,
                 $this->userSnapshot($freshUser),
             );

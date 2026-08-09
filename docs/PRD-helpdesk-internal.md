@@ -154,7 +154,7 @@ Keterangan: Milik berarti tiket yang pemohonnya adalah pengguna tersebut; Assign
 | Kemampuan | Super Admin | Pemohon | Agen Tier 1 | Agen Tier 2 | Approver aktif | Ketua Tim Kerja |
 |---|---|---|---|---|---|---|
 | Login dan ganti password sendiri | Ya | Ya | Ya | Ya | Ya | Ya |
-| Dipaksa mengganti password awal | Ya | Ya | Ya | Ya | Ya | Ya |
+| Dipaksa mengganti password awal | Tidak (ditunda) | Tidak (ditunda) | Tidak (ditunda) | Tidak (ditunda) | Tidak (ditunda) | Tidak (ditunda) |
 | Kelola pengguna dan status aktif | Semua | — | — | — | — | — |
 | Kelola pemberian/pencabutan peran | Semua | — | — | — | — | — |
 | Kelola tim, ketua, dan anggota | Semua | — | — | — | — | — |
@@ -216,7 +216,7 @@ Implementasi wajib menggunakan middleware, policy, gate, dan pemeriksaan domain 
 
 #### Journey A — Pemohon membuat dan memantau tiket sendiri
 
-1. Pemohon login; bila masih menggunakan password awal, sistem memaksa ganti password.
+1. Pemohon login dan langsung dapat menggunakan aplikasi sesuai role.
 2. Pemohon membuka katalog, melihat pengumuman aktif, lalu memilih jenis layanan.
 3. Sistem menampilkan field dinamis; lokasi diwajibkan hanya untuk layanan yang mensyaratkannya.
 4. Pemohon mengisi deskripsi, prioritas usulan, field layanan, dan lampiran bila ada.
@@ -747,7 +747,7 @@ Nilai historis seperti nama, NIP, tim kerja, jenis layanan, dan kategori yang di
 | ID | Kebutuhan | Prioritas |
 |---|---|---|
 | FR-AUTH-01 | Sistem menyediakan login username dan password serta sesi pengguna. | Must |
-| FR-AUTH-02 | Password awal memaksa pengguna menuju halaman ganti password sebelum memakai fungsi lain. | Must |
+| FR-AUTH-02 | Kewajiban mengganti password awal saat login ditunda; pengguna dapat langsung memakai fitur sesuai role. | Ditunda |
 | FR-AUTH-03 | Pengguna dapat mengganti password sendiri. Super Admin dapat mereset password. | Must |
 | FR-AUTH-04 | Pengguna dapat dinonaktifkan tanpa dihapus; akun nonaktif tidak boleh login. | Must |
 | FR-AUTH-05 | Sistem mendukung banyak peran per pengguna dan otorisasi server untuk setiap aksi. | Must |
@@ -858,7 +858,7 @@ Versi 1.0 tidak terintegrasi dengan WhatsApp, email, Telegram, Web Push, SSO, LD
 - web server dan HTTPS;
 - library ekspor Excel/PDF.
 
-Pengiriman password awal dan reset password harus mengikuti SOP aman yang ditetapkan Super Admin karena email dan kanal eksternal tidak tersedia dalam versi 1.0. Password sementara hanya dapat dipakai untuk satu kali inisialisasi dan wajib diganti saat login pertama.
+Pengiriman password awal dan reset password harus mengikuti SOP aman yang ditetapkan Super Admin karena email dan kanal eksternal tidak tersedia dalam versi 1.0. Password sementara dipakai untuk akses awal dan dapat diganti pengguna melalui halaman ganti password.
 
 ### 4.4 Konsistensi, concurrency, dan atomisitas
 
@@ -1074,7 +1074,7 @@ Pengukuran NFR-04 dan NFR-05 menggunakan P95 pada lingkungan target. Browser min
 #### Identitas dan sesi
 
 - Password disimpan dengan hashing aman, bukan enkripsi reversibel.
-- Pengguna yang masih menggunakan password awal selalu diarahkan ke ganti password dan tidak dapat memberikan persetujuan.
+- Password awal atau password hasil reset tidak memblokir akses; pengguna tetap dapat mengganti password secara mandiri melalui halaman ganti password.
 - Percobaan login dibatasi dengan rate limiting; pesan gagal tidak membocorkan apakah username ada.
 - Session cookie aman, HTTPS wajib, dan CSRF protection tidak boleh dinonaktifkan pada formulir state-changing.
 - Akun nonaktif tidak dapat login atau menerima hak operasional baru.
@@ -1150,7 +1150,7 @@ Kriteria berikut menjadi definisi selesai minimum untuk UAT versi 1.0. Semua ske
 
 | ID | Given/When/Then | Prioritas |
 |---|---|---|
-| AC-01 | Given pengguna memakai password awal, when membuka aplikasi, then pengguna hanya dapat menuju ganti password dan tidak dapat menyetujui tiket. | Must |
+| AC-01 | Given pengguna memakai password awal, when membuka aplikasi, then pengguna dapat memakai fitur sesuai role tanpa dipaksa mengganti password. | Must |
 | AC-02 | Given pengguna memiliki Super Admin tanpa peran operasional, when mencoba klaim atau menangani tiket, then server menolak dan mencatat percobaan. | Must |
 | AC-03 | Given pemohon memilih layanan, when form dimuat, then field dinamis dan pengumuman aktif yang sesuai tampil; SVC-01/SVC-05 menolak tanpa lokasi. | Must |
 | AC-04 | Given Agen Tier 1 membuat tiket atas nama pegawai, when tiket tersimpan, then pemohon, pembuat, NIP/tim snapshot, dan flag self-created tersimpan terpisah. | Must |
@@ -1159,7 +1159,7 @@ Kriteria berikut menjadi definisi selesai minimum untuk UAT versi 1.0. Semua ske
 | AC-07 | Given dua Agen Tier 1 mengklaim tiket Baru bersamaan, when transaksi selesai, then tepat satu klaim berhasil, satu tiket menjadi Diproses, dan percobaan lainnya gagal serta diaudit. | Must |
 | AC-08 | Given Agen Tier 1 melakukan triase, when memilih hasil, then hanya Kerjakan sendiri, Tugaskan Tier 2, atau Tolak yang tersedia; penolakan memerlukan alasan. | Must |
 | AC-09 | Given kategori memiliki mapping skill, when triase dibuka, then sistem menampilkan saran teknisi; when agen memilih teknisi lain, then keputusan manual tetap diizinkan dan tercatat. | Must |
-| AC-10 | Given tiket Diproses/Dikerjakan, when agen meminta persetujuan, then status menjadi Menunggu Persetujuan dan state sebelumnya tersimpan; approver aktif dapat memulihkan state atau menolak final dengan catatan wajib; self-approval hanya berhasil untuk Manajer TI aktif yang sudah mengganti password awal. | Must |
+| AC-10 | Given tiket Diproses/Dikerjakan, when agen meminta persetujuan, then status menjadi Menunggu Persetujuan dan state sebelumnya tersimpan; approver aktif dapat memulihkan state atau menolak final dengan catatan wajib; self-approval hanya berhasil untuk Manajer TI aktif yang ditetapkan. | Must |
 | AC-11 | Given petugas mengirim Balasan ke Pemohon dan Catatan Internal, when pemohon melihat tiket, then hanya balasan publik terlihat dan kedua aksi memiliki tombol/input terpisah. | Must |
 | AC-12 | Given agen meminta informasi, when status Menunggu Pemohon, then SLA berhenti, pertanyaan wajib, notifikasi pemohon dibuat, dan balasan pemohon mengembalikan tiket ke penanggung jawab sebelumnya; setelah 3 hari kerja tanpa balasan, tiket menjadi Dikerjakan dengan flag timeout dan notifikasi penanggung jawab. | Must |
 | AC-13 | Given tiket Menunggu Pihak Ketiga, when agen menyimpan status, then nama pihak ketiga wajib, SLA berhenti, tiket muncul pada bucket tunggu pihak ketiga, dan saat dilanjutkan kembali menjadi Dikerjakan dengan SLA berjalan. | Must |
@@ -1200,7 +1200,7 @@ Keputusan berikut telah disetujui pemilik produk dan menjadi aturan versi 1.0:
 3. Mapping kelas adalah SVC-01 INC, SVC-02 REQ, SVC-03 CHG, SVC-04 CHG, SVC-05 INC untuk perbaikan atau REQ untuk permintaan, SVC-06 REQ, dan SVC-07 CHG.
 4. SVC-05 memiliki subjenis Perbaikan atau Permintaan.
 5. Manajer TI aktif disimpan sebagai satu konfigurasi, wajib memiliki peran Approver, dan menjadi satu-satunya approver aktif.
-6. Self-approval hanya berlaku bagi akun Manajer TI aktif yang sudah mengganti password awal.
+6. Self-approval hanya berlaku bagi akun Manajer TI aktif yang ditetapkan; password awal tidak menjadi syarat tambahan.
 7. Timeout Menunggu Pemohon setelah 3 hari kerja mengubah tiket menjadi Dikerjakan, mempertahankan penanggung jawab, memberi flag timeout, mengembalikan SLA dari sisa waktu, dan mengirim notifikasi.
 8. Setelah Menunggu Pihak Ketiga selesai, tiket kembali Dikerjakan dan SLA berjalan kembali.
 9. Urutan antrean adalah prioritas Kritis, Tinggi, Sedang, Rendah, kemudian waktu pembuatan paling lama.
@@ -1211,7 +1211,7 @@ Keputusan berikut telah disetujui pemilik produk dan menjadi aturan versi 1.0:
 14. Definisi field dinamis yang sudah digunakan tidak diedit; perubahan dibuat sebagai versi baru atau dinonaktifkan.
 15. Verifikasi SVC-03 boleh dilakukan pelaksana yang sama pada versi 1.0 dengan bukti pelaku, waktu, hasil, dan catatan.
 16. RPO maksimal satu jam dan RTO maksimal empat jam layanan; backup penuh harian ditambah incremental/WAL maksimal satu jam.
-17. Password awal dan reset password menggunakan SOP aman Super Admin; password sementara wajib diganti saat login pertama.
+17. Password awal dan reset password menggunakan SOP aman Super Admin; penggantian password setelah login bersifat sukarela.
 18. Pengumuman dapat dinonaktifkan oleh pembuat atau Agen Tier 1 aktif lainnya.
 19. Laporan dan ekspor tidak tersedia untuk Pemohon atau Agen Tier 2 pada versi 1.0 dan menggunakan bulan kalender Asia/Jakarta sebagai periode default.
 
@@ -1266,7 +1266,7 @@ Item berikut bukan lagi keputusan alur bisnis, tetapi data atau kebijakan input 
 | Penghapusan hasil export menghapus bukti yang dibutuhkan | Kehilangan data atau sengketa | Rendah/Sedang | Konfirmasi kebijakan retensi, job idempotent, audit metadata, backup sesuai kebijakan | Pemilik produk + Legal |
 | Perubahan konfigurasi mengubah histori lama | Laporan periode lalu berubah | Sedang | Snapshot layanan/SLA/form, audit before/after, larangan edit definisi yang sudah dipakai | Tech lead |
 | Laporan baru tidak cocok dengan spreadsheet pimpinan | UAT gagal atau laporan tetap manual | Tinggi | Bandingkan kolom sebelum UAT, sample reconciliation, sign-off pimpinan | PIC helpdesk |
-| Password awal didistribusikan tidak aman | Pengambilalihan akun | Sedang | Prosedur distribusi terpisah, forced change, rate limit, larangan approval dengan password awal | Super Admin |
+| Password awal didistribusikan tidak aman | Pengambilalihan akun | Sedang | Prosedur distribusi terpisah, rate limit, larangan menyimpan password di audit/log | Super Admin |
 | Retensi data pribadi tidak sesuai kebijakan | Risiko hukum dan reputasi | Sedang | Review perlindungan data pribadi, minimisasi log, retensi configurable yang disahkan | Pimpinan/Legal |
 
 ### 5.6 Rencana fase pengembangan

@@ -160,11 +160,6 @@ class User extends Authenticatable
         return $this->is_active === true;
     }
 
-    public function requiresPasswordChange(): bool
-    {
-        return $this->must_change_password === true || $this->password_changed_at === null;
-    }
-
     /**
      * @return list<string>
      */

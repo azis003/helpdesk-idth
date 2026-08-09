@@ -51,7 +51,6 @@ class AttachmentAccessPolicy
     private function isPendingApprover(User $actor, Ticket $ticket): bool
     {
         return $actor->isActive()
-            && ! $actor->requiresPasswordChange()
             && $actor->hasRole(Role::Approver)
             && ApprovalRequest::query()
                 ->pending()

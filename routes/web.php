@@ -41,10 +41,10 @@ Route::post('/logout', [AuthController::class, 'destroy'])
 Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
-    Route::get('/password/change', [PasswordController::class, 'redirectToDashboard'])->name('password.change');
+    Route::get('/password/change', [PasswordController::class, 'edit'])->name('password.change');
     Route::put('/password/change', [PasswordController::class, 'update'])->name('password.update');
 
-    Route::middleware('password.changed')->group(function () {
+    Route::group([], function () {
         Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
         Route::get('/tickets/queue', [TicketController::class, 'queue'])->name('tickets.queue');
         Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');

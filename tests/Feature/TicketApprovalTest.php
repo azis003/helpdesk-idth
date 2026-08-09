@@ -175,7 +175,7 @@ class TicketApprovalTest extends TestCase
             ->assertSee($reason);
     }
 
-    public function test_non_active_approver_and_initial_password_account_cannot_decide(): void
+    public function test_non_active_approver_is_denied_and_initial_password_approver_can_decide(): void
     {
         $requester = $this->createUser([Role::Pemohon]);
         $agent = $this->createUser([Role::AgenTier1]);
@@ -197,10 +197,10 @@ class TicketApprovalTest extends TestCase
 
         $this->actingAs($approver)
             ->post(route('approvals.approve', $approval))
-            ->assertRedirect(route('dashboard'))
-            ->assertSessionHas('warning');
-        $this->assertSame(ApprovalRequest::STATUS_PENDING, $approval->fresh()->status);
-        $this->assertSame(TicketStatus::MenungguPersetujuan, $ticket->fresh()->status);
+            ->assertRedirect(route('tickets.show', $ticket))
+            ->assertSessionHasNoErrors();
+        $this->assertSame(ApprovalRequest::STATUS_APPROVED, $approval->fresh()->status);
+        $this->assertSame(TicketStatus::Dikerjakan, $ticket->fresh()->status);
     }
 
     private function assignApprover(object $approver): ApproverAssignment

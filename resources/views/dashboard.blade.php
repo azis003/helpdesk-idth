@@ -304,39 +304,10 @@
         <div class="flex items-end justify-between gap-4"><div><p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Ringkasan</p><h2 id="access-summary-heading" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">Status akses Anda</h2></div></div>
         <div class="mt-4 grid gap-3 md:grid-cols-3">
             <article class="ui-stat-card items-start"><span class="ui-stat-icon !bg-[#e8faf4] !text-[#087f5b]" aria-hidden="true">✓</span><div><p class="ui-stat-label">Status akun</p><p class="mt-1 text-lg font-extrabold text-[#087f5b]">Aktif</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Sesi telah melewati pemeriksaan akses.</p></div></article>
-            <article class="ui-stat-card items-start"><span class="ui-stat-icon" aria-hidden="true">◫</span><div><p class="ui-stat-label">Tiket ditugaskan</p>@if ($assignedTicketCount !== null)<p class="ui-stat-value">{{ $assignedTicketCount }}</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Tanggung jawab Anda.</p>@elseif ($requiresPasswordChange)<p class="mt-1 text-lg font-extrabold text-[#a16207]">Menunggu ganti</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Tersedia setelah password diganti.</p>@else<p class="mt-1 text-lg font-extrabold text-[#607681]">Tidak berlaku</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Membutuhkan role operasional.</p>@endif</div></article>
-            <article class="ui-stat-card items-start"><span class="ui-stat-icon !bg-[#eef3ff] !text-[#4f63a6]" aria-hidden="true">▤</span><div><p class="ui-stat-label">Antrean Baru</p>@if ($newTicketCount !== null)<p class="ui-stat-value">{{ $newTicketCount }}</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Menunggu klaim Agen Tier 1.</p>@elseif ($requiresPasswordChange)<p class="mt-1 text-lg font-extrabold text-[#a16207]">Terkunci sementara</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Tersedia setelah password diganti.</p>@else<p class="mt-1 text-lg font-extrabold text-[#607681]">Terbatas</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Membutuhkan role Agen Tier 1.</p>@endif</div></article>
+            <article class="ui-stat-card items-start"><span class="ui-stat-icon" aria-hidden="true">◫</span><div><p class="ui-stat-label">Tiket ditugaskan</p>@if ($assignedTicketCount !== null)<p class="ui-stat-value">{{ $assignedTicketCount }}</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Tanggung jawab Anda.</p>@else<p class="mt-1 text-lg font-extrabold text-[#607681]">Tidak berlaku</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Membutuhkan role operasional.</p>@endif</div></article>
+            <article class="ui-stat-card items-start"><span class="ui-stat-icon !bg-[#eef3ff] !text-[#4f63a6]" aria-hidden="true">▤</span><div><p class="ui-stat-label">Antrean Baru</p>@if ($newTicketCount !== null)<p class="ui-stat-value">{{ $newTicketCount }}</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Menunggu klaim Agen Tier 1.</p>@else<p class="mt-1 text-lg font-extrabold text-[#607681]">Terbatas</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Membutuhkan role Agen Tier 1.</p>@endif</div></article>
         </div>
     </section>
     @endif
 
-    @if ($requiresPasswordChange)
-        <div data-mandatory-password-modal class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="mandatory-password-title" aria-describedby="mandatory-password-description" tabindex="-1">
-            <div class="flex min-h-full items-center justify-center px-4 py-8 sm:px-6">
-                <div class="fixed inset-0 bg-[#243c48]/75" aria-hidden="true"></div>
-                <div class="relative w-full max-w-lg overflow-hidden rounded-xl border border-[#dce7eb] bg-white shadow-2xl">
-                    <div class="border-b border-[#e5ebee] bg-[#f8fafb] px-6 py-5 sm:px-8">
-                        <p class="text-[0.68rem] font-extrabold uppercase tracking-[0.16em] text-[#346478]">Keamanan akun</p>
-                        <h2 id="mandatory-password-title" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">Ganti password untuk melanjutkan</h2>
-                        <p id="mandatory-password-description" class="mt-2 text-sm leading-6 text-[#6a8089]">Password awal wajib diganti sebelum Anda dapat menggunakan fitur {{ $branding['application_name'] }}.</p>
-                    </div>
-                    <form method="POST" action="{{ route('password.update') }}" class="space-y-5 p-6 sm:p-8">
-                        @csrf
-                        @method('PUT')
-                        <x-form-field name="current_password" label="Password saat ini" type="password" autocomplete="current-password" autofocus required />
-                        <x-form-field name="password" label="Password baru" type="password" autocomplete="new-password" help="Minimal 12 karakter, mengandung huruf besar, huruf kecil, angka, dan simbol." required />
-                        <x-form-field name="password_confirmation" label="Konfirmasi password baru" type="password" autocomplete="new-password" required />
-                        <button type="submit" class="ui-btn ui-btn-primary w-full !py-3.5">Simpan password baru</button>
-                    </form>
-                    <div class="flex items-center justify-between gap-4 border-t border-[#e7eef1] px-6 py-4 sm:px-8">
-                        <p class="text-xs leading-5 text-[#78909a]">Modal ini tidak dapat ditutup sebelum password diganti.</p>
-                        <form method="POST" action="{{ route('logout') }}" class="shrink-0">
-                            @csrf
-                            <button type="submit" class="ui-action-link">Keluar</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
 @endsection

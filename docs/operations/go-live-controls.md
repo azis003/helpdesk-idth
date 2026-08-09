@@ -15,9 +15,9 @@ Dokumen ini adalah lampiran operasional issue #20. Nilai owner, kontak, tanggal 
 ## SOP password awal dan reset
 
 1. Super Admin membuat atau mereset akun melalui proses resmi; password sementara dibagikan melalui kanal out-of-band yang disetujui, bukan melalui Git, chat umum, atau log.
-2. Akun password awal hanya boleh login untuk menuju ganti password. Aksi operasional dan approval tetap ditolak sampai password diganti.
+2. Akun password awal dapat langsung memakai fitur sesuai role; penggantian password tidak dipaksa saat login pertama.
 3. Password baru memenuhi minimal 12 karakter dengan huruf besar, kecil, angka, dan simbol. Password disimpan hanya sebagai hash.
-4. Reset tidak boleh dilakukan oleh pengguna untuk dirinya sendiri melalui prosedur admin. Setelah reset, akun kembali wajib mengganti password.
+4. Reset tidak boleh dilakukan oleh pengguna untuk dirinya sendiri melalui prosedur admin. Setelah reset, pengguna dapat mengganti password secara mandiri bila diperlukan.
 5. Insiden kredensial dicatat, akun dinonaktifkan bila perlu, sesi aktif diputus, dan audit/log yang mengandung secret tidak boleh dipertahankan.
 
 Evidence: `tests/Feature/Auth/AuthenticationTest.php`, `tests/Feature/Auth/PasswordResetTest.php`, dan `tests/Feature/Authorization/RoleAuthorizationTest.php`.
