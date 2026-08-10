@@ -26,6 +26,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Services\DatabaseChangeControlService;
 use App\Services\DomainAuthorization;
+use App\Services\RequesterTicketPresenter;
 use App\Services\SkillSuggestionService;
 use App\Services\TeamChairTicketProjection;
 use App\Services\TicketApprovalService;
@@ -55,6 +56,7 @@ class TicketController extends Controller
         private readonly TicketSlaService $sla,
         private readonly DatabaseChangeControlService $specialControls,
         private readonly TeamChairTicketProjection $teamChairProjection,
+        private readonly RequesterTicketPresenter $requesterPresenter,
     ) {}
 
     public function index(Request $request): mixed
@@ -394,6 +396,7 @@ class TicketController extends Controller
         $canConfirm = $actor->can('confirm', $ticket);
         $canNotSatisfied = $actor->can('notSatisfied', $ticket);
         $canReopen = $actor->can('reopen', $ticket);
+        $canCancel = $actor->can('cancel', $ticket);
         $slaMetrics = $this->sla->metrics($ticket);
         $commentPublicPolicies = $ticket->serviceType
             ? $this->attachments->policiesFor($ticket->serviceType, true, 'public')
@@ -413,6 +416,24 @@ class TicketController extends Controller
         $ticketSuggestions = ($canTriage || $canAssignTierTwo)
             ? $this->skillSuggestions->forServiceType($ticket->serviceType, $tierTwoUsers, $ticket->problemCategory)
             : collect();
+
+        if ($this->isRequesterOnly($actor, $ticket, $canSeeInternal)) {
+            return view('tickets.requester-show', [
+                'ticket' => $this->requesterPresenter->present(
+                    $ticket,
+                    $slaMetrics,
+                    $approvalRequest?->decision_note,
+                ),
+                'actions' => [
+                    'cancel' => $canCancel,
+                    'reply' => $canRequesterReply,
+                    'confirm' => $canConfirm,
+                    'notSatisfied' => $canNotSatisfied,
+                    'reopen' => $canReopen,
+                ],
+                'replyAttachmentPolicies' => $commentPublicPolicies,
+            ]);
+        }
 
         return view('tickets.show', [
             'ticket' => $ticket,
@@ -453,6 +474,18 @@ class TicketController extends Controller
             'priorityOptions' => Priority::labels(),
             'timeline' => $this->buildTimeline($ticket, $canSeeInternal),
         ]);
+    }
+
+    /**
+     * The dedicated requester screen is only for the ticket owner without any
+     * internal capability. Agents, approvers and Super Admin keep the full
+     * operational view even when they happen to own the ticket.
+     */
+    private function isRequesterOnly(User $actor, Ticket $ticket, bool $canSeeInternal): bool
+    {
+        return ! $canSeeInternal
+            && $actor->hasRole(Role::Pemohon)
+            && (int) $ticket->requester_id === (int) $actor->getKey();
     }
 
     public function requestApproval(RequestApprovalRequest $request, Ticket $ticket): RedirectResponse
