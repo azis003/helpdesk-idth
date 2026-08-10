@@ -62,7 +62,7 @@ class TicketCommunicationController extends Controller
             $request->file('attachments', []),
         );
 
-        return back()->with('success', 'Informasi berhasil dikirim. Tiket kembali dikerjakan oleh petugas.');
+        return back()->with('success', 'Komentar berhasil ditambahkan.');
     }
 
     public function startThirdParty(ThirdPartyWaitRequest $request, Ticket $ticket): RedirectResponse

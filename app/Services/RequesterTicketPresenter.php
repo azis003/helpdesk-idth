@@ -217,7 +217,10 @@ class RequesterTicketPresenter
         }
 
         $targetDays = $metrics['target_working_days'] ?? null;
-        $target = $targetDays !== null ? $targetDays.' hari kerja' : 'sesuai standar layanan';
+        $deadline = $metrics['deadline_at'] ?? null;
+        $target = $deadline instanceof Carbon
+            ? $this->dateOnly($deadline)
+            : ($targetDays !== null ? $targetDays.' hari kerja' : 'sesuai standar layanan');
 
         if (($metrics['paused'] ?? false) === true) {
             return [
@@ -345,11 +348,15 @@ class RequesterTicketPresenter
     }
 
     /**
+     * Lampiran yang tampil di kartu utama hanya berasal dari pengajuan tiket.
+     * Lampiran komentar diproyeksikan bersama pesan terkait.
+     *
      * @return list<array{name: string, meta: string, url: string}>
      */
     private function attachmentsFor(Ticket $ticket): array
     {
         return $ticket->attachments
+            ->filter(static fn (Attachment $attachment): bool => $attachment->ticket_comment_id === null)
             ->map(fn (Attachment $attachment): array => [
                 'name' => (string) $attachment->original_name,
                 'meta' => ($attachment->type_label_snapshot ?: 'Lampiran').' - '.$this->humanSize((int) $attachment->size_bytes),
@@ -467,5 +474,10 @@ class RequesterTicketPresenter
     private function dateTime(?Carbon $value): string
     {
         return $value?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') ?? 'Belum tersedia';
+    }
+
+    private function dateOnly(Carbon $value): string
+    {
+        return $value->copy()->timezone(config('app.timezone'))->locale('id')->translatedFormat('d F Y');
     }
 }

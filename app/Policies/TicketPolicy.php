@@ -217,7 +217,7 @@ class TicketPolicy
             && ! $this->isReadOnlyTeamChair($actor)
             && $actor->hasRole(Role::Pemohon)
             && (int) $ticket->requester_id === (int) $actor->getKey()
-            && $ticket->status === TicketStatus::MenungguPemohon;
+            && ! in_array($ticket->status, TicketStatus::closedCases(), true);
     }
 
     public function startThirdPartyWait(User $actor, Ticket $ticket): bool

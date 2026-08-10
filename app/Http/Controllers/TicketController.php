@@ -199,7 +199,7 @@ class TicketController extends Controller
         if ($actor->can('replyRequester', $ticket)) {
             return [
                 'label' => 'Balas',
-                'description' => 'Balas informasi yang diminta agen.',
+                'description' => 'Kirim pesan lanjutan kepada Tim TI.',
             ];
         }
 

@@ -166,6 +166,60 @@ class TicketCommunicationTest extends TestCase
             'notifiable_id' => $agent->id,
             'type' => TicketEventNotification::class,
         ]);
+
+        $ticket->forceFill([
+            'status' => TicketStatus::Ditutup,
+            'closed_at' => now(),
+        ])->save();
+
+        $this->actingAs($requester)
+            ->get(route('tickets.show', $ticket))
+            ->assertOk()
+            ->assertDontSee('Kirim Pesan')
+            ->assertSee('Balasan tidak tersedia karena tiket sudah berstatus akhir.');
+
+        $this->actingAs($requester)
+            ->post(route('tickets.requester-reply', $ticket), [
+                'body' => 'Pesan setelah tiket ditutup.',
+            ])
+            ->assertForbidden();
+    }
+
+    public function test_requester_can_send_follow_up_messages_until_ticket_is_closed(): void
+    {
+        $requester = $this->createUser([Role::Pemohon]);
+        $agent = $this->createUser([Role::AgenTier1]);
+        $service = ServiceType::query()->where('code', 'SVC-01')->firstOrFail();
+        $ticket = $this->assignedTicket($requester->id, $agent->id, $service->id);
+
+        $this->actingAs($requester)
+            ->get(route('tickets.show', $ticket))
+            ->assertOk()
+            ->assertSee('Kirim Pesan')
+            ->assertSee('Tambahkan Balasan')
+            ->assertDontSee('Balas informasi')
+            ->assertDontSee('Balasan tidak tersedia karena tiket sudah berstatus akhir.');
+
+        $this->actingAs($requester)
+            ->post(route('tickets.requester-reply', $ticket), [
+                'body' => 'Saya menambahkan informasi lanjutan untuk pemeriksaan tiket.',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success', 'Komentar berhasil ditambahkan.');
+
+        $ticket->refresh();
+        $this->assertSame(TicketStatus::Dikerjakan, $ticket->status);
+        $this->assertDatabaseHas('ticket_comments', [
+            'ticket_id' => $ticket->id,
+            'author_id' => $requester->id,
+            'visibility' => TicketCommentVisibility::Public->value,
+            'body' => 'Saya menambahkan informasi lanjutan untuk pemeriksaan tiket.',
+        ]);
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $agent->id,
+            'type' => TicketEventNotification::class,
+        ]);
     }
 
     public function test_scheduler_expires_requester_wait_idempotently_and_marks_timeout(): void

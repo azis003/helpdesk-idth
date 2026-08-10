@@ -1868,4 +1868,585 @@
             animation-iteration-count: 1 !important;
         }
     }
+
+    .ticket-reference-content {
+        color: #0b1c30;
+    }
+
+    .ticket-reference-page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1.5rem;
+    }
+
+    .ticket-reference-page-actions {
+        display: flex;
+        flex: 0 0 auto;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.75rem;
+    }
+
+    .ticket-reference-number {
+        color: #0b1c30;
+        font-size: clamp(1.55rem, 2.2vw, 2rem);
+        font-weight: 700;
+        letter-spacing: -0.035em;
+        line-height: 1.2;
+    }
+
+    .ticket-reference-subtitle {
+        margin-top: 0.4rem;
+        color: #434655;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    .ticket-reference-card {
+        border: 1px solid #c4c5d7;
+        border-radius: 0.75rem;
+        background: #ffffff;
+    }
+
+    .ticket-reference-card-header {
+        border-bottom: 1px solid #c4c5d7;
+        background: #f8f9ff;
+        padding: 1.1rem 1.25rem;
+    }
+
+    .ticket-reference-card-body {
+        padding: 1.35rem 1.25rem;
+    }
+
+    .ticket-reference-card-heading {
+        color: #0b1c30;
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    .ticket-reference-collapsible-summary {
+        cursor: pointer;
+        list-style: none;
+    }
+
+    .ticket-reference-collapsible-summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .ticket-reference-collapsible-summary::after {
+        color: #434655;
+        content: '+';
+        font-size: 1.3rem;
+        font-weight: 400;
+        line-height: 1;
+    }
+
+    .ticket-reference-collapsible[open] > .ticket-reference-collapsible-summary::after {
+        content: '−';
+    }
+
+    .ticket-reference-collapsible-summary:hover {
+        background: #eff4ff;
+    }
+
+    .ticket-reference-collapsible-summary:focus-visible {
+        position: relative;
+        z-index: 1;
+        outline: 3px solid rgba(0, 55, 176, 0.2);
+        outline-offset: -3px;
+    }
+
+    .ticket-reference-action-form {
+        display: flex;
+        flex: 0 0 auto;
+    }
+
+    .ticket-reference-action-button {
+        display: inline-flex;
+        min-height: 2.85rem;
+        cursor: pointer;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        border: 1px solid transparent;
+        border-radius: 0.85rem;
+        padding: 0.7rem 1rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        line-height: 1.2;
+        white-space: nowrap;
+        text-decoration: none;
+        box-shadow: 0 7px 15px rgba(11, 28, 48, 0.12);
+        transition: background-color 160ms ease, box-shadow 160ms ease, color 160ms ease, transform 160ms ease;
+    }
+
+    .ticket-reference-action-button svg {
+        height: 1.15rem;
+        width: 1.15rem;
+        flex: 0 0 auto;
+    }
+
+    .ticket-reference-action-button:hover {
+        box-shadow: 0 9px 18px rgba(11, 28, 48, 0.16);
+        transform: translateY(-1px);
+    }
+
+    .ticket-reference-action-button:focus-visible {
+        outline: 3px solid rgba(0, 55, 176, 0.2);
+        outline-offset: 3px;
+    }
+
+    .ticket-reference-action-button--danger {
+        background: #ba1a1a;
+        color: #ffffff;
+        box-shadow: 0 7px 15px rgba(186, 26, 26, 0.2);
+    }
+
+    .ticket-reference-action-button--danger:hover,
+    .ticket-reference-action-button--danger:focus-visible {
+        background: #93000a;
+        color: #ffffff;
+        outline-color: rgba(186, 26, 26, 0.25);
+    }
+
+    .ticket-reference-action-button--success {
+        background: #087f5b;
+        color: #ffffff;
+        box-shadow: 0 7px 15px rgba(8, 127, 91, 0.2);
+    }
+
+    .ticket-reference-action-button--success:hover,
+    .ticket-reference-action-button--success:focus-visible {
+        background: #066448;
+        color: #ffffff;
+        outline-color: rgba(8, 127, 91, 0.25);
+    }
+
+    .ticket-reference-action-button--warning {
+        background: #d99d18;
+        color: #3d2b00;
+        box-shadow: 0 7px 15px rgba(128, 91, 0, 0.18);
+    }
+
+    .ticket-reference-action-button--warning:hover,
+    .ticket-reference-action-button--warning:focus-visible {
+        background: #b9810e;
+        color: #2f2100;
+        outline-color: rgba(128, 91, 0, 0.25);
+    }
+
+    .ticket-reference-action-button--reopen {
+        background: #4355a6;
+        color: #ffffff;
+        box-shadow: 0 7px 15px rgba(67, 85, 166, 0.2);
+    }
+
+    .ticket-reference-action-button--reopen:hover,
+    .ticket-reference-action-button--reopen:focus-visible {
+        background: #34438b;
+        color: #ffffff;
+        outline-color: rgba(67, 85, 166, 0.25);
+    }
+
+    .ticket-reference-eyebrow {
+        color: #0037b0;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        line-height: 1.25;
+        text-transform: uppercase;
+    }
+
+    .ticket-reference-section-title,
+    .ticket-reference-subject {
+        color: #0b1c30;
+        font-size: 1.35rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1.35;
+    }
+
+    .ticket-reference-subject {
+        font-size: 1.45rem;
+    }
+
+    .ticket-reference-section-description {
+        margin-top: 0.35rem;
+        color: #434655;
+        font-size: 0.85rem;
+        line-height: 1.55;
+    }
+
+    .ticket-reference-description,
+    .ticket-reference-body-copy {
+        color: #29354b;
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    .ticket-reference-description > * + * {
+        margin-top: 1rem;
+    }
+
+    .ticket-reference-subsection {
+        border-top: 1px solid #c4c5d7;
+        padding-top: 1.25rem;
+    }
+
+    .ticket-reference-subsection--solution {
+        border-top-color: #b9c7ff;
+    }
+
+    .ticket-reference-info-label,
+    .ticket-reference-field-label {
+        color: #434655;
+        font-size: 0.78rem;
+        font-weight: 700;
+        line-height: 1.4;
+    }
+
+    .ticket-reference-field-value {
+        margin-top: 0.3rem;
+        color: #29354b;
+        font-size: 0.9rem;
+        line-height: 1.55;
+        overflow-wrap: anywhere;
+    }
+
+    .ticket-reference-textarea {
+        display: block;
+        width: 100%;
+        min-height: 7rem;
+        resize: vertical;
+        border: 1px solid #c4c5d7;
+        border-radius: 0.25rem;
+        background: #ffffff;
+        color: #0b1c30;
+        font-size: 0.9rem;
+        line-height: 1.55;
+        padding: 0.8rem;
+        outline: none;
+        transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .ticket-reference-textarea::placeholder {
+        color: #747686;
+    }
+
+    .ticket-reference-textarea:focus {
+        border-color: #0037b0;
+        box-shadow: 0 0 0 3px rgba(0, 55, 176, 0.14);
+    }
+
+    .ticket-reference-reply {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .ticket-reference-avatar,
+    .ticket-reference-assignee-avatar {
+        display: inline-flex;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        background: #dce9ff;
+        color: #25344c;
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    .ticket-reference-avatar {
+        height: 3rem;
+        width: 3rem;
+    }
+
+    .ticket-reference-file-input {
+        position: absolute;
+        height: 1px;
+        width: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+    }
+
+    .ticket-reference-file-input:focus + div .ticket-reference-attach-label {
+        outline: 3px solid rgba(0, 55, 176, 0.2);
+        outline-offset: 3px;
+    }
+
+    .ticket-reference-attach-label {
+        display: inline-flex;
+        cursor: pointer;
+        align-items: center;
+        gap: 0.35rem;
+        color: #0037b0;
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    .ticket-reference-attach-label:hover {
+        color: #1d4ed8;
+        text-decoration: underline;
+        text-underline-offset: 0.2rem;
+    }
+
+    .ticket-reference-attach-label:focus-within {
+        outline: 3px solid rgba(0, 55, 176, 0.2);
+        outline-offset: 3px;
+    }
+
+    .ticket-reference-file-help,
+    .ticket-reference-info-help {
+        color: #747686;
+        font-size: 0.75rem;
+        line-height: 1.5;
+    }
+
+    .ticket-reference-info-list {
+        padding: 1.25rem;
+    }
+
+    .ticket-reference-info-item + .ticket-reference-info-item {
+        margin-top: 1.25rem;
+    }
+
+    .ticket-reference-info-value {
+        margin-top: 0.35rem;
+        color: #0b1c30;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+    }
+
+    .ticket-reference-info-help {
+        margin-top: 0.3rem;
+    }
+
+    .ticket-reference-info-divider {
+        height: 1px;
+        margin: 1.25rem 0;
+        background: #c4c5d7;
+    }
+
+    .ticket-reference-assignee {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        margin-top: 0.6rem;
+    }
+
+    .ticket-reference-assignee-avatar {
+        height: 2.5rem;
+        width: 2.5rem;
+    }
+
+    .ticket-reference-attachment-link {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 0.65rem;
+        border: 1px solid #c4c5d7;
+        border-radius: 0.25rem;
+        background: #ffffff;
+        padding: 0.75rem;
+        transition: border-color 160ms ease, background-color 160ms ease;
+    }
+
+    .ticket-reference-attachment-link:hover {
+        border-color: #0037b0;
+        background: #eff4ff;
+    }
+
+    .ticket-reference-attachment-link:focus-visible,
+    .ticket-reference-attach-label:focus-visible {
+        outline: 3px solid rgba(0, 55, 176, 0.2);
+        outline-offset: 2px;
+    }
+
+    .ticket-reference-attachment-icon {
+        display: inline-flex;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: center;
+        color: #747686;
+    }
+
+    .ticket-reference-empty {
+        border: 1px dashed #c4c5d7;
+        border-radius: 0.5rem;
+        background: #f8f9ff;
+        color: #434655;
+        font-size: 0.85rem;
+        line-height: 1.5;
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .ticket-reference-alert {
+        border: 1px solid #f2b8b5;
+        border-radius: 0.75rem;
+        background: #fff5f4;
+        padding: 1rem 1.25rem;
+    }
+
+    .ticket-reference-alert-title {
+        color: #93000a;
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    .ticket-reference-alert-body {
+        margin-top: 0.35rem;
+        color: #6f1d1b;
+        font-size: 0.9rem;
+        line-height: 1.55;
+        white-space: pre-line;
+    }
+
+    .ticket-reference-solution {
+        border: 1px solid #b9c7ff;
+        border-radius: 0.5rem;
+        background: #f1f4ff;
+        padding: 1rem;
+    }
+
+    .ticket-reference-action {
+        display: flex;
+        min-height: 100%;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 1rem;
+        border-radius: 0.5rem;
+        padding: 1rem;
+    }
+
+    .ticket-reference-action--success {
+        border: 1px solid #b6decf;
+        background: #f1fbf7;
+    }
+
+    .ticket-reference-action--warning {
+        border: 1px solid #ecd18a;
+        background: #fffaf0;
+    }
+
+    .ticket-reference-action-title {
+        color: #0b1c30;
+        font-size: 0.95rem;
+        font-weight: 700;
+    }
+
+    .ticket-reference-action-copy {
+        margin-top: 0.35rem;
+        color: #434655;
+        font-size: 0.78rem;
+        line-height: 1.5;
+    }
+
+    .ticket-reference-timeline {
+        position: relative;
+        list-style: none;
+        padding: 0 0 0 0.15rem;
+    }
+
+    .ticket-reference-timeline::before {
+        position: absolute;
+        top: 1.25rem;
+        bottom: 1.25rem;
+        left: 0.7rem;
+        width: 2px;
+        background: #c4c5d7;
+        content: '';
+    }
+
+    .ticket-reference-timeline-item {
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding-bottom: 1.5rem;
+    }
+
+    .ticket-reference-timeline-item:last-child {
+        padding-bottom: 0;
+    }
+
+    .ticket-reference-timeline-marker {
+        position: relative;
+        z-index: 1;
+        display: inline-flex;
+        height: 1.45rem;
+        width: 1.45rem;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: center;
+        border: 3px solid #ffffff;
+        border-radius: 9999px;
+        background: #dce9ff;
+        color: #0037b0;
+        box-shadow: 0 0 0 1px #c4c5d7;
+    }
+
+    .ticket-reference-timeline-marker--success {
+        background: #2151da;
+        color: #ffffff;
+        box-shadow: none;
+    }
+
+    .ticket-reference-timeline-marker--danger {
+        background: #fff1f2;
+        color: #ba1a1a;
+        box-shadow: 0 0 0 1px #f2b8b5;
+    }
+
+    .ticket-reference-timeline-marker--attention {
+        background: #fff7df;
+        color: #805b00;
+        box-shadow: 0 0 0 1px #ecd18a;
+    }
+
+    .ticket-reference-timeline-marker--current {
+        background: #ffffff;
+        box-shadow: 0 0 0 2px #0037b0;
+    }
+
+    @media (max-width: 639px) {
+        .ticket-reference-page-header {
+            flex-direction: column;
+        }
+
+        .ticket-reference-page-actions {
+            width: 100%;
+            justify-content: flex-start;
+        }
+
+        .ticket-reference-page-actions > .ticket-reference-action-form,
+        .ticket-reference-page-actions > .ticket-reference-action-button {
+            flex: 0 0 auto;
+        }
+
+        .ticket-reference-card-body {
+            padding: 1rem;
+        }
+
+        .ticket-reference-info-list {
+            padding: 1rem;
+        }
+
+        .ticket-reference-reply {
+            gap: 0.75rem;
+        }
+
+        .ticket-reference-avatar {
+            height: 2.5rem;
+            width: 2.5rem;
+        }
+    }
 }

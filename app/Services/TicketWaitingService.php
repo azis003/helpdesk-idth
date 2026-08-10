@@ -112,13 +112,55 @@ class TicketWaitingService
         $this->authorization->authorize($actor, 'replyRequester', $ticket, 'ticket.reply.requester');
         $now = Carbon::now(config('app.timezone'));
 
-        [$result, $assignee, $commentId] = $this->database->transaction(function () use ($actor, $ticket, $body, $fileGroups, $now): array {
+        [$result, $assignee, $commentId, $returnedToWork] = $this->database->transaction(function () use ($actor, $ticket, $body, $fileGroups, $now): array {
             $lockedTicket = $this->lockTicket($ticket, $actor, 'ticket.reply.requester');
             $this->authorization->authorize($actor, 'replyRequester', $lockedTicket, 'ticket.reply.requester');
             $wait = $lockedTicket->waits()->active()->requester()->latest('started_at')->lockForUpdate()->first();
 
-            if ($wait === null || $lockedTicket->status !== TicketStatus::MenungguPemohon) {
-                $this->deny($actor, $lockedTicket, 'ticket.reply.requester', 'Tiket tidak lagi menunggu balasan Pemohon.');
+            if ($lockedTicket->status === TicketStatus::MenungguPemohon) {
+                if ($wait === null) {
+                    $this->deny($actor, $lockedTicket, 'ticket.reply.requester', 'Tiket tidak lagi menunggu balasan Pemohon.');
+                }
+
+                $comment = $this->comments->create(
+                    $lockedTicket,
+                    $actor,
+                    TicketCommentVisibility::Public,
+                    $body,
+                    $fileGroups,
+                );
+                $assigneeId = $wait->from_assignee_id ?: $lockedTicket->assigned_to_id;
+                $assignedTier = $wait->from_assigned_tier ?: $lockedTicket->assigned_tier;
+                $wait->forceFill([
+                    'ended_at' => $now,
+                    'ended_by_id' => $actor->getKey(),
+                    'end_reason' => TicketWaitEndReason::RequesterReplied,
+                ])->save();
+                $lockedTicket->forceFill([
+                    'status' => TicketStatus::Dikerjakan,
+                    'assigned_to_id' => $assigneeId,
+                    'assigned_tier' => $assignedTier,
+                ])->save();
+                $this->recordStatus($lockedTicket, TicketStatus::MenungguPemohon, TicketStatus::Dikerjakan, 'ticket.reply.requester', $actor, null, [
+                    'wait_id' => $wait->getKey(),
+                    'comment_id' => $comment->getKey(),
+                    'returned_to_user_id' => $assigneeId,
+                ], $now);
+                $this->sla->resume($lockedTicket, $now);
+                $this->auditLogger->succeeded(
+                    $actor,
+                    'ticket.reply.requester',
+                    $lockedTicket,
+                    'Balasan Pemohon mengakhiri waktu tunggu.',
+                    null,
+                    ['wait_id' => $wait->getKey(), 'comment_id' => $comment->getKey()],
+                );
+
+                return [$lockedTicket->fresh(['requester', 'assignee']), $assigneeId, $comment->getKey(), true];
+            }
+
+            if ($wait !== null) {
+                $this->deny($actor, $lockedTicket, 'ticket.reply.requester', 'Tiket sedang memiliki waktu tunggu yang belum selesai.');
             }
 
             $comment = $this->comments->create(
@@ -128,34 +170,17 @@ class TicketWaitingService
                 $body,
                 $fileGroups,
             );
-            $assigneeId = $wait->from_assignee_id ?: $lockedTicket->assigned_to_id;
-            $assignedTier = $wait->from_assigned_tier ?: $lockedTicket->assigned_tier;
-            $wait->forceFill([
-                'ended_at' => $now,
-                'ended_by_id' => $actor->getKey(),
-                'end_reason' => TicketWaitEndReason::RequesterReplied,
-            ])->save();
-            $lockedTicket->forceFill([
-                'status' => TicketStatus::Dikerjakan,
-                'assigned_to_id' => $assigneeId,
-                'assigned_tier' => $assignedTier,
-            ])->save();
-            $this->recordStatus($lockedTicket, TicketStatus::MenungguPemohon, TicketStatus::Dikerjakan, 'ticket.reply.requester', $actor, null, [
-                'wait_id' => $wait->getKey(),
-                'comment_id' => $comment->getKey(),
-                'returned_to_user_id' => $assigneeId,
-            ], $now);
-            $this->sla->resume($lockedTicket, $now);
+            $assigneeId = $lockedTicket->assigned_to_id;
             $this->auditLogger->succeeded(
                 $actor,
                 'ticket.reply.requester',
                 $lockedTicket,
-                'Balasan Pemohon mengakhiri waktu tunggu.',
+                'Pesan Pemohon disimpan.',
                 null,
-                ['wait_id' => $wait->getKey(), 'comment_id' => $comment->getKey()],
+                ['comment_id' => $comment->getKey(), 'visibility' => TicketCommentVisibility::Public->value],
             );
 
-            return [$lockedTicket->fresh(['requester', 'assignee']), $assigneeId, $comment->getKey()];
+            return [$lockedTicket->fresh(['requester', 'assignee']), $assigneeId, $comment->getKey(), false];
         });
 
         if ($assignee !== null && (int) $assignee !== (int) $actor->getKey()) {
@@ -163,7 +188,9 @@ class TicketWaitingService
                 $result,
                 'requester_reply',
                 'Pemohon membalas tiket',
-                "Pemohon membalas tiket {$result->ticket_number} dan tiket kembali dikerjakan.",
+                $returnedToWork
+                    ? "Pemohon membalas tiket {$result->ticket_number} dan tiket kembali dikerjakan."
+                    : "Pemohon menambahkan pesan pada tiket {$result->ticket_number}.",
                 [$assignee],
                 "ticket:{$result->getKey()}:comment:{$commentId}",
             );
