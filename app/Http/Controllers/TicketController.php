@@ -26,6 +26,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Services\DatabaseChangeControlService;
 use App\Services\DomainAuthorization;
+use App\Services\RequesterTicketList;
 use App\Services\RequesterTicketPresenter;
 use App\Services\SkillSuggestionService;
 use App\Services\TeamChairTicketProjection;
@@ -57,6 +58,7 @@ class TicketController extends Controller
         private readonly DatabaseChangeControlService $specialControls,
         private readonly TeamChairTicketProjection $teamChairProjection,
         private readonly RequesterTicketPresenter $requesterPresenter,
+        private readonly RequesterTicketList $requesterList,
     ) {}
 
     public function index(Request $request): mixed
@@ -74,6 +76,17 @@ class TicketController extends Controller
                 'search' => '',
                 'perPage' => 15,
             ]);
+        }
+
+        if ($this->isRequesterOnlyList($actor)) {
+            $data = $this->requesterList->build($request, $actor);
+            $data['requesterActions'] = $data['tickets']->getCollection()
+                ->mapWithKeys(fn (Ticket $ticket): array => [
+                    $ticket->getKey() => $this->requesterActionFor($actor, $ticket),
+                ])
+                ->all();
+
+            return view('tickets.requester-index', $data);
         }
 
         $search = trim((string) $request->query('q', ''));
@@ -156,6 +169,22 @@ class TicketController extends Controller
             'perPage' => $perPage,
             'requesterActions' => $requesterActions,
         ]);
+    }
+
+    /**
+     * Pemohon murni memakai halaman "Tiket saya" yang khusus. Agen, Ketua Tim
+     * Kerja, dan Super Admin tetap memakai daftar operasional walaupun mereka
+     * juga memiliki tiket sendiri.
+     */
+    private function isRequesterOnlyList(User $actor): bool
+    {
+        return $actor->hasRole(Role::Pemohon)
+            && ! $actor->hasAnyRole([
+                Role::SuperAdmin,
+                Role::AgenTier1,
+                Role::AgenTier2,
+                Role::KetuaTimKerja,
+            ]);
     }
 
     /**
