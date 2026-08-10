@@ -196,7 +196,7 @@
                         <tr>
                             <td colspan="4">
                                 <div class="ui-empty m-4">
-                                    <h3 class="text-sm font-extrabold text-[#526f79]">Belum ada perubahan tersimpan</h3>
+                                    <h4 class="text-sm font-extrabold text-[#526f79]">Belum ada perubahan tersimpan</h4>
                                     <p class="mx-auto mt-2 max-w-md text-xs leading-5 text-[#78909a]">Aplikasi masih menggunakan nilai awal. Simpan perubahan pertama untuk mulai membangun riwayat identitas.</p>
                                 </div>
                             </td>
@@ -229,7 +229,7 @@
                 </article>
             @empty
                 <div class="ui-empty m-4">
-                    <h3 class="text-sm font-extrabold text-[#526f79]">Belum ada perubahan tersimpan</h3>
+                    <h4 class="text-sm font-extrabold text-[#526f79]">Belum ada perubahan tersimpan</h4>
                     <p class="mx-auto mt-2 max-w-md text-xs leading-5 text-[#78909a]">Nilai awal masih digunakan sampai Anda menyimpan identitas baru.</p>
                 </div>
             @endforelse

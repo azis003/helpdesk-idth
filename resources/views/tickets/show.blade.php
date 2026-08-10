@@ -585,7 +585,7 @@
                         </span>
                         <div>
                             <p class="ui-ticket-section-kicker">Penanganan</p>
-                            <h2 class="mt-0.5 text-sm font-extrabold tracking-tight text-[#263a43]">Tindakan tiket</h2>
+                            <h3 class="mt-0.5 text-sm font-extrabold tracking-tight text-[#263a43]">Tindakan tiket</h3>
                         </div>
                     </div>
 
@@ -597,7 +597,7 @@
                         </span>
                         <div class="min-w-0">
                             <p class="ui-ticket-section-kicker">Aksi berikutnya</p>
-                            <h2 id="next-step-heading" class="mt-0.5 text-sm font-extrabold leading-5 tracking-tight text-[#263a43]">{{ $nextStepTitle }}</h2>
+                            <h3 id="next-step-heading" class="mt-0.5 text-sm font-extrabold leading-5 tracking-tight text-[#263a43]">{{ $nextStepTitle }}</h3>
                         </div>
                 </section>
                 </div>

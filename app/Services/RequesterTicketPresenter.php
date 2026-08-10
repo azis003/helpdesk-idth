@@ -400,8 +400,8 @@ class RequesterTicketPresenter
     }
 
     /**
-     * Requester-safe history: status milestones and shared files only.
-     * Triage, tier routing and priority changes stay out of this screen.
+     * Requester-safe history: status transitions only.
+     * Attachments remain available in the dedicated attachments section.
      *
      * @return list<array{title: string, description: string, occurredAt: ?Carbon, tone: string}>
      */
@@ -415,15 +415,6 @@ class RequesterTicketPresenter
             if ($event !== null) {
                 $events[] = $event;
             }
-        }
-
-        foreach ($ticket->attachments as $attachment) {
-            $events[] = [
-                'title' => 'Lampiran ditambahkan',
-                'description' => (string) $attachment->original_name,
-                'occurredAt' => $attachment->created_at,
-                'tone' => 'neutral',
-            ];
         }
 
         usort($events, static function (array $left, array $right): int {

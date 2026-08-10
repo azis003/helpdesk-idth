@@ -108,7 +108,7 @@
                                 <div class="flex items-start justify-between gap-3">
                                     <div class="min-w-0">
                                         <p class="text-xs font-extrabold text-[#1d5d72]">{{ $row['ticket_number'] }}</p>
-                                        <h3 class="mt-2 text-sm font-extrabold leading-5 text-[#35505b]">{{ $row['service'] ?: 'Layanan belum tercatat' }}</h3>
+                                        <h4 class="mt-2 text-sm font-extrabold leading-5 text-[#35505b]">{{ $row['service'] ?: 'Layanan belum tercatat' }}</h4>
                                     </div>
                                     <span class="rounded-lg border border-[#dce7eb] bg-white px-2 py-1 text-[0.65rem] font-extrabold text-[#526f79]">{{ $row['final_status'] ?: 'Belum berstatus' }}</span>
                                 </div>

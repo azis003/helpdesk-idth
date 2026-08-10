@@ -90,7 +90,7 @@
                             <a href="{{ route('tickets.show', $ticket) }}" class="text-xs font-extrabold text-[#1d5d72] hover:underline">{{ $ticket->ticket_number ?? 'Tiket #'.$ticket->id }}</a>
                             <x-priority-badge :priority="$ticket->priority" />
                         </div>
-                        <h3 class="mt-3 text-sm font-extrabold leading-5 text-[#35505b]">{{ $ticket->subject }}</h3>
+                        <h4 class="mt-3 text-sm font-extrabold leading-5 text-[#35505b]">{{ $ticket->subject }}</h4>
                         <p class="mt-1 text-xs text-[#78909a]">{{ $ticket->requester_name_snapshot ?? $ticket->requester?->name ?? 'Belum tercatat' }} · {{ $ticket->problemCategory?->name ?? 'Belum dikategorikan' }}</p>
                         <p class="mt-1 text-xs text-[#78909a]">{{ ($ticket->submitted_at ?? $ticket->created_at)?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</p>
                         <form method="POST" action="{{ route('tickets.claim', $ticket) }}" class="mt-4" data-queue-claim>

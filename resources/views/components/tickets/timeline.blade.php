@@ -26,7 +26,7 @@
 
                 <div class="min-w-0 flex-1">
                     <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                        <h3 class="text-sm font-bold {{ $isCurrent ? 'text-[#0037b0]' : 'text-[#0b1c30]' }}">{{ $event['title'] }}</h3>
+                        <h4 class="text-sm font-bold {{ $isCurrent ? 'text-[#0037b0]' : 'text-[#0b1c30]' }}">{{ $event['title'] }}</h4>
                         @if ($event['occurredAt'])
                             <time class="text-sm text-[#434655]" datetime="{{ $event['occurredAt']->toIso8601String() }}">{{ $event['occurredAt']->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }} WIB</time>
                         @endif

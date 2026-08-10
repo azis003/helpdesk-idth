@@ -123,7 +123,7 @@
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                             <p class="text-xs font-extrabold tracking-[0.08em] text-[#26677b]">{{ $serviceType->code }}</p>
-                            <h3 class="mt-1 text-sm font-extrabold leading-5 text-[#17313c]">{{ $serviceType->name }}</h3>
+                            <h4 class="mt-1 text-sm font-extrabold leading-5 text-[#17313c]">{{ $serviceType->name }}</h4>
                         </div>
                         <span class="ui-status shrink-0 {{ $serviceType->is_active ? 'ui-status-active' : 'ui-status-inactive' }}">{{ $serviceType->is_active ? 'Aktif' : 'Nonaktif' }}</span>
                     </div>

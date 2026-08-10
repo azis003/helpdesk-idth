@@ -15,7 +15,7 @@
     };
 @endphp
 
-<span {{ $attributes->merge(['class' => "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-extrabold {$tone}"]) }}>
+<span {{ $attributes->merge(['class' => "ui-badge inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 {$tone}"]) }}>
     <span class="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true"></span>
     {{ $status?->label() ?? 'Status tidak diketahui' }}
 </span>

@@ -45,7 +45,7 @@
         @if ($isRequesterOnly)
             <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                    <h1 id="dashboard-title" class="mt-2 text-2xl font-extrabold tracking-[-0.04em] sm:text-3xl">Butuh bantuan TI?</h1>
+                    <h1 id="dashboard-title" class="ui-hero-title">Butuh bantuan TI?</h1>
                     <p class="mt-2 max-w-2xl text-sm leading-6 text-[#d7e8ed]">Buat tiket untuk melaporkan kendala atau mengajukan layanan TI</p>
                 </div>
                 <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -59,7 +59,7 @@
             <div class="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
                 <div>
                     <p class="ui-eyebrow ui-eyebrow--inverse"><span class="ui-eyebrow-dot" aria-hidden="true"></span>{{ $branding['tagline'] ?: 'Portal layanan' }} · {{ $branding['application_name'] }}</p>
-                    <h1 id="dashboard-title" class="mt-2 text-2xl font-extrabold tracking-[-0.04em] sm:text-3xl">Selamat datang, {{ $user->name }}</h1>
+                    <h1 id="dashboard-title" class="ui-hero-title">Selamat datang, {{ $user->name }}</h1>
                     <p class="mt-2 max-w-2xl text-sm leading-6 text-[#d7e8ed]">Pantau pekerjaan yang menjadi cakupan peran Anda dalam satu tampilan.</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
@@ -154,7 +154,7 @@
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
                                 <p class="text-xs font-extrabold text-[#1d5d72]">{{ $approval->ticket?->ticket_number ?? 'Tiket #'.$approval->ticket_id }}</p>
-                                <h3 class="mt-2 truncate text-sm font-extrabold text-[#35505b]">{{ $approval->ticket?->subject ?? 'Tiket tidak tersedia' }}</h3>
+                                <h4 class="mt-2 truncate text-sm font-extrabold text-[#35505b]">{{ $approval->ticket?->subject ?? 'Tiket tidak tersedia' }}</h4>
                             </div>
                             <span class="shrink-0 rounded-full bg-[#fff4d7] px-2.5 py-1 text-[0.68rem] font-extrabold text-[#9a6700]">Menunggu</span>
                         </div>
@@ -180,7 +180,7 @@
             <div class="mt-4 grid gap-3 lg:grid-cols-2">
                 @foreach ($announcements as $announcement)
                     <article class="ui-panel border-l-4 border-l-[#e4a72c] p-5 sm:p-6">
-                        <div class="flex items-start justify-between gap-3"><h3 class="text-sm font-extrabold text-[#263a43]">{{ $announcement->title }}</h3><time class="shrink-0 text-[0.68rem] font-bold text-[#86979e]" datetime="{{ $announcement->starts_at?->toIso8601String() }}">{{ $formatDate($announcement->starts_at) }}</time></div>
+                        <div class="flex items-start justify-between gap-3"><h4 class="text-sm font-extrabold text-[#263a43]">{{ $announcement->title }}</h4><time class="shrink-0 text-[0.68rem] font-bold text-[#86979e]" datetime="{{ $announcement->starts_at?->toIso8601String() }}">{{ $formatDate($announcement->starts_at) }}</time></div>
                         <p class="mt-3 whitespace-pre-line text-sm leading-6 text-[#526f79]">{{ $announcement->body }}</p>
                     </article>
                 @endforeach

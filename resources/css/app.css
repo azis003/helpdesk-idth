@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
@@ -8,16 +9,36 @@
 @theme {
     --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+    --text-base: 0.875rem;
+    --text-base--line-height: 1.25rem;
+    --text-3xl: 1.875rem;
+    --text-3xl--line-height: 2.375rem;
 }
 
 @layer base {
     :root {
         color-scheme: light;
+        --type-h1-size: 1.875rem;
+        --type-h1-line: 2.375rem;
+        --type-h2-size: 1.5rem;
+        --type-h2-line: 2rem;
+        --type-h3-size: 1.25rem;
+        --type-h3-line: 1.75rem;
+        --type-body-md-size: 0.875rem;
+        --type-body-md-line: 1.25rem;
+        --type-body-sm-size: 0.8125rem;
+        --type-body-sm-line: 1.125rem;
+        --type-label-size: 0.75rem;
+        --type-label-line: 1rem;
     }
 
     body {
         background: #f3f6f8;
         color: #14212b;
+        font-family: var(--font-sans);
+        font-size: var(--type-body-md-size);
+        font-weight: 400;
+        line-height: var(--type-body-md-line);
     }
 
     body.is-processing {
@@ -94,24 +115,25 @@
     .ui-login-logo-caption {
         margin-top: 0.45rem;
         color: #737b7f;
-        font-size: 0.78rem;
+        font-size: var(--type-body-sm-size);
+        line-height: var(--type-body-sm-line);
         letter-spacing: 0.02em;
     }
 
     .ui-login-title {
         margin-top: 3rem;
         color: #3f4548;
-        font-size: 1.45rem;
-        font-weight: 400;
-        line-height: 1.25;
+        font-size: var(--type-h1-size);
+        font-weight: 700;
+        line-height: var(--type-h1-line);
     }
 
     .ui-login-description {
         max-width: 26rem;
         margin-top: 0.5rem;
         color: #6d767a;
-        font-size: 0.82rem;
-        line-height: 1.5;
+        font-size: var(--type-body-md-size);
+        line-height: var(--type-body-md-line);
     }
 
     .ui-login-form {
@@ -125,8 +147,9 @@
 
     .ui-login-form .ui-field-label {
         color: #24282b;
-        font-size: 0.73rem;
+        font-size: var(--type-label-size);
         font-weight: 600;
+        line-height: var(--type-label-line);
     }
 
     .ui-login-form .ui-input.ui-login-input {
@@ -135,7 +158,8 @@
         border-color: #c8ced1;
         border-radius: 0.2rem;
         padding: 0.45rem 0.7rem;
-        font-size: 0.78rem;
+        font-size: var(--type-body-md-size);
+        line-height: var(--type-body-md-line);
         box-shadow: none;
     }
 
@@ -145,7 +169,8 @@
     }
 
     .ui-login-form .ui-field-help {
-        font-size: 0.7rem;
+        font-size: var(--type-body-sm-size);
+        line-height: var(--type-body-sm-line);
     }
 
     .ui-login-submit {
@@ -157,8 +182,9 @@
         background: #ffd438;
         color: #2b2c2d;
         cursor: pointer;
-        font-size: 0.78rem;
+        font-size: var(--type-label-size);
         font-weight: 600;
+        line-height: var(--type-label-line);
         padding: 0.45rem 0.8rem;
         transition: background-color 160ms ease, border-color 160ms ease;
     }
@@ -176,8 +202,8 @@
     .ui-login-note,
     .ui-login-footer {
         color: #90979a;
-        font-size: 0.68rem;
-        line-height: 1.6;
+        font-size: var(--type-body-sm-size);
+        line-height: var(--type-body-sm-line);
     }
 
     .ui-login-note {
@@ -259,8 +285,9 @@
         border-radius: 0.65rem;
         background: #ffd44f;
         color: #151515;
-        font-size: 0.9rem;
-        font-weight: 800;
+        font-size: var(--type-body-md-size);
+        font-weight: 700;
+        line-height: var(--type-body-md-line);
         letter-spacing: -0.04em;
         box-shadow: 0 8px 16px -12px rgba(185, 145, 0, 0.75);
     }
@@ -269,10 +296,10 @@
         display: block;
         margin: 0 0 0.25rem 0.8rem;
         color: #92a1a7;
-        font-size: 0.65rem;
-        font-weight: 800;
-        letter-spacing: 0.16em;
-        line-height: 1.25;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        line-height: var(--type-label-line);
         text-transform: uppercase;
     }
 
@@ -354,8 +381,9 @@
         width: 100%;
         border-radius: 0.35rem;
         color: #6d7b82;
-        font-size: 0.875rem;
+        font-size: var(--type-body-md-size);
         font-weight: 600;
+        line-height: var(--type-body-md-line);
         padding: 0.7rem 0.8rem;
         transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
     }
@@ -395,8 +423,9 @@
         background: rgba(255, 255, 255, 0.96);
         box-shadow: 0 18px 45px rgba(20, 44, 55, 0.22);
         color: #274752;
-        font-size: 0.82rem;
-        font-weight: 750;
+        font-size: var(--type-body-md-size);
+        font-weight: 600;
+        line-height: var(--type-body-md-line);
         padding: 1rem 1.15rem;
     }
 
@@ -421,7 +450,8 @@
         min-height: 2.5rem;
         padding-top: 0.55rem;
         padding-bottom: 0.55rem;
-        font-size: 0.78rem;
+        font-size: var(--type-body-sm-size);
+        line-height: var(--type-body-sm-line);
     }
 
     .ui-nav-sublink .ui-nav-icon {
@@ -507,16 +537,18 @@
 
     .ui-topbar-kicker {
         color: #72909a;
-        font-size: 0.65rem;
-        font-weight: 800;
-        letter-spacing: 0.15em;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        line-height: var(--type-label-line);
         text-transform: uppercase;
     }
 
     .ui-topbar-title {
         color: #14212b;
-        font-size: 0.92rem;
-        font-weight: 700;
+        font-size: var(--type-body-md-size);
+        font-weight: 600;
+        line-height: var(--type-body-md-line);
     }
 
     .ui-main {
@@ -538,10 +570,10 @@
         align-items: center;
         gap: 0.5rem;
         color: #315d6b;
-        font-size: 0.68rem;
-        font-weight: 800;
-        letter-spacing: 0.15em;
-        line-height: 1.25;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        line-height: var(--type-label-line);
         text-transform: uppercase;
     }
 
@@ -560,10 +592,10 @@
     .ui-page-title {
         margin-top: 0.7rem;
         color: #10232d;
-        font-size: clamp(1.8rem, 2.2vw, 2.35rem);
-        font-weight: 750;
-        letter-spacing: -0.045em;
-        line-height: 1.08;
+        font-size: var(--type-h1-size);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: var(--type-h1-line);
     }
 
     .ui-ticket-detail-header {
@@ -614,10 +646,10 @@
 
     .ui-ticket-detail-kicker {
         color: #6d8791;
-        font-size: 0.7rem;
-        font-weight: 850;
-        letter-spacing: 0.11em;
-        line-height: 1.3;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        line-height: var(--type-label-line);
         text-transform: uppercase;
     }
 
@@ -625,10 +657,10 @@
         margin-top: 0.1rem;
         max-width: 58rem;
         color: #10232d;
-        font-size: clamp(1.3rem, 1.7vw, 1.7rem);
+        font-size: var(--type-h1-size);
         font-weight: 700;
-        letter-spacing: -0.025em;
-        line-height: 1.25;
+        letter-spacing: -0.02em;
+        line-height: var(--type-h1-line);
         overflow-wrap: anywhere;
     }
 
@@ -649,17 +681,17 @@
         border-radius: 9999px;
         background: #eef7f8;
         color: #147a79;
-        font-size: 0.65rem;
-        line-height: 1.25rem;
+        font-size: var(--type-label-size);
+        line-height: var(--type-label-line);
         padding: 0 0.35rem;
     }
 
     .ui-ticket-section-kicker {
         color: #78909a;
-        font-size: 0.66rem;
-        font-weight: 850;
-        letter-spacing: 0.12em;
-        line-height: 1.25;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        line-height: var(--type-label-line);
         text-transform: uppercase;
     }
 
@@ -681,9 +713,10 @@
 
     .ui-ticket-reference-heading-title {
         color: #263a43;
-        font-size: 1.25rem;
-        font-weight: 700;
-        letter-spacing: -0.02em;
+        font-size: var(--type-h2-size);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        line-height: var(--type-h2-line);
     }
 
     .ui-ticket-detail-section {
@@ -702,17 +735,17 @@
 
     .ui-ticket-meta-label {
         color: #596d75;
-        font-size: 0.72rem;
-        font-weight: 800;
-        line-height: 1.35;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        line-height: var(--type-label-line);
     }
 
     .ui-ticket-meta-value {
         margin-top: 0.3rem;
         color: #35505b;
-        font-size: 0.82rem;
-        font-weight: 700;
-        line-height: 1.55;
+        font-size: var(--type-body-md-size);
+        font-weight: 500;
+        line-height: var(--type-body-md-line);
         overflow-wrap: anywhere;
     }
 
@@ -737,9 +770,10 @@
 
     .ui-ticket-meta--reference .ui-ticket-meta-label {
         color: #71838b;
-        font-size: 0.88rem;
-        font-weight: 500;
+        font-size: var(--type-label-size);
+        font-weight: 600;
         text-align: left;
+        line-height: var(--type-label-line);
     }
 
     .ui-ticket-meta--reference .ui-ticket-meta-label-inner {
@@ -772,9 +806,9 @@
     .ui-ticket-meta--reference .ui-ticket-meta-value {
         margin-top: 0;
         color: #1f3440;
-        font-size: 0.95rem;
+        font-size: var(--type-body-md-size);
         font-weight: 500;
-        line-height: 1.5;
+        line-height: var(--type-body-md-line);
     }
 
     .ui-ticket-meta--reference .ui-ticket-meta-value--nowrap {
@@ -793,9 +827,9 @@
 
     .ui-ticket-content-label {
         color: #263a43;
-        font-size: 0.78rem;
-        font-weight: 850;
-        line-height: 1.35;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        line-height: var(--type-label-line);
     }
 
     .ui-ticket-content-text {
@@ -803,8 +837,8 @@
         white-space: pre-line;
         max-width: 52rem;
         color: #455a64;
-        font-size: 0.83rem;
-        line-height: 1.7;
+        font-size: var(--type-body-md-size);
+        line-height: var(--type-body-md-line);
     }
 
     .ui-ticket-content-block--solution {
@@ -972,8 +1006,8 @@
         margin-top: 0.8rem;
         max-width: 48rem;
         color: #5d737d;
-        font-size: 0.9rem;
-        line-height: 1.7;
+        font-size: var(--type-body-md-size);
+        line-height: var(--type-body-md-line);
     }
 
     .ui-announcement-hero {
@@ -1000,10 +1034,10 @@
 
     .ui-announcement-hero-label {
         color: #1d6b7c;
-        font-size: 0.67rem;
-        font-weight: 850;
-        letter-spacing: 0.14em;
-        line-height: 1.25;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        line-height: var(--type-label-line);
         text-transform: uppercase;
     }
 
@@ -1011,18 +1045,18 @@
         max-width: 42rem;
         margin-top: 0.65rem;
         color: #173f4d;
-        font-size: clamp(1.25rem, 2vw, 1.7rem);
-        font-weight: 800;
-        letter-spacing: -0.035em;
-        line-height: 1.15;
+        font-size: var(--type-h2-size);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        line-height: var(--type-h2-line);
     }
 
     .ui-announcement-hero-copy {
         max-width: 38rem;
         margin-top: 0.7rem;
         color: #55747f;
-        font-size: 0.83rem;
-        line-height: 1.65;
+        font-size: var(--type-body-md-size);
+        line-height: var(--type-body-md-line);
     }
 
     .ui-announcement-signal {
@@ -1036,9 +1070,10 @@
 
     .ui-announcement-signal-label {
         color: #7b969f;
-        font-size: 0.64rem;
-        font-weight: 800;
+        font-size: var(--type-label-size);
+        font-weight: 600;
         letter-spacing: 0.1em;
+        line-height: var(--type-label-line);
         text-transform: uppercase;
     }
 
@@ -1047,8 +1082,9 @@
         gap: 0.55rem;
         margin-top: 0.75rem;
         color: #355966;
-        font-size: 0.75rem;
-        font-weight: 750;
+        font-size: var(--type-body-sm-size);
+        font-weight: 400;
+        line-height: var(--type-body-sm-line);
     }
 
     .ui-announcement-signal-list li {
@@ -1074,8 +1110,8 @@
     .ui-announcement-stat-meta {
         margin-top: 0.2rem;
         color: #8aa0a8;
-        font-size: 0.68rem;
-        line-height: 1.4;
+        font-size: var(--type-body-sm-size);
+        line-height: var(--type-body-sm-line);
     }
 
     .ui-announcement-item {
@@ -1120,9 +1156,10 @@
 
     .ui-announcement-preview-label {
         color: #7b969f;
-        font-size: 0.64rem;
-        font-weight: 850;
+        font-size: var(--type-label-size);
+        font-weight: 600;
         letter-spacing: 0.1em;
+        line-height: var(--type-label-line);
         text-transform: uppercase;
     }
 
@@ -1133,8 +1170,9 @@
         border-radius: 9999px;
         background: #f7fbfc;
         color: #55747f;
-        font-size: 0.68rem;
-        font-weight: 800;
+        font-size: var(--type-label-size);
+        font-weight: 500;
+        line-height: var(--type-label-line);
         padding: 0.32rem 0.58rem;
     }
 
@@ -1177,16 +1215,17 @@
 
     .ui-section-title {
         color: #17313c;
-        font-size: 1rem;
-        font-weight: 750;
-        letter-spacing: -0.015em;
+        font-size: var(--type-h2-size);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        line-height: var(--type-h2-line);
     }
 
     .ui-section-description {
         margin-top: 0.3rem;
         color: #6a8089;
-        font-size: 0.8rem;
-        line-height: 1.55;
+        font-size: var(--type-body-sm-size);
+        line-height: var(--type-body-sm-line);
     }
 
     .ui-btn {
@@ -1197,9 +1236,9 @@
         gap: 0.5rem;
         border-radius: 0.75rem;
         padding: 0.65rem 0.95rem;
-        font-size: 0.8rem;
-        font-weight: 750;
-        line-height: 1.2;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        line-height: var(--type-label-line);
         transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
     }
 
@@ -1285,8 +1324,8 @@
         border-radius: 0.7rem;
         background: #ffffff;
         color: #14212b;
-        font-size: 0.85rem;
-        line-height: 1.35;
+        font-size: var(--type-body-md-size);
+        line-height: var(--type-body-md-line);
         outline: none;
         padding: 0.7rem 0.8rem;
         transition: border-color 160ms ease, box-shadow 160ms ease;
@@ -1299,8 +1338,8 @@
         border-radius: 0.7rem;
         background: #ffffff;
         color: #526f79;
-        font-size: 0.78rem;
-        line-height: 1.35;
+        font-size: var(--type-body-sm-size);
+        line-height: var(--type-body-sm-line);
         padding: 0.42rem;
         transition: border-color 160ms ease, box-shadow 160ms ease;
     }
@@ -1318,8 +1357,9 @@
         background: #e8f7fb;
         color: #1d5d72;
         cursor: pointer;
-        font-size: 0.72rem;
-        font-weight: 750;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        line-height: var(--type-label-line);
         padding: 0.45rem 0.7rem;
     }
 
@@ -1338,15 +1378,16 @@
     .ui-field-label {
         display: block;
         color: #35505b;
-        font-size: 0.78rem;
-        font-weight: 750;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        line-height: var(--type-label-line);
     }
 
     .ui-field-help {
         margin-top: 0.28rem;
         color: #78909a;
-        font-size: 0.72rem;
-        line-height: 1.45;
+        font-size: var(--type-body-sm-size);
+        line-height: var(--type-body-sm-line);
     }
 
     .ui-stat-card {
@@ -1374,16 +1415,18 @@
 
     .ui-stat-label {
         color: #718790;
-        font-size: 0.72rem;
-        font-weight: 650;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        line-height: var(--type-label-line);
     }
 
     .ui-stat-value {
         margin-top: 0.15rem;
         color: #17313c;
-        font-size: 1.25rem;
-        font-weight: 800;
-        letter-spacing: -0.03em;
+        font-size: var(--type-h3-size);
+        font-weight: 600;
+        letter-spacing: 0;
+        line-height: var(--type-h3-line);
     }
 
     .ui-status {
@@ -1392,8 +1435,9 @@
         gap: 0.38rem;
         border-radius: 9999px;
         padding: 0.32rem 0.58rem;
-        font-size: 0.68rem;
-        font-weight: 800;
+        font-size: var(--type-label-size);
+        font-weight: 500;
+        line-height: var(--type-label-line);
         white-space: nowrap;
     }
 
@@ -1435,15 +1479,17 @@
         border-radius: 0.75rem;
         background: #d8f5ef;
         color: #0f625e;
-        font-size: 0.78rem;
-        font-weight: 850;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        line-height: var(--type-label-line);
     }
 
     .ui-table {
         width: 100%;
         border-collapse: collapse;
         text-align: left;
-        font-size: 0.8rem;
+        font-size: var(--type-body-sm-size);
+        line-height: var(--type-body-sm-line);
     }
 
     .ui-table thead {
@@ -1452,17 +1498,20 @@
     }
 
     .ui-table th {
-        padding: 0.8rem 1.2rem;
-        font-size: 0.64rem;
-        font-weight: 800;
-        letter-spacing: 0.1em;
+        height: 2.75rem;
+        padding: 0 0.75rem;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        line-height: var(--type-label-line);
         text-transform: uppercase;
     }
 
     .ui-table td {
         border-top: 1px solid #edf2f4;
-        padding: 1rem 1.2rem;
-        vertical-align: top;
+        height: 2.75rem;
+        padding: 0 0.75rem;
+        vertical-align: middle;
     }
 
     .ui-table tbody tr {
@@ -1480,15 +1529,17 @@
         border-radius: 9999px;
         background: #effcf9;
         color: #0f6862;
-        font-size: 0.67rem;
-        font-weight: 750;
-        padding: 0.28rem 0.55rem;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        line-height: var(--type-label-line);
+        padding: 0.25rem 0.55rem;
     }
 
     .ui-action-link {
         color: #0f766e;
-        font-size: 0.78rem;
-        font-weight: 800;
+        font-size: var(--type-body-sm-size);
+        font-weight: 600;
+        line-height: var(--type-body-sm-line);
         text-decoration: none;
     }
 
@@ -1597,8 +1648,9 @@
         background: #ffffff;
         color: #45606a;
         cursor: pointer;
-        font-size: 0.75rem;
-        font-weight: 750;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        line-height: var(--type-label-line);
         list-style: none;
         padding: 0.55rem 0.7rem;
     }
@@ -1667,8 +1719,9 @@
         display: block;
         border-radius: 0.55rem;
         color: #536871;
-        font-size: 0.8rem;
-        font-weight: 700;
+        font-size: var(--type-body-md-size);
+        font-weight: 600;
+        line-height: var(--type-body-md-line);
         padding: 0.65rem 0.75rem;
     }
 
@@ -1734,10 +1787,10 @@
     .ui-mobile-nav-group-label {
         margin: 0.65rem 0.75rem 0.2rem;
         color: #9aa8ad;
-        font-size: 0.62rem;
-        font-weight: 800;
-        letter-spacing: 0.14em;
-        line-height: 1.25;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        line-height: var(--type-label-line);
         text-transform: uppercase;
     }
 
@@ -1758,8 +1811,9 @@
 
     .sihati-swal-popup .swal2-title {
         color: #263a43;
-        font-size: 1.25rem;
-        font-weight: 800;
+        font-size: var(--type-h2-size);
+        font-weight: 600;
+        line-height: var(--type-h2-line);
     }
 
     .sihati-swal-popup .swal2-html-container {
@@ -1891,17 +1945,17 @@
 
     .ticket-reference-number {
         color: #0b1c30;
-        font-size: clamp(1.55rem, 2.2vw, 2rem);
+        font-size: var(--type-h1-size);
         font-weight: 700;
-        letter-spacing: -0.035em;
-        line-height: 1.2;
+        letter-spacing: -0.02em;
+        line-height: var(--type-h1-line);
     }
 
     .ticket-reference-subtitle {
         margin-top: 0.4rem;
         color: #434655;
-        font-size: 0.9rem;
-        line-height: 1.5;
+        font-size: var(--type-body-md-size);
+        line-height: var(--type-body-md-line);
     }
 
     .ticket-reference-card {
@@ -1922,10 +1976,10 @@
 
     .ticket-reference-card-heading {
         color: #0b1c30;
-        font-size: 0.85rem;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
+        font-size: var(--type-h3-size);
+        font-weight: 600;
+        letter-spacing: 0;
+        line-height: var(--type-h3-line);
     }
 
     .ticket-reference-collapsible-summary {
@@ -1976,9 +2030,9 @@
         border: 1px solid transparent;
         border-radius: 0.85rem;
         padding: 0.7rem 1rem;
-        font-size: 0.78rem;
-        font-weight: 700;
-        line-height: 1.2;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        line-height: var(--type-label-line);
         white-space: nowrap;
         text-decoration: none;
         box-shadow: 0 7px 15px rgba(11, 28, 48, 0.12);
@@ -2055,38 +2109,34 @@
 
     .ticket-reference-eyebrow {
         color: #0037b0;
-        font-size: 0.72rem;
-        font-weight: 700;
+        font-size: var(--type-label-size);
+        font-weight: 600;
         letter-spacing: 0.1em;
-        line-height: 1.25;
+        line-height: var(--type-label-line);
         text-transform: uppercase;
     }
 
     .ticket-reference-section-title,
     .ticket-reference-subject {
         color: #0b1c30;
-        font-size: 1.35rem;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        line-height: 1.35;
-    }
-
-    .ticket-reference-subject {
-        font-size: 1.45rem;
+        font-size: var(--type-h2-size);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        line-height: var(--type-h2-line);
     }
 
     .ticket-reference-section-description {
         margin-top: 0.35rem;
         color: #434655;
-        font-size: 0.85rem;
-        line-height: 1.55;
+        font-size: var(--type-body-sm-size);
+        line-height: var(--type-body-sm-line);
     }
 
     .ticket-reference-description,
     .ticket-reference-body-copy {
         color: #29354b;
-        font-size: 1rem;
-        line-height: 1.6;
+        font-size: var(--type-body-md-size);
+        line-height: var(--type-body-md-line);
     }
 
     .ticket-reference-description > * + * {
@@ -2105,16 +2155,16 @@
     .ticket-reference-info-label,
     .ticket-reference-field-label {
         color: #434655;
-        font-size: 0.78rem;
-        font-weight: 700;
-        line-height: 1.4;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        line-height: var(--type-label-line);
     }
 
     .ticket-reference-field-value {
         margin-top: 0.3rem;
         color: #29354b;
-        font-size: 0.9rem;
-        line-height: 1.55;
+        font-size: var(--type-body-md-size);
+        line-height: var(--type-body-md-line);
         overflow-wrap: anywhere;
     }
 
@@ -2127,8 +2177,8 @@
         border-radius: 0.25rem;
         background: #ffffff;
         color: #0b1c30;
-        font-size: 0.9rem;
-        line-height: 1.55;
+        font-size: var(--type-body-md-size);
+        line-height: var(--type-body-md-line);
         padding: 0.8rem;
         outline: none;
         transition: border-color 160ms ease, box-shadow 160ms ease;
@@ -2158,8 +2208,9 @@
         border-radius: 9999px;
         background: #dce9ff;
         color: #25344c;
-        font-size: 0.78rem;
-        font-weight: 700;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        line-height: var(--type-label-line);
     }
 
     .ticket-reference-avatar {
@@ -2187,8 +2238,9 @@
         align-items: center;
         gap: 0.35rem;
         color: #0037b0;
-        font-size: 0.78rem;
-        font-weight: 700;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        line-height: var(--type-label-line);
     }
 
     .ticket-reference-attach-label:hover {
@@ -2205,8 +2257,8 @@
     .ticket-reference-file-help,
     .ticket-reference-info-help {
         color: #747686;
-        font-size: 0.75rem;
-        line-height: 1.5;
+        font-size: var(--type-body-sm-size);
+        line-height: var(--type-body-sm-line);
     }
 
     .ticket-reference-info-list {
@@ -2220,8 +2272,8 @@
     .ticket-reference-info-value {
         margin-top: 0.35rem;
         color: #0b1c30;
-        font-size: 0.95rem;
-        line-height: 1.5;
+        font-size: var(--type-body-md-size);
+        line-height: var(--type-body-md-line);
         overflow-wrap: anywhere;
     }
 
@@ -2283,8 +2335,8 @@
         border-radius: 0.5rem;
         background: #f8f9ff;
         color: #434655;
-        font-size: 0.85rem;
-        line-height: 1.5;
+        font-size: var(--type-body-md-size);
+        line-height: var(--type-body-md-line);
         padding: 1rem;
         text-align: center;
     }
@@ -2298,15 +2350,16 @@
 
     .ticket-reference-alert-title {
         color: #93000a;
-        font-size: 0.78rem;
-        font-weight: 700;
+        font-size: var(--type-label-size);
+        font-weight: 600;
+        line-height: var(--type-label-line);
     }
 
     .ticket-reference-alert-body {
         margin-top: 0.35rem;
         color: #6f1d1b;
-        font-size: 0.9rem;
-        line-height: 1.55;
+        font-size: var(--type-body-md-size);
+        line-height: var(--type-body-md-line);
         white-space: pre-line;
     }
 
@@ -2339,15 +2392,16 @@
 
     .ticket-reference-action-title {
         color: #0b1c30;
-        font-size: 0.95rem;
-        font-weight: 700;
+        font-size: var(--type-h3-size);
+        font-weight: 600;
+        line-height: var(--type-h3-line);
     }
 
     .ticket-reference-action-copy {
         margin-top: 0.35rem;
         color: #434655;
-        font-size: 0.78rem;
-        line-height: 1.5;
+        font-size: var(--type-body-sm-size);
+        line-height: var(--type-body-sm-line);
     }
 
     .ticket-reference-timeline {
@@ -2449,4 +2503,78 @@
             width: 2.5rem;
         }
     }
+}
+
+/* Design.md typography roles: keep semantic headings consistent even when a
+ * view carries a legacy Tailwind size utility. */
+html,
+body {
+    font-family: var(--font-sans);
+}
+
+body {
+    font-size: var(--type-body-md-size);
+    font-weight: 400;
+    line-height: var(--type-body-md-line);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-sans);
+}
+
+h1 {
+    font-size: var(--type-h1-size);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: var(--type-h1-line);
+}
+
+h2 {
+    font-size: var(--type-h2-size);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: var(--type-h2-line);
+}
+
+h3 {
+    font-size: var(--type-h3-size);
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: var(--type-h3-line);
+}
+
+h4 {
+    font-size: var(--type-body-md-size);
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: var(--type-body-md-line);
+}
+
+h5,
+h6 {
+    font-size: var(--type-body-sm-size);
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: var(--type-body-sm-line);
+}
+
+.ui-badge {
+    font-family: var(--font-sans);
+    font-size: var(--type-label-size);
+    font-weight: 500;
+    line-height: var(--type-label-line);
+}
+
+.ui-hero-title {
+    margin-top: 0.5rem;
+    color: inherit;
+    font-size: var(--type-h1-size);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: var(--type-h1-line);
 }
