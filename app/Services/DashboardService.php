@@ -361,6 +361,7 @@ class DashboardService
             'problemCategory',
             'requester',
             'assignee',
+            'floor.building',
             'room.floor.building',
         ]);
     }
@@ -439,6 +440,7 @@ class DashboardService
     private function buildingLabel(Ticket $ticket): string
     {
         return $ticket->building_name_snapshot
+            ?: $ticket->floor?->building?->name
             ?: $ticket->room?->floor?->building?->name
             ?: 'Lokasi belum diisi';
     }
@@ -446,6 +448,7 @@ class DashboardService
     private function floorLabel(Ticket $ticket): string
     {
         return $ticket->floor_name_snapshot
+            ?: $ticket->floor?->name
             ?: $ticket->room?->floor?->name
             ?: 'Lantai belum diisi';
     }

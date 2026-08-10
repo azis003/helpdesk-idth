@@ -76,7 +76,7 @@ class AuthenticationTest extends TestCase
 
         $dashboard = $this->get(route('dashboard'));
         $dashboard->assertOk()
-            ->assertSee('Status akses Anda')
+            ->assertDontSee('Status akses Anda')
             ->assertDontSee('Ganti password untuk melanjutkan')
             ->assertDontSee('mandatory-password-modal', false);
 

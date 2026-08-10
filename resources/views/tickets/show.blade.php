@@ -7,8 +7,11 @@
 @php
     $actor = auth()->user();
     $ticketLabel = $ticket->ticket_number ?? 'Tiket #'.$ticket->id;
+    $ticketHeading = str_starts_with((string) $ticketLabel, 'Tiket #') ? $ticketLabel : '#'.$ticketLabel;
+    $isIncident = str_starts_with((string) $ticketLabel, 'IN-');
+    $ticketTypeLabel = $isIncident ? 'Insiden' : 'Permintaan layanan';
     $serviceLabel = $ticket->service_type_name_snapshot ?? $ticket->serviceType?->name ?? 'Layanan belum tersedia';
-    $locationLabel = collect([$ticket->building_name_snapshot, $ticket->floor_name_snapshot, $ticket->room_name_snapshot])->filter()->implode(' · ');
+    $locationLabel = collect([$ticket->building_name_snapshot, $ticket->floor_name_snapshot, $ticket->room_name_snapshot])->filter()->implode(' — ');
     $canCancel = $actor->can('cancel', $ticket);
     $canTriage = $canTriage ?? false;
     $canAssignTierTwo = $canAssignTierTwo ?? false;
@@ -44,54 +47,156 @@
     $internalFieldValues = $internalFieldValues ?? collect();
     $activeWait = $activeWait ?? null;
     $lastTimedOutWait = $lastTimedOutWait ?? null;
+    $showActionPanel = $canCancel
+        || $canTriage
+        || $canAssignTierTwo
+        || $canReturnToTierOne
+        || $canStartThirdParty
+        || $canResumeThirdParty
+        || $canRequestApproval
+        || $canComplete
+        || $canConfirm
+        || $canNotSatisfied
+        || $canReopen
+        || $canStartDatabaseChange
+        || $canVerifyDatabaseChange
+        || $canDecideApproval
+        || $approvalRequest;
     $currentPriority = old('priority', $ticket->priority?->value);
     $currentOutcome = old('outcome', 'self');
-    $serviceSkills = ($ticket->serviceType?->skills ?? collect())->where('is_active', true)->values();
-    [$nextStepTitle, $nextStepDescription] = match ($ticket->status) {
-        \App\Enums\TicketStatus::Baru => ['Tiket menunggu diproses', 'Tiket baru masuk ke antrean Tier 1 dan belum memiliki penanggung jawab.'],
-        \App\Enums\TicketStatus::Diproses => ['Tiket sedang ditriase', 'Agen Tier 1 sedang memeriksa prioritas dan jalur penanganan tiket.'],
-        \App\Enums\TicketStatus::Dikerjakan => ['Tiket sedang dikerjakan', 'Penanggung jawab aktif melanjutkan pekerjaan sesuai jalur penanganan yang dipilih.'],
-        \App\Enums\TicketStatus::MenungguPersetujuan => ['Menunggu persetujuan Manajer TI', 'State tiket dan penanggung jawab sebelumnya tersimpan sampai keputusan persetujuan diberikan.'],
-        \App\Enums\TicketStatus::MenungguPemohon => ['Menunggu balasan Pemohon', $activeWait?->due_at ? 'Pemohon perlu melengkapi informasi sebelum '. $activeWait->due_at->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i').'.' : 'Agen sedang menunggu informasi tambahan dari Pemohon.'],
-        \App\Enums\TicketStatus::MenungguPihakKetiga => ['Menunggu pihak ketiga', $activeWait?->third_party_name ? 'Menunggu tindak lanjut dari '.$activeWait->third_party_name.'.' : 'Agen sedang menunggu tindak lanjut dari pihak ketiga.'],
-        \App\Enums\TicketStatus::MenungguKonfirmasi => ['Menunggu konfirmasi Pemohon', $ticket->confirmation_due_at ? 'Pemohon dapat memberikan konfirmasi sampai '.$ticket->confirmation_due_at->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i').'.' : 'Pemohon perlu mengonfirmasi hasil pekerjaan.'],
-        \App\Enums\TicketStatus::Ditutup => ['Tiket telah ditutup', $ticket->closed_reason === 'auto_closed' ? 'Tiket ditutup otomatis karena batas konfirmasi terlewati.' : 'Tiket ditutup setelah hasil dikonfirmasi Pemohon.'],
-        \App\Enums\TicketStatus::Ditolak => ['Tiket ditolak', $ticket->rejection_reason ?: 'Permintaan ini tidak dilanjutkan oleh Agen Tier 1.'],
-        \App\Enums\TicketStatus::TidakDisetujui => ['Persetujuan tidak disetujui', $approvalRequest?->decision_note ?: 'Permintaan persetujuan ini bersifat final.'],
-        \App\Enums\TicketStatus::Dibatalkan => ['Tiket telah dibatalkan', 'Tiket ini tidak akan masuk ke proses penanganan lebih lanjut.'],
-        default => ['Status tiket diperbarui', 'Tim TI akan melanjutkan tiket sesuai status dan kewenangan penanganannya.'],
+    $nextStepTitle = match ($ticket->status) {
+        \App\Enums\TicketStatus::Baru => 'Menunggu diproses',
+        \App\Enums\TicketStatus::Diproses => 'Sedang ditriase',
+        \App\Enums\TicketStatus::Dikerjakan => 'Sedang dikerjakan',
+        \App\Enums\TicketStatus::MenungguPersetujuan => 'Menunggu persetujuan',
+        \App\Enums\TicketStatus::MenungguPemohon => 'Menunggu balasan Pemohon',
+        \App\Enums\TicketStatus::MenungguPihakKetiga => 'Menunggu pihak ketiga',
+        \App\Enums\TicketStatus::MenungguKonfirmasi => 'Menunggu konfirmasi Pemohon',
+        \App\Enums\TicketStatus::Ditutup => 'Tiket telah ditutup',
+        \App\Enums\TicketStatus::Ditolak => 'Tiket ditolak',
+        \App\Enums\TicketStatus::TidakDisetujui => 'Persetujuan tidak disetujui',
+        \App\Enums\TicketStatus::Dibatalkan => 'Tiket telah dibatalkan',
+        default => 'Status tiket diperbarui',
     };
 @endphp
 
 @section('content')
-    <div class="ui-page-header">
-        <div>
-            <a href="{{ $actor->hasRole(\App\Enums\Role::AgenTier1) ? route('tickets.queue') : route('tickets.index') }}" class="ui-action-link">← {{ $actor->hasRole(\App\Enums\Role::AgenTier1) ? 'Kembali ke antrean' : 'Kembali ke tiket saya' }}</a>
-            <h1 class="ui-page-title">{{ $ticketLabel }}</h1>
-            <p class="ui-page-description">Detail permintaan, kepemilikan tiket, jalur triase, dan histori penanganan.</p>
-        </div>
-        @if ($canCancel)
-            <form method="POST" action="{{ route('tickets.cancel', $ticket) }}" data-swal-confirm="Batalkan tiket ini? Tiket hanya dapat dibatalkan saat status Baru dan tidak dapat diproses lebih lanjut.">
-                @csrf
-                <button type="submit" class="ui-btn ui-btn-danger">Batalkan tiket</button>
-            </form>
-        @endif
-    </div>
-
-    <div class="mt-8 grid gap-5 xl:grid-cols-[1.28fr_0.72fr]">
-        <div class="space-y-5">
-            <section class="ui-panel" aria-labelledby="ticket-summary-heading">
-                <div class="ui-panel-header flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-[#78909a]">Ringkasan permintaan</p>
-                        <h2 id="ticket-summary-heading" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">{{ $ticket->subject }}</h2>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        <x-status-badge :status="$ticket->status" />
-                        <x-priority-badge :priority="$ticket->priority" />
-                    </div>
+    <header class="ui-ticket-detail-header">
+        <div class="min-w-0">
+            <a href="{{ $actor->hasRole(\App\Enums\Role::AgenTier1) ? route('tickets.queue') : route('tickets.index') }}" class="ui-action-link mb-4 inline-flex items-center gap-1.5">← {{ $actor->hasRole(\App\Enums\Role::AgenTier1) ? 'Kembali ke antrean' : 'Kembali ke tiket saya' }}</a>
+            <div class="ui-ticket-detail-heading">
+                <span class="ui-ticket-detail-icon {{ $isIncident ? 'ui-ticket-detail-icon--incident' : 'ui-ticket-detail-icon--request' }}" aria-hidden="true">
+                    @if ($isIncident)
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.75" y="5.25" width="16.5" height="13.5" rx="2" /><path stroke-linecap="round" stroke-linejoin="round" d="m5 7.5 7 5.5 7-5.5" /></svg>
+                    @else
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8.25" cy="15.75" r="3.25" /><path stroke-linecap="round" stroke-linejoin="round" d="m10.6 13.4 7.15-7.15m-1.65-.2h2.05v2.05m-4.6 2.35 2.2 2.2" /></svg>
+                    @endif
+                </span>
+                <div class="min-w-0">
+                    <h1 class="ui-ticket-detail-title">{{ $ticketHeading }}: {{ $ticket->subject }}</h1>
                 </div>
-                <div class="space-y-5 p-5 sm:p-6">
+            </div>
+        </div>
+    </header>
+
+    @php
+        $showSecondaryPanel = $showActionPanel || $timeline !== [];
+    @endphp
+
+    <div class="ui-ticket-reference-shell mt-6 grid gap-5 {{ $showSecondaryPanel ? 'xl:grid-cols-[minmax(0,1fr)_22rem]' : '' }}">
+        <div class="ui-ticket-detail-flow ui-ticket-reference-card ui-panel flex flex-col overflow-hidden">
+            <section id="ticket-overview" class="ui-ticket-detail-section" aria-labelledby="ticket-summary-heading">
+                <div class="ui-ticket-reference-heading">
+                    <h2 id="ticket-summary-heading" class="ui-ticket-reference-heading-title">Detail tiket</h2>
+                </div>
+                <div class="ui-ticket-reference-body space-y-8 px-6 py-8 sm:px-9 sm:py-10">
+                    <dl class="ui-ticket-meta ui-ticket-meta--reference grid">
+                        <div>
+                            <dt class="ui-ticket-meta-label">
+                                <span class="ui-ticket-meta-label-inner">
+                                    <span class="ui-ticket-meta-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linejoin="round" d="M6 4.75h8.5l3.5 3.5v11H6zM14 4.75v3.5h3.5" /><path stroke-linecap="round" d="M9 12h6M9 15.25h4.5" /></svg></span>
+                                    <span>Nomor tiket</span>
+                                </span>
+                            </dt>
+                            <dd class="ui-ticket-meta-value ui-ticket-meta-value--nowrap">{{ $ticketLabel }}</dd>
+                        </div>
+                        <div>
+                            <dt class="ui-ticket-meta-label">
+                                <span class="ui-ticket-meta-label-inner">
+                                    <span class="ui-ticket-meta-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.25" /><path stroke-linecap="round" stroke-linejoin="round" d="m8.5 12 2.25 2.25 4.75-4.75" /></svg></span>
+                                    <span>Status</span>
+                                </span>
+                            </dt>
+                            <dd class="ui-ticket-meta-value ui-ticket-meta-value--nowrap">{{ $ticket->status?->label() ?? 'Status tidak diketahui' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="ui-ticket-meta-label">
+                                <span class="ui-ticket-meta-label-inner">
+                                    <span class="ui-ticket-meta-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linejoin="round" d="M4.75 8.25h14.5v10.5H4.75zM9 8.25V6.5h6v1.75" /><path stroke-linecap="round" d="M4.75 12h14.5M10 12v1.5h4V12" /></svg></span>
+                                    <span>Layanan</span>
+                                </span>
+                            </dt>
+                            <dd class="ui-ticket-meta-value">{{ $ticket->service_type_code_snapshot ?? $ticket->serviceType?->code ?? 'Kode layanan tidak tersedia' }} <span class="font-normal text-[#a1b0b5]">&mdash;</span> {{ $serviceLabel }}</dd>
+                        </div>
+                        <div>
+                            <dt class="ui-ticket-meta-label">
+                                <span class="ui-ticket-meta-label-inner">
+                                    <span class="ui-ticket-meta-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linejoin="round" d="M6.25 4.75h10.5v7.25l-5.25 3-5.25-3z" /><path stroke-linecap="round" d="M6.25 4.75h10.5M12 15v4.25" /></svg></span>
+                                    <span>Prioritas</span>
+                                </span>
+                            </dt>
+                            <dd class="ui-ticket-meta-value ui-ticket-meta-value--nowrap">{{ $ticket->priority?->label() ?? 'Belum ditentukan' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="ui-ticket-meta-label">
+                                <span class="ui-ticket-meta-label-inner">
+                                    <span class="ui-ticket-meta-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8.25" r="3.25" /><path stroke-linecap="round" d="M5.5 19.25a6.5 6.5 0 0 1 13 0" /></svg></span>
+                                    <span>Pemohon</span>
+                                </span>
+                            </dt>
+                            <dd class="ui-ticket-meta-value ui-ticket-meta-value--nowrap">{{ $ticket->requester_name_snapshot ?? $ticket->requester?->name ?? 'Belum tercatat' }}</dd>
+                        </div>
+                        @if (filled($locationLabel))
+                            <div>
+                                <dt class="ui-ticket-meta-label">
+                                    <span class="ui-ticket-meta-label-inner">
+                                        <span class="ui-ticket-meta-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linejoin="round" d="M12 20s6-5.1 6-10a6 6 0 1 0-12 0c0 4.9 6 10 6 10Z" /><circle cx="12" cy="10" r="2" /></svg></span>
+                                        <span>Lokasi</span>
+                                    </span>
+                                </dt>
+                                <dd class="ui-ticket-meta-value">{{ $locationLabel }}</dd>
+                            </div>
+                        @endif
+                        <div>
+                            <dt class="ui-ticket-meta-label">
+                                <span class="ui-ticket-meta-label-inner">
+                                    <span class="ui-ticket-meta-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4.75" y="5.75" width="14.5" height="14" rx="1.5" /><path stroke-linecap="round" d="M8 3.75v4M16 3.75v4M4.75 10h14.5" /></svg></span>
+                                    <span>Dibuat</span>
+                                </span>
+                            </dt>
+                            <dd class="ui-ticket-meta-value ui-ticket-meta-value--nowrap">{{ ($ticket->submitted_at ?? $ticket->created_at)?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</dd>
+                        </div>
+                        <div>
+                            <dt class="ui-ticket-meta-label">
+                                <span class="ui-ticket-meta-label-inner">
+                                    <span class="ui-ticket-meta-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8.25" r="2.75" /><path stroke-linecap="round" d="M4.75 18.75a4.25 4.25 0 0 1 8.5 0M15 10.5l1.5 1.5 3-3" /></svg></span>
+                                    <span>Penanggung jawab</span>
+                                </span>
+                            </dt>
+                            <dd class="ui-ticket-meta-value ui-ticket-meta-value--nowrap">
+                                {{ $ticket->assignee?->name ?? 'Belum ada' }}
+                                @if ($ticket->assignee && $ticket->assigned_tier)
+                                    <span class="mt-1 block text-xs font-normal text-[#78909a]">{{ \App\Enums\Role::tryFrom($ticket->assigned_tier)?->label() ?? $ticket->assigned_tier }}</span>
+                                @endif
+                            </dd>
+                        </div>
+                    </dl>
+
+                    <div class="ui-ticket-content-block ui-ticket-content-block--summary">
+                        <p class="ui-ticket-content-label">Deskripsi</p>
+                        <p class="ui-ticket-content-text">{{ $ticket->description ?: 'Deskripsi belum tersedia.' }}</p>
+                    </div>
+
                     @if ($ticket->status === \App\Enums\TicketStatus::Ditolak && filled($ticket->rejection_reason))
                         <div class="rounded-xl border border-rose-200 bg-[#fff5f6] p-4" role="status">
                             <p class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#be123c]">Alasan penolakan</p>
@@ -104,14 +209,10 @@
                             <p class="mt-2 whitespace-pre-line text-sm leading-6 text-[#7f1d1d]">{{ $approvalRequest->decision_note }}</p>
                         </div>
                     @endif
-                    <div>
-                        <p class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Deskripsi</p>
-                        <p class="mt-2 whitespace-pre-line text-sm leading-7 text-[#526f79]">{{ $ticket->description ?: 'Deskripsi belum tersedia.' }}</p>
-                    </div>
                     @if (filled($ticket->solution))
-                        <div class="rounded-xl border border-[#cdeef7] bg-[#f5fcfe] p-4" role="status">
-                            <p class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#147a79]">Solusi</p>
-                            <p class="mt-2 whitespace-pre-line text-sm leading-7 text-[#35505b]">{{ $ticket->solution }}</p>
+                        <div class="ui-ticket-content-block ui-ticket-content-block--solution" role="status">
+                            <p class="ui-ticket-content-label">Solusi</p>
+                            <p class="ui-ticket-content-text">{{ $ticket->solution }}</p>
                         </div>
                     @endif
                     @if ($slaMetrics && $slaMetrics['uses_sla'])
@@ -136,42 +237,13 @@
                             </dl>
                         </div>
                     @endif
-                    <dl class="grid gap-4 border-t border-[#edf2f4] pt-5 sm:grid-cols-2">
-                        <div>
-                            <dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Layanan</dt>
-                            <dd class="mt-1 text-sm font-bold text-[#35505b]">{{ $ticket->service_type_code_snapshot ?? $ticket->serviceType?->code }} — {{ $serviceLabel }}</dd>
-                        </div>
-                        <div>
-                            <dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Keahlian layanan</dt>
-                            <dd class="mt-1 text-sm font-bold text-[#35505b]">{{ $serviceSkills->pluck('name')->implode(', ') ?: 'Belum dipetakan di Katalog Layanan' }}</dd>
-                        </div>
-                        <div>
-                            <dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Dibuat</dt>
-                            <dd class="mt-1 text-sm font-bold text-[#35505b]">{{ ($ticket->submitted_at ?? $ticket->created_at)?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</dd>
-                        </div>
-                        <div>
-                            <dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Penanggung jawab</dt>
-                            <dd class="mt-1 text-sm font-bold text-[#35505b]">
-                                {{ $ticket->assignee?->name ?? 'Belum ada — menunggu antrean Tier 1' }}
-                                @if ($ticket->assignee && $ticket->assigned_tier)
-                                    <span class="mt-1 block text-xs font-normal text-[#78909a]">{{ \App\Enums\Role::tryFrom($ticket->assigned_tier)?->label() ?? $ticket->assigned_tier }}</span>
-                                @endif
-                            </dd>
-                        </div>
-                        <div>
-                            <dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Prioritas</dt>
-                            <dd class="mt-1"><x-priority-badge :priority="$ticket->priority" /></dd>
-                        </div>
-                    </dl>
                 </div>
             </section>
 
-            <section class="ui-panel overflow-hidden" aria-labelledby="conversation-heading">
+            <section id="ticket-conversation" class="ui-ticket-detail-section order-last overflow-hidden" aria-labelledby="conversation-heading">
                 <div class="ui-panel-header flex flex-wrap items-start justify-between gap-4">
                     <div>
-                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#75d5f3] !shadow-[0_0_0_4px_#d9f6ff]" aria-hidden="true"></span>Ruang komunikasi</p>
-                        <h2 id="conversation-heading" class="mt-2 ui-section-title">Percakapan tiket</h2>
-                        <p class="ui-section-description">Balasan ke Pemohon dan Catatan Internal dipisahkan dengan jelas. Catatan internal tidak pernah terlihat oleh Pemohon.</p>
+                        <h2 id="conversation-heading" class="ui-section-title">Percakapan</h2>
                     </div>
                     @if ($ticket->comments->isNotEmpty())
                         <span class="rounded-full bg-[#f1fbfe] px-3 py-1 text-xs font-extrabold text-[#147a79]">{{ $ticket->comments->count() }} pesan</span>
@@ -186,7 +258,7 @@
                             </span>
                             <div>
                                 <p class="text-sm font-extrabold text-[#7c5800]">Batas tunggu Pemohon terlewati</p>
-                                <p class="mt-1 text-xs leading-5 text-[#946f16]">Tiket otomatis dikembalikan ke status Dikerjakan pada {{ $lastTimedOutWait->ended_at?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}. Penanda timeout disimpan di histori tiket.</p>
+                                <p class="mt-1 text-xs leading-5 text-[#946f16]">Dikembalikan ke Dikerjakan pada {{ $lastTimedOutWait->ended_at?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}.</p>
                             </div>
                         </div>
                     </div>
@@ -223,7 +295,6 @@
                     @empty
                         <div class="rounded-2xl border border-dashed border-[#cfe0e5] bg-[#fbfdfd] p-6 text-center">
                             <p class="text-sm font-extrabold text-[#526f79]">Belum ada percakapan</p>
-                            <p class="mt-1 text-xs leading-5 text-[#78909a]">Pesan pertama akan menjadi bagian dari histori komunikasi tiket.</p>
                         </div>
                     @endforelse
                 </div>
@@ -232,7 +303,6 @@
                     <div class="border-t border-[#edf2f4] bg-[#f8fbfc] p-5 sm:p-6">
                         <div class="mb-4">
                             <p class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#147a79]">Balasan Pemohon</p>
-                            <p class="mt-1 text-sm leading-6 text-[#526f79]">Lengkapi pertanyaan agen agar tiket kembali diproses oleh penanggung jawab sebelumnya.</p>
                         </div>
                         <form method="POST" action="{{ route('tickets.requester-reply', $ticket) }}" enctype="multipart/form-data" class="space-y-4" data-ticket-communication-form>
                             @csrf
@@ -246,11 +316,14 @@
                                     @foreach ($commentPublicPolicies as $policy)
                                         @php
                                             $accept = collect($policy->allowed_mimes ?? [])->merge(collect($policy->allowed_extensions ?? [])->map(fn ($extension) => '.'.ltrim($extension, '.')))->implode(',');
+                                            $fileSize = $policy->max_file_size_kb % 1024 === 0
+                                                ? intdiv($policy->max_file_size_kb, 1024).' MB'
+                                                : $policy->max_file_size_kb.' KB';
                                         @endphp
                                         <div>
                                             <label for="requester-reply-attachment-{{ $policy->id }}" class="ui-field-label">{{ $policy->label }}</label>
                                             <input id="requester-reply-attachment-{{ $policy->id }}" type="file" name="attachments[{{ $policy->id }}][]" multiple class="ui-file-input mt-2" @if ($accept !== '') accept="{{ $accept }}" @endif>
-                                            <p class="ui-field-help">Maksimal {{ $policy->max_file_count }} berkas, {{ $policy->max_file_size_kb }} KB per berkas.</p>
+                                            <p class="ui-field-help">Maks. {{ $policy->max_file_count }} berkas · {{ $fileSize }} per berkas.</p>
                                         </div>
                                     @endforeach
                                 </fieldset>
@@ -266,7 +339,6 @@
                                 <div class="flex items-start justify-between gap-3">
                                     <div>
                                         <p class="text-sm font-extrabold text-[#35505b]">Balasan ke Pemohon</p>
-                                        <p class="mt-1 text-xs leading-5 text-[#78909a]">Pesan ini terlihat oleh Pemohon dan tercatat permanen.</p>
                                     </div>
                                     <span class="rounded-full bg-[#e8f9fd] px-2 py-1 text-[0.62rem] font-extrabold text-[#147a79]">Publik</span>
                                 </div>
@@ -296,7 +368,6 @@
                                 <div class="flex items-start justify-between gap-3">
                                     <div>
                                         <p class="text-sm font-extrabold text-[#35505b]">Catatan Internal</p>
-                                        <p class="mt-1 text-xs leading-5 text-[#78909a]">Hanya dapat dibaca oleh tim TI yang berwenang.</p>
                                     </div>
                                     <span class="rounded-full bg-[#fff4d7] px-2 py-1 text-[0.62rem] font-extrabold text-[#9a6700]">Internal</span>
                                 </div>
@@ -326,7 +397,6 @@
                                 <div class="flex flex-wrap items-start justify-between gap-3">
                                     <div>
                                         <p class="text-sm font-extrabold text-[#35505b]">Minta informasi tambahan</p>
-                                        <p class="mt-1 text-xs leading-5 text-[#78909a]">Pertanyaan dikirim sebagai balasan publik, status menjadi Menunggu Pemohon, dan SLA aktif dijeda.</p>
                                     </div>
                                     <span class="rounded-full bg-[#e8f9fd] px-2 py-1 text-[0.62rem] font-extrabold text-[#147a79]">Tunggu 3 hari kerja</span>
                                 </div>
@@ -339,59 +409,34 @@
                 @endif
             </section>
 
-            <section class="ui-panel" aria-labelledby="requester-heading">
-                <div class="ui-panel-header">
-                    <h2 id="requester-heading" class="ui-section-title">Identitas tiket</h2>
-                    <p class="ui-section-description">Pemohon dan pembuat tiket disimpan terpisah untuk membedakan tiket mandiri dan pencatatan oleh Agen Tier 1.</p>
-                </div>
-                <dl class="grid gap-4 p-5 sm:grid-cols-2 sm:p-6">
-                    <div class="rounded-lg bg-[#f8fbfc] p-4">
-                        <dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Pemohon</dt>
-                        <dd class="mt-2 text-sm font-extrabold text-[#35505b]">{{ $ticket->requester_name_snapshot ?? $ticket->requester?->name ?? 'Belum tercatat' }}</dd>
-                        <dd class="mt-1 text-xs text-[#78909a]">NIP: {{ $ticket->requester_nip_snapshot ?? $ticket->requester?->nip ?? 'Tidak tersedia' }}</dd>
-                        <dd class="mt-1 text-xs text-[#78909a]">Tim: {{ $ticket->requester_team_snapshot ?: 'Belum memiliki tim' }}</dd>
-                    </div>
-                    <div class="rounded-lg bg-[#f8fbfc] p-4">
-                        <dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Pembuat tiket</dt>
-                        <dd class="mt-2 text-sm font-extrabold text-[#35505b]">{{ $ticket->creator?->name ?? 'Belum tercatat' }}</dd>
-                        <dd class="mt-1 text-xs text-[#78909a]">{{ $ticket->is_self_created ? 'Dibuat mandiri oleh Pemohon' : 'Dicatat atas nama pegawai oleh Agen Tier 1' }}</dd>
-                    </div>
-                </dl>
-            </section>
-
-            <section class="ui-panel" aria-labelledby="service-fields-heading">
+            @if ($ticket->fieldValues->isNotEmpty())
+            <section class="ui-ticket-detail-section" aria-labelledby="service-fields-heading">
                 <div class="ui-panel-header">
                     <h2 id="service-fields-heading" class="ui-section-title">Informasi layanan</h2>
-                    <p class="ui-section-description">Nilai field disimpan bersama label dan versi definisi saat tiket dibuat.</p>
                 </div>
-                @if ($ticket->fieldValues->isEmpty())
-                    <p class="p-5 text-sm text-[#78909a] sm:p-6">Tidak ada field tambahan pada layanan ini.</p>
-                @else
-                    <dl class="grid gap-4 p-5 sm:grid-cols-2 sm:p-6">
-                        @foreach ($ticket->fieldValues as $fieldValue)
-                            @php
-                                $displayValue = is_array($fieldValue->value)
-                                    ? implode(', ', $fieldValue->value)
-                                    : ($fieldValue->field_type_snapshot === 'boolean' ? ((bool) $fieldValue->value ? 'Ya' : 'Tidak') : $fieldValue->value);
-                            @endphp
-                            <div class="rounded-lg border border-[#edf2f4] p-4">
-                                <dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">{{ $fieldValue->label_snapshot }}</dt>
-                                <dd class="mt-2 whitespace-pre-line text-sm leading-6 text-[#35505b]">{{ filled($displayValue) ? $displayValue : 'Tidak diisi' }}</dd>
-                            </div>
-                        @endforeach
-                    </dl>
-                @endif
+                <dl class="grid gap-4 p-5 sm:grid-cols-2 sm:p-6">
+                    @foreach ($ticket->fieldValues as $fieldValue)
+                        @php
+                            $displayValue = is_array($fieldValue->value)
+                                ? implode(', ', $fieldValue->value)
+                                : ($fieldValue->field_type_snapshot === 'boolean' ? ((bool) $fieldValue->value ? 'Ya' : 'Tidak') : $fieldValue->value);
+                        @endphp
+                        <div class="rounded-lg border border-[#edf2f4] p-4">
+                            <dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">{{ $fieldValue->label_snapshot }}</dt>
+                            <dd class="mt-2 whitespace-pre-line text-sm leading-6 text-[#35505b]">{{ filled($displayValue) ? $displayValue : 'Tidak diisi' }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
             </section>
+            @endif
 
             @if ($canSeeInternal && ($ticket->service_type_code_snapshot ?? $ticket->serviceType?->code) === 'SVC-07' && ($internalFieldDefinitions->isNotEmpty() || $internalFieldValues->isNotEmpty()))
                 @php
                     $internalValuesByKey = $internalFieldValues->keyBy('field_key');
                 @endphp
-                <section class="ui-panel border-l-4 border-l-[#e4a72c]" aria-labelledby="internal-fields-heading">
+                <section class="ui-ticket-detail-section border-l-4 border-l-[#e4a72c]" aria-labelledby="internal-fields-heading">
                     <div class="ui-panel-header">
-                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#e4a72c] !shadow-[0_0_0_4px_#fff4d7]" aria-hidden="true"></span>Ruang kerja Tim TI</p>
-                        <h2 id="internal-fields-heading" class="mt-2 ui-section-title">Bagian internal SVC-07</h2>
-                        <p class="ui-section-description">Nilai ini hanya terlihat oleh petugas berwenang Tim TI. Setiap penyimpanan mencatat versi definisi dan histori perubahan.</p>
+                        <h2 id="internal-fields-heading" class="ui-section-title">Bagian internal SVC-07</h2>
                     </div>
 
                     @if ($canUpdateInternalFields && $internalFieldDefinitions->isNotEmpty())
@@ -405,7 +450,6 @@
                             </div>
                             @error('internal_fields')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror
                             <div class="flex flex-wrap items-center justify-between gap-3 border-t border-[#f0dca7] pt-4">
-                                <p class="text-xs leading-5 text-[#8a7440]">Simpan bertahap jika penilaian internal belum lengkap.</p>
                                 <button type="submit" class="ui-btn ui-btn-warning" data-ticket-internal-fields-submit>
                                     <span data-ticket-internal-fields-label>Simpan bagian internal</span>
                                     <span class="hidden" data-ticket-internal-fields-loading aria-hidden="true">Menyimpan…</span>
@@ -435,64 +479,141 @@
                 </section>
             @endif
 
-            <section class="ui-panel" aria-labelledby="timeline-heading">
-                <div class="ui-panel-header">
-                    <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Jejak pekerjaan</p>
-                    <h2 id="timeline-heading" class="mt-2 ui-section-title">Histori tiket</h2>
-                    <p class="ui-section-description">Perubahan status, penugasan, prioritas, dan persetujuan disusun berdasarkan waktu kejadian. Klasifikasi kategori pada tiket lama tetap ditampilkan sebagai histori.</p>
+            <section id="ticket-attachments" class="ui-ticket-detail-section" aria-labelledby="attachments-heading">
+                <div class="ui-panel-header flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <p class="ui-ticket-section-kicker">Berkas</p>
+                        <h2 id="attachments-heading" class="mt-1 ui-section-title">Lampiran</h2>
+                    </div>
+                    @if ($ticket->attachments->isNotEmpty())
+                        <span class="ui-ticket-count">{{ $ticket->attachments->count() }}</span>
+                    @endif
                 </div>
-                @if ($timeline === [])
-                    <p class="p-5 text-sm leading-6 text-[#78909a] sm:p-6">Belum ada histori operasional pada tiket ini.</p>
-                @else
-                    <ol class="space-y-0 p-5 sm:p-6">
-                        @foreach ($timeline as $entry)
-                            <li class="relative flex gap-4 pb-6 last:pb-0">
-                                @if (! $loop->last)
-                                    <span class="absolute left-[0.45rem] top-5 h-full w-px bg-[#dfe8ec]" aria-hidden="true"></span>
-                                @endif
-                                <span class="relative mt-1 h-2.5 w-2.5 shrink-0 rounded-full {{ $entry['kind'] === 'status' ? 'bg-[#75d5f3]' : ($entry['kind'] === 'priority' || $entry['kind'] === 'approval' ? 'bg-[#e4a72c]' : 'bg-[#2bb8aa]') }} ring-4 ring-white" aria-hidden="true"></span>
-                                <div class="min-w-0 flex-1">
-                                    <div class="flex flex-wrap items-start justify-between gap-2">
-                                        <p class="text-sm font-extrabold text-[#35505b]">{{ $entry['title'] }}</p>
-                                        <time class="text-xs text-[#78909a]" datetime="{{ $entry['occurred_at']?->toIso8601String() }}">{{ $entry['occurred_at']?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</time>
-                                    </div>
-                                    <p class="mt-1 text-sm leading-6 text-[#526f79]">{{ $entry['description'] }}</p>
-                                    @if (filled($entry['actor']))
-                                        <p class="mt-1 text-xs text-[#78909a]">Oleh {{ $entry['actor'] }}</p>
-                                    @endif
-                                    @if (filled($entry['reason']))
-                                        <p class="mt-2 rounded-lg bg-[#f8fbfc] px-3 py-2 text-xs leading-5 text-[#526f79]">Alasan: {{ $entry['reason'] }}</p>
-                                    @endif
+                @if ($canUploadAttachments && $ticketAttachmentPolicies->isNotEmpty())
+                    <form method="POST" action="{{ route('tickets.attachments.store', $ticket) }}" enctype="multipart/form-data" class="space-y-4 border-b border-[#edf2f4] bg-[#f8fbfc] p-5 sm:p-6" data-ticket-attachment-form>
+                        @csrf
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            @foreach ($ticketAttachmentPolicies as $policy)
+                                @php
+                                    $accept = collect($policy->allowed_extensions ?? [])->map(fn ($extension) => '.'.ltrim($extension, '.'))->implode(',');
+                                    $fileSize = $policy->max_file_size_kb % 1024 === 0
+                                        ? intdiv($policy->max_file_size_kb, 1024).' MB'
+                                        : $policy->max_file_size_kb.' KB';
+                                @endphp
+                                <div>
+                                    <label for="ticket-attachment-policy-{{ $policy->id }}" class="ui-field-label">{{ $policy->label }}</label>
+                                    <p id="ticket-attachment-policy-{{ $policy->id }}-help" class="ui-field-help">Maks. {{ $policy->max_file_count }} berkas · {{ $fileSize }} per berkas{{ $policy->visibility === 'internal' ? ' · internal' : '' }}.</p>
+                                    <input id="ticket-attachment-policy-{{ $policy->id }}" name="attachments[{{ $policy->id }}][]" type="file" class="ui-file-input mt-2" multiple @if ($accept !== '') accept="{{ $accept }}" @endif aria-describedby="ticket-attachment-policy-{{ $policy->id }}-help">
                                 </div>
+                            @endforeach
+                        </div>
+                        @error('attachments')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror
+                        <button type="submit" class="ui-btn ui-btn-secondary w-full sm:w-auto" data-ticket-attachment-submit>Tambah lampiran</button>
+                    </form>
+                @endif
+                @if ($ticket->attachments->isEmpty())
+                    <p class="p-5 text-sm leading-6 text-[#78909a] sm:p-6">Belum ada lampiran.</p>
+                @else
+                    <ul class="divide-y divide-[#edf2f4]">
+                        @foreach ($ticket->attachments as $attachment)
+                            <li class="flex items-start justify-between gap-3 p-4 sm:px-6">
+                                <div class="flex min-w-0 items-start gap-3">
+                                    <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#eef7f8] text-[#147a79]" aria-hidden="true">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M7 3.75h7l3 3V20.25H7zM14 3.75v3h3M9.5 11h5M9.5 14.5h5M9.5 18h3" /></svg>
+                                    </span>
+                                    <div class="min-w-0">
+                                        <p class="truncate text-sm font-extrabold text-[#35505b]" title="{{ $attachment->original_name }}">{{ $attachment->original_name }}</p>
+                                        <p class="mt-1 text-xs text-[#78909a]">{{ $attachment->type_label_snapshot }} · {{ number_format($attachment->size_bytes / 1024, 0, ',', '.') }} KB</p>
+                                    </div>
+                                </div>
+                                <a href="{{ route('attachments.download', $attachment) }}" class="ui-action-link shrink-0">Unduh<span class="sr-only"> {{ $attachment->original_name }}</span></a>
                             </li>
                         @endforeach
-                    </ol>
+                    </ul>
                 @endif
             </section>
+
         </div>
 
-        <aside class="space-y-5">
-            <section class="ui-panel ui-panel--accent p-5 sm:p-6" aria-labelledby="next-step-heading">
-                <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Status saat ini</p>
-                <h2 id="next-step-heading" class="mt-2 text-lg font-extrabold tracking-tight text-[#263a43]">{{ $nextStepTitle }}</h2>
-                <p class="mt-2 text-sm leading-6 text-[#52747b]">{{ $nextStepDescription }}</p>
-                <div class="mt-4"><x-status-badge :status="$ticket->status" /></div>
-            </section>
+        @if ($showSecondaryPanel)
+        <aside class="ui-ticket-side-rail flex flex-col gap-4 xl:sticky xl:top-24 xl:self-start">
+            @if ($timeline !== [])
+                <details id="ticket-activity" class="ui-ticket-history-card ui-panel order-2" open>
+                    <summary class="ui-panel-header ui-ticket-disclosure flex items-center justify-between gap-3">
+                        <div>
+                            <p class="ui-ticket-section-kicker">Aktivitas</p>
+                            <h2 id="timeline-heading" class="mt-1 ui-section-title">Histori tiket</h2>
+                        </div>
+                        <span class="ui-ticket-count">{{ count($timeline) }}</span>
+                    </summary>
+                    @if ($timeline === [])
+                        <p class="p-5 text-sm leading-6 text-[#78909a] sm:p-6">Belum ada histori operasional pada tiket ini.</p>
+                    @else
+                        <ol class="ui-ticket-history-list space-y-0 p-5 sm:p-6">
+                            @foreach ($timeline as $entry)
+                                <li class="relative flex gap-4 pb-6 last:pb-0">
+                                    @if (! $loop->last)
+                                        <span class="absolute left-[0.45rem] top-5 h-full w-px bg-[#dfe8ec]" aria-hidden="true"></span>
+                                    @endif
+                                    <span class="relative mt-1 h-2.5 w-2.5 shrink-0 rounded-full {{ $entry['kind'] === 'status' ? 'bg-[#75d5f3]' : ($entry['kind'] === 'priority' || $entry['kind'] === 'approval' ? 'bg-[#e4a72c]' : 'bg-[#2bb8aa]') }} ring-4 ring-white" aria-hidden="true"></span>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-start justify-between gap-2">
+                                            <p class="text-sm font-extrabold text-[#35505b]">{{ $entry['title'] }}</p>
+                                            <time class="text-xs text-[#78909a]" datetime="{{ $entry['occurred_at']?->toIso8601String() }}">{{ $entry['occurred_at']?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</time>
+                                        </div>
+                                        <p class="mt-1 text-sm leading-6 text-[#526f79]">{{ $entry['description'] }}</p>
+                                        @if (filled($entry['actor']))
+                                            <p class="mt-1 text-xs text-[#78909a]">Oleh {{ $entry['actor'] }}</p>
+                                        @endif
+                                        @if (filled($entry['reason']))
+                                            <p class="mt-2 rounded-lg bg-[#f8fbfc] px-3 py-2 text-xs leading-5 text-[#526f79]">Alasan: {{ $entry['reason'] }}</p>
+                                        @endif
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ol>
+                    @endif
+                </details>
+            @endif
+
+            @if ($showActionPanel)
+            <div class="ui-ticket-action-area order-1">
+                <div class="ui-ticket-action-summary">
+                    <div class="ui-ticket-action-heading">
+                        <span class="ui-ticket-action-heading-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.75v16.5M5.75 10l6.25-6.25L18.25 10M5.75 14l6.25 6.25L18.25 14" /></svg>
+                        </span>
+                        <div>
+                            <p class="ui-ticket-section-kicker">Penanganan</p>
+                            <h2 class="mt-0.5 text-sm font-extrabold tracking-tight text-[#263a43]">Tindakan tiket</h2>
+                        </div>
+                    </div>
+
+                    <span class="ui-ticket-action-divider" aria-hidden="true"></span>
+
+                    <section class="ui-ticket-next-action" aria-labelledby="next-step-heading">
+                        <span class="ui-ticket-next-action-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h13m-5-5 5 5-5 5" /></svg>
+                        </span>
+                        <div class="min-w-0">
+                            <p class="ui-ticket-section-kicker">Aksi berikutnya</p>
+                            <h2 id="next-step-heading" class="mt-0.5 text-sm font-extrabold leading-5 tracking-tight text-[#263a43]">{{ $nextStepTitle }}</h2>
+                        </div>
+                </section>
+                </div>
 
             @if ($canSeeInternal && ($specialControlReadiness['kind'] ?? null) === 'database_change')
                 @php
                     $changeControl = $specialControlReadiness['control'] ?? null;
                     $controlLabels = [
-                        'change_script' => 'Change script',
-                        'rollback_script' => 'Rollback script',
+                        'change_script' => 'Skrip perubahan',
+                        'rollback_script' => 'Skrip pemulihan',
                         'backup_evidence' => 'Bukti backup',
                     ];
                 @endphp
                 <section class="ui-panel border-l-4 border-l-[#e4a72c]" aria-labelledby="database-change-heading">
                     <div class="ui-panel-header">
-                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#e4a72c] !shadow-[0_0_0_4px_#fff4d7]" aria-hidden="true"></span>Kontrol perubahan produksi</p>
-                        <h2 id="database-change-heading" class="mt-2 ui-section-title">Kontrol SVC-03</h2>
-                        <p class="ui-section-description">Tiga bukti berbeda wajib tersedia sebelum eksekusi. Verifikasi hasil wajib selesai sebelum tiket menunggu konfirmasi.</p>
+                        <h2 id="database-change-heading" class="ui-section-title">Kontrol SVC-03</h2>
                     </div>
                     <div class="space-y-4 p-5 sm:p-6">
                         <ul class="space-y-2" aria-label="Persyaratan bukti SVC-03">
@@ -519,7 +640,7 @@
                         @elseif ($canStartDatabaseChange)
                             <form method="POST" action="{{ route('tickets.database-change.execute', $ticket) }}" class="space-y-3" data-ticket-database-change-form data-swal-confirm="Mulai Eksekusi SVC-03 setelah tiga bukti diverifikasi?">
                                 @csrf
-                                <p class="text-xs leading-5 text-[#78909a]">Pastikan ketiga bukti sudah benar. Aksi ini menyimpan pelaku dan waktu Mulai Eksekusi ke histori.</p>
+                                <p class="text-xs leading-5 text-[#78909a]">Tiga bukti harus valid sebelum eksekusi.</p>
                                 <button type="submit" class="ui-btn ui-btn-warning w-full">Mulai Eksekusi</button>
                                 @error('database_change')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror
                             </form>
@@ -555,9 +676,7 @@
             @elseif ($canSeeInternal && ($specialControlReadiness['kind'] ?? null) === 'data_export')
                 <section class="ui-panel border-l-4 border-l-[#2bb8aa]" aria-labelledby="data-export-heading">
                     <div class="ui-panel-header">
-                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#2bb8aa] !shadow-[0_0_0_4px_#d7f7f1]" aria-hidden="true"></span>Hasil tarik data</p>
-                        <h2 id="data-export-heading" class="mt-2 ui-section-title">Ketersediaan hasil SVC-02</h2>
-                        <p class="ui-section-description">Hasil tarik data diunggah bersama penyelesaian tiket dan harus dapat diakses Pemohon.</p>
+                        <h2 id="data-export-heading" class="ui-section-title">Ketersediaan hasil SVC-02</h2>
                     </div>
                     <div class="p-5 sm:p-6">
                         <p class="rounded-lg border {{ ($specialControlReadiness['ready'] ?? false) ? 'border-[#bfe8d8] bg-[#f2fcf7] text-[#087f5b]' : 'border-[#f0d28c] bg-[#fffaf0] text-[#8a5a00]' }} p-3 text-sm leading-6">
@@ -573,9 +692,7 @@
                         $isDataExport = ($specialControlReadiness['kind'] ?? null) === 'data_export';
                     @endphp
                     <div class="ui-panel-header">
-                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#2bb8aa] !shadow-[0_0_0_4px_#d7f7f1]" aria-hidden="true"></span>Penyelesaian</p>
-                        <h2 id="complete-heading" class="mt-2 ui-section-title">{{ $isDataExport ? 'Simpan solusi dan hasil tarik data' : 'Simpan solusi' }}</h2>
-                        <p class="ui-section-description">{{ $isDataExport ? 'Isi solusi dan unggah hasil tarik data. Setelah disimpan, tiket masuk Menunggu Konfirmasi dan SLA berhenti.' : 'Solusi wajib diisi. Setelah disimpan, tiket masuk Menunggu Konfirmasi dan SLA berhenti.' }}</p>
+                        <h2 id="complete-heading" class="ui-section-title">{{ $isDataExport ? 'Simpan solusi dan hasil tarik data' : 'Simpan solusi' }}</h2>
                     </div>
                     <form method="POST" action="{{ route('tickets.complete', $ticket) }}" class="space-y-4 p-5 sm:p-6" data-ticket-resolution-form @if ($isDataExport) enctype="multipart/form-data" @endif>
                         @csrf
@@ -600,9 +717,7 @@
             @if ($canConfirm || $canNotSatisfied)
                 <section class="ui-panel border-l-4 border-l-[#2bb8aa]" aria-labelledby="confirmation-heading">
                     <div class="ui-panel-header">
-                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#2bb8aa] !shadow-[0_0_0_4px_#d7f7f1]" aria-hidden="true"></span>Konfirmasi hasil</p>
-                        <h2 id="confirmation-heading" class="mt-2 ui-section-title">Apakah hasilnya sudah sesuai?</h2>
-                        <p class="ui-section-description">Konfirmasi menutup tiket. Jika belum sesuai, tiket kembali kepada penanggung jawab terakhir tanpa triase ulang.</p>
+                        <h2 id="confirmation-heading" class="ui-section-title">Apakah hasilnya sudah sesuai?</h2>
                     </div>
                     <div class="grid gap-3 p-5 sm:p-6">
                         @if ($canConfirm)
@@ -629,9 +744,7 @@
             @if ($canReopen)
                 <section class="ui-panel border-l-4 border-l-[#e4a72c]" aria-labelledby="reopen-heading">
                     <div class="ui-panel-header">
-                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#e4a72c] !shadow-[0_0_0_4px_#fff4d7]" aria-hidden="true"></span>Tindak lanjut</p>
-                        <h2 id="reopen-heading" class="mt-2 ui-section-title">Buka kembali tiket</h2>
-                        <p class="ui-section-description">Tiket kembali Dikerjakan kepada penanggung jawab terakhir dan mendapatkan siklus SLA penuh baru sesuai batas yang berlaku.</p>
+                        <h2 id="reopen-heading" class="ui-section-title">Buka kembali tiket</h2>
                     </div>
                     <form method="POST" action="{{ route('tickets.reopen', $ticket) }}" class="space-y-4 p-5 sm:p-6" data-ticket-resolution-form>
                         @csrf
@@ -652,9 +765,7 @@
             @if ($canRequestApproval)
                 <section class="ui-panel border-l-4 border-l-[#e4a72c]" aria-labelledby="request-approval-heading">
                     <div class="ui-panel-header">
-                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#e4a72c] !shadow-[0_0_0_4px_#fff4d7]" aria-hidden="true"></span>Keputusan operasional</p>
-                        <h2 id="request-approval-heading" class="mt-2 ui-section-title">Butuh Persetujuan</h2>
-                        <p class="ui-section-description">Tiket akan masuk ke status Menunggu Persetujuan. State, penanggung jawab, dan tier saat ini akan dipulihkan setelah disetujui.</p>
+                        <h2 id="request-approval-heading" class="ui-section-title">Butuh Persetujuan</h2>
                     </div>
                     <form method="POST" action="{{ route('tickets.request-approval', $ticket) }}" class="space-y-4 p-5 sm:p-6" data-approval-request-form>
                         @csrf
@@ -671,9 +782,7 @@
             @if ($canStartThirdParty || $canResumeThirdParty)
                 <section class="ui-panel border-l-4 border-l-[#2bb8aa]" aria-labelledby="third-party-heading">
                     <div class="ui-panel-header">
-                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#2bb8aa] !shadow-[0_0_0_4px_#d7f7f1]" aria-hidden="true"></span>Ketergantungan eksternal</p>
-                        <h2 id="third-party-heading" class="mt-2 ui-section-title">{{ $canResumeThirdParty ? 'Menunggu pihak ketiga' : 'Tunggu pihak ketiga' }}</h2>
-                        <p class="ui-section-description">Simpan nama pihak yang ditunggu dan tanggal follow-up tanpa menghapus jejak status sebelumnya.</p>
+                        <h2 id="third-party-heading" class="ui-section-title">{{ $canResumeThirdParty ? 'Menunggu pihak ketiga' : 'Tunggu pihak ketiga' }}</h2>
                     </div>
                     @if ($canResumeThirdParty && $activeWait)
                         <div class="space-y-3 px-5 pb-1 sm:px-6">
@@ -714,19 +823,17 @@
             @if ($canTriage)
                 <section class="ui-panel overflow-hidden" aria-labelledby="triage-heading">
                     <div class="ui-panel-header">
-                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#ffd44f] !shadow-[0_0_0_4px_#fff0b9]" aria-hidden="true"></span>Keputusan operasional</p>
-                        <h2 id="triage-heading" class="mt-2 ui-section-title">Triase tiket</h2>
-                        <p class="ui-section-description">Pilih satu hasil. Layanan tiket sudah ditentukan dari Katalog Layanan; perubahan prioritas membutuhkan alasan.</p>
+                        <h2 id="triage-heading" class="ui-section-title">Triase tiket</h2>
                     </div>
                     <form method="POST" action="{{ route('tickets.triage', $ticket) }}" class="space-y-5 p-5 sm:p-6" data-ticket-triage-form>
                         @csrf
                         <fieldset>
                             <legend class="ui-field-label">Hasil triase <span class="text-rose-600" aria-hidden="true">*</span></legend>
                             <div class="mt-2 grid gap-2">
-                                @foreach ([['self', 'Kerjakan sendiri', 'Tetapkan tiket kepada Anda sebagai Agen Tier 1.'], ['tier_2', 'Tugaskan Tier 2', 'Pilih teknisi Tier 2 untuk melanjutkan pekerjaan.'], ['reject', 'Tolak', 'Akhiri tiket dengan alasan yang terlihat Pemohon.']] as [$value, $label, $description])
+                                @foreach ([['self', 'Kerjakan sendiri'], ['tier_2', 'Tugaskan Tier 2'], ['reject', 'Tolak']] as [$value, $label])
                                     <label class="flex cursor-pointer gap-3 rounded-xl border border-[#dfe8ec] bg-[#fbfdfd] p-3 transition hover:border-[#8bd7ee] has-[:checked]:border-[#75d5f3] has-[:checked]:bg-[#f1fbfe]">
                                         <input type="radio" name="outcome" value="{{ $value }}" class="mt-1 h-4 w-4 border-[#a9bbc2] text-[#147a79] focus:ring-[#2bb8aa]" @checked($currentOutcome === $value) data-ticket-triage-outcome>
-                                        <span><span class="block text-sm font-extrabold text-[#35505b]">{{ $label }}</span><span class="mt-1 block text-xs leading-5 text-[#78909a]">{{ $description }}</span></span>
+                                        <span class="block text-sm font-extrabold text-[#35505b]">{{ $label }}</span>
                                     </label>
                                 @endforeach
                             </div>
@@ -737,7 +844,6 @@
                             <div class="rounded-xl border border-[#dce9ed] bg-[#f8fbfc] p-4">
                                 <p class="ui-field-label">Layanan tiket</p>
                                 <p class="mt-2 text-sm font-extrabold text-[#35505b]">{{ $serviceLabel }}</p>
-                                <p class="mt-1 text-xs leading-5 text-[#78909a]">Keahlian dan saran teknisi diambil dari pemetaan layanan ini pada Katalog Layanan.</p>
                             </div>
                             <div>
                                 <label for="triage-priority" class="ui-field-label">Prioritas <span class="text-rose-600" aria-hidden="true">*</span></label>
@@ -765,13 +871,12 @@
                                         <option value="{{ $tierTwoUser->id }}" @selected((string) old('assigned_to_id') === (string) $tierTwoUser->id)>{{ $tierTwoUser->name }}</option>
                                     @endforeach
                                 </select>
-                                <p id="tier-two-help" class="ui-field-help">Saran di bawah dihitung dari keahlian layanan. Pilihan manual tetap diperbolehkan.</p>
+                                <p id="tier-two-help" class="ui-field-help">Saran berdasarkan keahlian layanan.</p>
                                 @error('assigned_to_id')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
                             </div>
                             <div aria-live="polite">
                                 <div class="flex items-center justify-between gap-3">
                                     <p class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#607681]">Saran teknisi</p>
-                                    <span class="text-[0.68rem] font-bold text-[#78909a]">Berdasarkan keahlian</span>
                                 </div>
                                 <ul class="mt-2 space-y-2" data-ticket-suggestion-list>
                                     @foreach ($ticketSuggestions as $suggestion)
@@ -803,9 +908,7 @@
             @if ($canAssignTierTwo)
                 <section class="ui-panel" aria-labelledby="assign-tier-two-heading">
                     <div class="ui-panel-header">
-                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Alih penanganan</p>
-                        <h2 id="assign-tier-two-heading" class="mt-2 ui-section-title">Tugaskan ke Tier 2</h2>
-                        <p class="ui-section-description">Status tetap Dikerjakan dan histori perpindahan akan disimpan.</p>
+                        <h2 id="assign-tier-two-heading" class="ui-section-title">Tugaskan ke Tier 2</h2>
                     </div>
                     <form method="POST" action="{{ route('tickets.assign-tier-2', $ticket) }}" class="space-y-4 p-5 sm:p-6" data-ticket-assignment-form>
                         @csrf
@@ -835,9 +938,7 @@
             @if ($canReturnToTierOne)
                 <section class="ui-panel border-l-4 border-l-[#e4a72c]" aria-labelledby="return-tier-one-heading">
                     <div class="ui-panel-header">
-                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#e4a72c] !shadow-[0_0_0_4px_#fff4d7]" aria-hidden="true"></span>Perlu dikembalikan</p>
-                        <h2 id="return-tier-one-heading" class="mt-2 ui-section-title">Kembalikan ke Tier 1</h2>
-                        <p class="ui-section-description">Tujuan: {{ $ticket->lastTriagedBy?->name ?? 'Agen Tier 1 terakhir' }}.</p>
+                        <h2 id="return-tier-one-heading" class="ui-section-title">Kembalikan ke Tier 1</h2>
                     </div>
                     <form method="POST" action="{{ route('tickets.return-to-tier-1', $ticket) }}" class="space-y-4 p-5 sm:p-6" data-ticket-return-form>
                         @csrf
@@ -851,50 +952,21 @@
                 </section>
             @endif
 
-            <section class="ui-panel" aria-labelledby="attachments-heading">
-                <div class="ui-panel-header">
-                    <h2 id="attachments-heading" class="ui-section-title">Lampiran</h2>
-                    <p class="ui-section-description">Berkas yang dapat Anda akses pada tiket ini.</p>
-                </div>
-                @if ($canUploadAttachments && $ticketAttachmentPolicies->isNotEmpty())
-                    <form method="POST" action="{{ route('tickets.attachments.store', $ticket) }}" enctype="multipart/form-data" class="space-y-4 border-b border-[#edf2f4] bg-[#f8fbfc] p-5 sm:p-6" data-ticket-attachment-form>
+            @if ($canCancel)
+                <section class="ui-ticket-danger-action ui-panel" aria-labelledby="cancel-ticket-heading">
+                    <div class="ui-panel-header">
+                        <h2 id="cancel-ticket-heading" class="ui-section-title">Batalkan tiket</h2>
+                    </div>
+                    <form method="POST" action="{{ route('tickets.cancel', $ticket) }}" class="p-5 sm:p-6" data-swal-confirm="Batalkan tiket ini? Tiket hanya dapat dibatalkan saat status Baru dan tidak dapat diproses lebih lanjut.">
                         @csrf
-                        <div>
-                            <p class="text-sm font-extrabold text-[#35505b]">Tambah lampiran kerja</p>
-                            <p class="mt-1 text-xs leading-5 text-[#78909a]">Pilih tipe lampiran yang sesuai. Storage berkas tetap privat dan setiap akses dicatat.</p>
-                        </div>
-                        <div class="grid gap-3 sm:grid-cols-2">
-                            @foreach ($ticketAttachmentPolicies as $policy)
-                                @php
-                                    $accept = collect($policy->allowed_extensions ?? [])->map(fn ($extension) => '.'.ltrim($extension, '.'))->implode(',');
-                                @endphp
-                                <div>
-                                    <label for="ticket-attachment-policy-{{ $policy->id }}" class="ui-field-label">{{ $policy->label }}</label>
-                                    <p id="ticket-attachment-policy-{{ $policy->id }}-help" class="ui-field-help">Maksimal {{ $policy->max_file_count }} berkas, {{ $policy->max_file_size_kb }} KB per berkas{{ $policy->visibility === 'internal' ? ' · internal' : ' · dapat diakses Pemohon sesuai visibilitas' }}.</p>
-                                    <input id="ticket-attachment-policy-{{ $policy->id }}" name="attachments[{{ $policy->id }}][]" type="file" class="ui-file-input mt-2" multiple @if ($accept !== '') accept="{{ $accept }}" @endif aria-describedby="ticket-attachment-policy-{{ $policy->id }}-help">
-                                </div>
-                            @endforeach
-                        </div>
-                        @error('attachments')<p class="text-sm text-rose-700">{{ $message }}</p>@enderror
-                        <button type="submit" class="ui-btn ui-btn-secondary w-full sm:w-auto" data-ticket-attachment-submit>Tambah lampiran</button>
+                        <p class="text-sm leading-6 text-[#78909a]">Tiket yang dibatalkan tidak dapat diproses lebih lanjut.</p>
+                        <button type="submit" class="ui-btn ui-btn-danger mt-4 w-full">Batalkan tiket</button>
                     </form>
-                @endif
-                @if ($ticket->attachments->isEmpty())
-                    <p class="p-5 text-sm leading-6 text-[#78909a] sm:p-6">Tidak ada lampiran pada tiket ini.</p>
-                @else
-                    <ul class="divide-y divide-[#edf2f4]">
-                        @foreach ($ticket->attachments as $attachment)
-                            <li class="flex items-start justify-between gap-3 p-4">
-                                <div class="min-w-0">
-                                    <p class="truncate text-sm font-extrabold text-[#35505b]" title="{{ $attachment->original_name }}">{{ $attachment->original_name }}</p>
-                                    <p class="mt-1 text-xs text-[#78909a]">{{ $attachment->type_label_snapshot }} · {{ number_format($attachment->size_bytes / 1024, 0, ',', '.') }} KB</p>
-                                </div>
-                                <a href="{{ route('attachments.download', $attachment) }}" class="ui-action-link shrink-0">Unduh<span class="sr-only"> {{ $attachment->original_name }}</span></a>
-                            </li>
-                        @endforeach
-                    </ul>
-                @endif
-            </section>
+                </section>
+            @endif
+            </div>
+            @endif
         </aside>
+        @endif
     </div>
 @endsection

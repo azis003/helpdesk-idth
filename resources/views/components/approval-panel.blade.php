@@ -11,19 +11,9 @@
 
 <section class="ui-panel border-l-4 {{ $isPending ? 'border-l-[#e4a72c]' : ($isApproved ? 'border-l-[#2bb8aa]' : 'border-l-[#d06478]') }}" aria-labelledby="approval-heading-{{ $approvalRequest->id }}">
     <div class="ui-panel-header">
-        <p class="ui-eyebrow"><span class="ui-eyebrow-dot {{ $isPending ? '!bg-[#e4a72c] !shadow-[0_0_0_4px_#fff4d7]' : ($isApproved ? '!bg-[#2bb8aa] !shadow-[0_0_0_4px_#d7f7f1]' : '!bg-[#d06478] !shadow-[0_0_0_4px_#fbe4e8]') }}" aria-hidden="true"></span>Persetujuan</p>
-        <h2 id="approval-heading-{{ $approvalRequest->id }}" class="mt-2 ui-section-title">
+        <h2 id="approval-heading-{{ $approvalRequest->id }}" class="ui-section-title">
             {{ $isPending ? 'Menunggu keputusan Manajer TI' : ($isApproved ? 'Persetujuan disetujui' : 'Persetujuan tidak disetujui') }}
         </h2>
-        <p class="ui-section-description">
-            @if ($isPending)
-                State tiket, penanggung jawab, dan tier sebelumnya tersimpan sampai keputusan diberikan.
-            @elseif ($isApproved)
-                Tiket telah dikembalikan ke state sebelum permintaan persetujuan.
-            @else
-                Tiket menjadi final Tidak Disetujui dan tidak dapat dibuka kembali.
-            @endif
-        </p>
     </div>
 
     <dl class="grid gap-3 px-5 pb-5 text-sm sm:grid-cols-2 sm:px-6">
@@ -36,7 +26,7 @@
             <dd class="mt-1 font-extrabold text-[#35505b]">{{ $approvalRequest->requestedBy?->name ?? 'Sistem' }}</dd>
         </div>
         <div class="rounded-lg bg-[#f8fbfc] p-3">
-            <dt class="text-[0.68rem] font-extrabold uppercase tracking-[0.1em] text-[#78909a]">State sebelumnya</dt>
+            <dt class="text-[0.68rem] font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Status sebelumnya</dt>
             <dd class="mt-1 font-extrabold text-[#35505b]">{{ \App\Enums\TicketStatus::tryFrom((string) $approvalRequest->previous_status)?->label() ?? 'Tidak tercatat' }}</dd>
         </div>
         <div class="rounded-lg bg-[#f8fbfc] p-3">
@@ -57,7 +47,6 @@
             <form method="POST" action="{{ route('approvals.approve', $approvalRequest) }}" class="rounded-xl border border-[#c8eee4] bg-[#f5fcf9] p-4" data-approval-decision-form>
                 @csrf
                 <p class="text-sm font-extrabold text-[#35505b]">Setujui permintaan</p>
-                <p class="mt-1 text-xs leading-5 text-[#52747b]">State sebelumnya dipulihkan dan pekerjaan dapat dilanjutkan.</p>
                 <button type="submit" class="ui-btn ui-btn-primary mt-4 w-full" data-approval-submit>Setuju</button>
             </form>
             <form method="POST" action="{{ route('approvals.reject', $approvalRequest) }}" class="rounded-xl border border-rose-200 bg-[#fff8f9] p-4" data-approval-decision-form>

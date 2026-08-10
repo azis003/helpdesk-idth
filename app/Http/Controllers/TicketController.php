@@ -251,7 +251,7 @@ class TicketController extends Controller
                 ->get();
             $buildings = Building::query()
                 ->active()
-                ->with(['floors' => fn ($query) => $query->active()->with(['rooms' => fn ($roomQuery) => $roomQuery->active()])])
+                ->with(['floors' => fn ($query) => $query->active()])
                 ->orderBy('name')
                 ->get();
             $requesters = $actor->hasRole(Role::AgenTier1)
@@ -310,6 +310,7 @@ class TicketController extends Controller
             'serviceType.activeFieldDefinitions.options',
             'serviceType.skills',
             'problemCategory',
+            'floor.building',
             'room.floor.building',
             'fieldValues',
             'fieldValueHistories.actor',

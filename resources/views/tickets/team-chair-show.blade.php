@@ -5,6 +5,9 @@
 @section('header_title', 'Detail tiket')
 
 @php
+    $ticketLabel = $ticket->ticketLabel();
+    $isIncident = str_starts_with((string) $ticketLabel, 'IN-');
+    $ticketTypeLabel = $isIncident ? 'Insiden' : 'Permintaan layanan';
     $sla = $ticket->sla;
     $formatMinutes = static function ($minutes): string {
         if ($minutes === null) {
@@ -25,41 +28,45 @@
 @endphp
 
 @section('content')
-    <div class="ui-page-header">
-        <div>
-            <a href="{{ route('tickets.index') }}" class="ui-action-link">&larr; Kembali ke tiket tim</a>
-            <p class="ui-eyebrow mt-4"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Metadata yang disetujui</p>
-            <h1 class="ui-page-title">{{ $ticket->ticketLabel() }}</h1>
-            <p class="ui-page-description">Ringkasan tiket anggota tim untuk pemantauan Ketua Tim Kerja. Halaman ini bersifat baca saja.</p>
-        </div>
-        <div class="flex shrink-0 flex-wrap gap-2">
-            <span class="rounded-full border border-[#f2d996] bg-[#fff8e6] px-3 py-1.5 text-xs font-extrabold text-[#8b6100]">Mode baca saja</span>
-        </div>
-    </div>
-
-    <div class="mt-8 space-y-5">
-        <section class="rounded-2xl border border-[#f0d28c] bg-[#fffaf0] p-4 sm:p-5" role="note" aria-label="Batas akses Ketua Tim Kerja">
-            <div class="flex items-start gap-3">
-                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#ffe8a3] text-[#8b6100]" aria-hidden="true">
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3.5 19 6v5.3c0 4.1-2.8 7.5-7 9.2-4.2-1.7-7-5.1-7-9.2V6l7-2.5Z" /><path stroke-linecap="round" d="M12 8v4.5m0 3h.01" /></svg>
+    <header class="ui-ticket-detail-header">
+        <div class="min-w-0">
+            <a href="{{ route('tickets.index') }}" class="ui-action-link mb-4 inline-flex items-center gap-1.5">
+                <span aria-hidden="true">&larr;</span>
+                Kembali ke tiket tim
+            </a>
+            <div class="ui-ticket-detail-heading">
+                <span class="ui-ticket-detail-icon {{ $isIncident ? 'ui-ticket-detail-icon--incident' : 'ui-ticket-detail-icon--request' }}" aria-hidden="true">
+                    @if ($isIncident)
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.75" y="5.25" width="16.5" height="13.5" rx="2" /><path stroke-linecap="round" stroke-linejoin="round" d="m5 7.5 7 5.5 7-5.5" /></svg>
+                    @else
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8.25" cy="15.75" r="3.25" /><path stroke-linecap="round" stroke-linejoin="round" d="m10.6 13.4 7.15-7.15m-1.65-.2h2.05v2.05m-4.6 2.35 2.2 2.2" /></svg>
+                    @endif
                 </span>
-                <div>
-                    <p class="text-sm font-extrabold text-[#7c5800]">Akses terbatas untuk pemantauan</p>
-                    <p class="mt-1 text-sm leading-6 text-[#946f16]">Anda dapat melihat status, SLA, penanggung jawab, balasan publik, dan solusi. Komentar, perubahan status, lampiran, persetujuan, serta aksi operasional tidak tersedia pada peran ini.</p>
+                <div class="min-w-0">
+                    <p class="ui-ticket-detail-kicker">{{ $ticketTypeLabel }} &middot; {{ $ticket->serviceCode ?? 'Tiket' }}</p>
+                    <h1 class="ui-ticket-detail-title">#{{ $ticketLabel }}: {{ $ticket->subject }}</h1>
                 </div>
             </div>
-        </section>
+        </div>
+        <div class="ui-ticket-detail-actions">
+            <x-status-badge :status="$ticket->status" />
+            <x-priority-badge :priority="$ticket->priority" />
+            <span class="rounded-full border border-[#f2d996] bg-[#fff8e6] px-3 py-1.5 text-xs font-extrabold text-[#8b6100]">Baca saja</span>
+        </div>
+    </header>
+
+    <div class="mt-6 space-y-5">
+        <div class="flex items-center gap-2 text-xs font-bold text-[#78909a]" role="note" aria-label="Batas akses Ketua Tim Kerja">
+            <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#fff0b9] text-[#8b6100]" aria-hidden="true">i</span>
+            <span>Mode baca saja untuk pemantauan tim.</span>
+        </div>
 
         <div class="grid gap-5 xl:grid-cols-[1.28fr_0.72fr]">
-            <section class="ui-panel" aria-labelledby="team-chair-ticket-summary">
+            <section id="team-chair-summary" class="ui-panel" aria-labelledby="team-chair-ticket-summary">
                 <div class="ui-panel-header flex flex-wrap items-start justify-between gap-4">
                     <div class="min-w-0">
-                        <p class="text-xs font-extrabold uppercase tracking-[0.12em] text-[#78909a]">Ringkasan tiket</p>
-                        <h2 id="team-chair-ticket-summary" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">{{ $ticket->subject }}</h2>
-                    </div>
-                    <div class="flex shrink-0 flex-wrap gap-2">
-                        <x-status-badge :status="$ticket->status" />
-                        <x-priority-badge :priority="$ticket->priority" />
+                        <p class="ui-ticket-section-kicker">Ringkasan tiket</p>
+                        <h2 id="team-chair-ticket-summary" class="mt-1 ui-section-title">Informasi utama</h2>
                     </div>
                 </div>
 
@@ -67,13 +74,6 @@
                     <div class="rounded-xl bg-[#f8fbfc] p-4 sm:col-span-2">
                         <dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Layanan</dt>
                         <dd class="mt-2 text-sm font-extrabold text-[#35505b]">{{ $ticket->serviceCode ?? 'Kode layanan tidak tersedia' }} <span class="font-normal text-[#78909a]">&mdash;</span> {{ $ticket->serviceName ?? 'Layanan belum tersedia' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Keahlian layanan</dt>
-                        <dd class="mt-1 text-sm font-bold text-[#35505b]">{{ $ticket->serviceSkills ?? 'Belum dipetakan di Katalog Layanan' }}</dd>
-                        @if ($ticket->categoryName)
-                            <p class="mt-1 text-xs text-[#78909a]">Klasifikasi historis: {{ $ticket->categoryName }}</p>
-                        @endif
                     </div>
                     <div>
                         <dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Pemohon</dt>
@@ -100,28 +100,25 @@
 
             <section class="ui-panel" aria-labelledby="team-chair-assignee-heading">
                 <div class="ui-panel-header">
-                    <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#75d5f3] !shadow-[0_0_0_4px_#d9f6ff]" aria-hidden="true"></span>Penanganan</p>
-                    <h2 id="team-chair-assignee-heading" class="mt-2 ui-section-title">Penanggung jawab</h2>
-                    <p class="ui-section-description">Informasi kepemilikan tiket yang dapat dipantau oleh Ketua Tim.</p>
+                    <h2 id="team-chair-assignee-heading" class="ui-section-title">Penanggung jawab</h2>
                 </div>
                 <div class="p-5 sm:p-6">
-                    <p class="text-lg font-extrabold text-[#35505b]">{{ $ticket->assigneeLabel() }}</p>
-                    @if ($ticket->assignedTierLabel())
-                        <p class="mt-1 text-sm text-[#78909a]">{{ $ticket->assignedTierLabel() }}</p>
-                    @endif
-                    <div class="mt-5 rounded-xl border border-[#dce7eb] bg-[#fbfdfd] p-4">
-                        <p class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Status saat ini</p>
-                        <div class="mt-2"><x-status-badge :status="$ticket->status" /></div>
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <p class="text-lg font-extrabold text-[#35505b]">{{ $ticket->assigneeLabel() }}</p>
+                            @if ($ticket->assignedTierLabel())
+                                <p class="mt-1 text-sm text-[#78909a]">{{ $ticket->assignedTierLabel() }}</p>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </section>
         </div>
 
-        <section class="ui-panel" aria-labelledby="team-chair-sla-heading">
+        <section id="team-chair-sla" class="ui-panel" aria-labelledby="team-chair-sla-heading">
             <div class="ui-panel-header flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#f3c64d] !shadow-[0_0_0_4px_#fff1c2]" aria-hidden="true"></span>Target layanan</p>
-                    <h2 id="team-chair-sla-heading" class="mt-2 ui-section-title">SLA tiket</h2>
+                    <h2 id="team-chair-sla-heading" class="ui-section-title">SLA tiket</h2>
                 </div>
                 <span class="rounded-full bg-[#f8fbfc] px-3 py-1 text-xs font-extrabold text-[#526f79]">{{ $slaState }}</span>
             </div>
@@ -142,11 +139,9 @@
         </section>
 
         <div class="grid gap-5 xl:grid-cols-2">
-            <section class="ui-panel" aria-labelledby="team-chair-public-replies-heading">
+            <section id="team-chair-replies" class="ui-panel" aria-labelledby="team-chair-public-replies-heading">
                 <div class="ui-panel-header">
-                    <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#75d5f3] !shadow-[0_0_0_4px_#d9f6ff]" aria-hidden="true"></span>Komunikasi</p>
-                    <h2 id="team-chair-public-replies-heading" class="mt-2 ui-section-title">Balasan publik</h2>
-                    <p class="ui-section-description">Hanya pesan yang ditujukan untuk Pemohon yang ditampilkan.</p>
+                    <h2 id="team-chair-public-replies-heading" class="ui-section-title">Balasan publik</h2>
                 </div>
                 <div class="space-y-3 p-5 sm:p-6">
                     @forelse ($ticket->publicComments as $comment)
@@ -162,17 +157,14 @@
                     @empty
                         <div class="rounded-2xl border border-dashed border-[#cfe0e5] bg-[#fbfdfd] p-6 text-center">
                             <p class="text-sm font-extrabold text-[#526f79]">Belum ada balasan publik.</p>
-                            <p class="mt-1 text-xs text-[#78909a]">Catatan internal tidak termasuk dalam tampilan Ketua Tim.</p>
                         </div>
                     @endforelse
                 </div>
             </section>
 
-            <section class="ui-panel" aria-labelledby="team-chair-solution-heading">
+            <section id="team-chair-solution" class="ui-panel" aria-labelledby="team-chair-solution-heading">
                 <div class="ui-panel-header">
-                    <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#75d5f3] !shadow-[0_0_0_4px_#d9f6ff]" aria-hidden="true"></span>Penyelesaian</p>
-                    <h2 id="team-chair-solution-heading" class="mt-2 ui-section-title">Solusi</h2>
-                    <p class="ui-section-description">Solusi yang tercatat untuk tiket ini, tanpa detail operasional lainnya.</p>
+                    <h2 id="team-chair-solution-heading" class="ui-section-title">Solusi</h2>
                 </div>
                 <div class="p-5 sm:p-6">
                     <div class="rounded-2xl border border-[#cdeef7] bg-[#f5fcfe] p-5">

@@ -53,6 +53,7 @@ class Ticket extends Model
         'sla_elapsed_working_minutes',
         'rejection_reason',
         'room_id',
+        'floor_id',
         'building_name_snapshot',
         'floor_name_snapshot',
         'room_name_snapshot',
@@ -141,6 +142,11 @@ class Ticket extends Model
     public function room(): BelongsTo
     {
         return $this->belongsTo(Room::class);
+    }
+
+    public function floor(): BelongsTo
+    {
+        return $this->belongsTo(Floor::class);
     }
 
     public function fieldValues(): HasMany

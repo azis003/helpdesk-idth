@@ -228,6 +228,40 @@ class ServiceCatalogSeeder extends Seeder
             }
         }
 
+        AttachmentPolicy::query()->firstOrCreate(
+            [
+                'service_type_id' => null,
+                'type_key' => 'supporting',
+            ],
+            [
+                'label' => 'Lampiran pendukung',
+                'max_file_size_kb' => 10240,
+                'max_file_count' => 5,
+                'allowed_mimes' => [
+                    'image/jpeg',
+                    'image/png',
+                    'image/gif',
+                    'image/webp',
+                    'application/pdf',
+                    'application/msword',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'application/vnd.ms-excel',
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'application/vnd.ms-powerpoint',
+                    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                    'text/plain',
+                    'text/csv',
+                    'application/rtf',
+                ],
+                'allowed_extensions' => [
+                    'jpg', 'jpeg', 'png', 'gif', 'webp',
+                    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'rtf',
+                ],
+                'visibility' => 'both',
+                'is_active' => true,
+            ],
+        );
+
         $specialAttachmentPolicies = [
             [
                 'service' => 'SVC-03',

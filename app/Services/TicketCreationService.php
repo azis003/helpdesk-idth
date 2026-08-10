@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Enums\Priority;
 use App\Enums\Role;
 use App\Enums\TicketStatus;
-use App\Models\Room;
+use App\Models\Floor;
 use App\Models\ServiceType;
 use App\Models\Ticket;
 use App\Models\User;
@@ -38,7 +38,7 @@ class TicketCreationService
         $serviceType = $this->resolveServiceType($data['service_type_id'] ?? null);
         $fields = $this->fieldValidator->validate($serviceType, is_array($data['fields'] ?? null) ? $data['fields'] : []);
         $ticketClass = $this->resolveTicketClass($serviceType);
-        $room = $this->resolveRoom($data['room_id'] ?? null, $serviceType);
+        $floor = $this->resolveFloor($data['floor_id'] ?? null, $serviceType);
         $priority = $this->resolvePriority($data['priority'] ?? null);
         $policies = $this->attachmentService->policiesFor(
             $serviceType,
@@ -58,7 +58,7 @@ class TicketCreationService
             $serviceType,
             $fields,
             $ticketClass,
-            $room,
+            $floor,
             $priority,
             $attachments,
             $data,
@@ -92,10 +92,11 @@ class TicketCreationService
                 'service_type_variant_label_snapshot' => null,
                 'priority' => $priority,
                 'description' => trim((string) $data['description']),
-                'room_id' => $room?->getKey(),
-                'building_name_snapshot' => $room?->floor?->building?->name,
-                'floor_name_snapshot' => $room?->floor?->name,
-                'room_name_snapshot' => $room?->name,
+                'room_id' => null,
+                'floor_id' => $floor?->getKey(),
+                'building_name_snapshot' => $floor?->building?->name,
+                'floor_name_snapshot' => $floor?->name,
+                'room_name_snapshot' => null,
                 'submitted_at' => $now,
             ]);
 
@@ -124,7 +125,7 @@ class TicketCreationService
             }
 
             $this->attachmentService->store($ticket, $actor, $attachments);
-            $ticket->load(['requester', 'creator', 'serviceType', 'serviceTypeVariant', 'room.floor.building', 'fieldValues', 'attachments']);
+            $ticket->load(['requester', 'creator', 'serviceType', 'serviceTypeVariant', 'floor.building', 'fieldValues', 'attachments']);
 
             $this->auditLogger->succeeded(
                 $actor,
@@ -198,35 +199,35 @@ class TicketCreationService
         return $serviceType->ticket_class;
     }
 
-    private function resolveRoom(mixed $roomId, ServiceType $serviceType): ?Room
+    private function resolveFloor(mixed $floorId, ServiceType $serviceType): ?Floor
     {
         $required = in_array($serviceType->code, ['SVC-01', 'SVC-05'], true);
-        $roomId = $roomId === null || $roomId === '' ? null : (int) $roomId;
+        $floorId = $floorId === null || $floorId === '' ? null : (int) $floorId;
 
-        if ($roomId === null && $required) {
+        if ($floorId === null && $required) {
             throw ValidationException::withMessages([
-                'room_id' => "Lokasi wajib diisi untuk {$serviceType->code}.",
+                'floor_id' => "Gedung dan lantai wajib diisi untuk {$serviceType->code}.",
             ]);
         }
 
-        if ($roomId === null) {
+        if ($floorId === null) {
             return null;
         }
 
-        $room = Room::query()
+        $floor = Floor::query()
             ->active()
-            ->with('floor.building')
-            ->whereKey($roomId)
-            ->whereHas('floor', fn ($query) => $query->where('is_active', true)->whereHas('building', fn ($building) => $building->where('is_active', true)))
+            ->with('building')
+            ->whereKey($floorId)
+            ->whereHas('building', fn ($query) => $query->where('is_active', true))
             ->first();
 
-        if ($room === null) {
+        if ($floor === null) {
             throw ValidationException::withMessages([
-                'room_id' => 'Lokasi yang dipilih tidak aktif atau tidak ditemukan.',
+                'floor_id' => 'Gedung atau lantai yang dipilih tidak aktif atau tidak ditemukan.',
             ]);
         }
 
-        return $room;
+        return $floor;
     }
 
     private function resolvePriority(mixed $priority): Priority
@@ -259,7 +260,8 @@ class TicketCreationService
             'service_type' => $ticket->service_type_code_snapshot,
             'priority' => $ticket->priority?->value,
             'status' => $ticket->status?->value,
-            'room' => $ticket->room_name_snapshot,
+            'building' => $ticket->building_name_snapshot,
+            'floor' => $ticket->floor_name_snapshot,
             'attachment_count' => $ticket->attachments->count(),
         ];
     }

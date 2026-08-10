@@ -10,7 +10,6 @@ use App\Models\Attachment;
 use App\Models\AttachmentPolicy;
 use App\Models\Building;
 use App\Models\Floor;
-use App\Models\Room;
 use App\Models\ServiceType;
 use App\Models\TeamMembership;
 use App\Models\Ticket;
@@ -38,7 +37,7 @@ class TicketManagementTest extends TestCase
         Storage::fake('local');
 
         $pemohon = $this->createUser([Role::Pemohon]);
-        $room = $this->createRoom();
+        $floor = $this->createFloor();
         $service = ServiceType::query()->where('code', 'SVC-01')->firstOrFail();
         $policy = AttachmentPolicy::query()->create([
             'service_type_id' => $service->id,
@@ -78,7 +77,9 @@ class TicketManagementTest extends TestCase
             ->assertSee($pemohon->email)
             ->assertSee($pemohon->nip)
             ->assertSee('Jenis gangguan')
-            ->assertSee('name="room_id"', false)
+            ->assertSee('name="floor_id"', false)
+            ->assertSee('Gedung Utama — Lantai 1')
+            ->assertSee('Lantai 1')
             ->assertDontSee('Gangguan terjadwal');
 
         $svc02 = ServiceType::query()->where('code', 'SVC-02')->firstOrFail();
@@ -88,7 +89,7 @@ class TicketManagementTest extends TestCase
             ->assertOk()
             ->assertSee('Nama data atau laporan')
             ->assertDontSee('Jenis gangguan')
-            ->assertDontSee('name="room_id"', false);
+            ->assertDontSee('name="floor_id"', false);
 
         $response = $this->actingAs($pemohon)->post(route('tickets.store'), [
             'requester_id' => $pemohon->id,
@@ -96,7 +97,7 @@ class TicketManagementTest extends TestCase
             'subject' => 'Wi-Fi tidak dapat digunakan',
             'description' => 'Perangkat saya tidak dapat terhubung ke Wi-Fi kantor.',
             'priority' => Priority::Tinggi->value,
-            'room_id' => $room->id,
+            'floor_id' => $floor->id,
             'fields' => [
                 'incident_type' => 'wifi',
                 'connection_medium' => 'wifi',
@@ -119,6 +120,10 @@ class TicketManagementTest extends TestCase
         $this->assertSame(Priority::Tinggi, $ticket->priority);
         $this->assertSame($pemohon->id, $ticket->requester_id);
         $this->assertSame($pemohon->id, $ticket->created_by_id);
+        $this->assertSame($floor->id, $ticket->floor_id);
+        $this->assertSame('Gedung Utama', $ticket->building_name_snapshot);
+        $this->assertSame('Lantai 1', $ticket->floor_name_snapshot);
+        $this->assertNull($ticket->room_id);
         $this->assertTrue($ticket->is_self_created);
         $this->assertNull($ticket->assigned_to_id);
         $this->assertSame('wifi', TicketFieldValue::query()->where('ticket_id', $ticket->id)->where('field_key', 'incident_type')->value('value'));
@@ -171,7 +176,7 @@ class TicketManagementTest extends TestCase
         $this->actingAs($pemohon)
             ->post(route('tickets.store'), $this->payloadFor($service, [
                 'subject' => 'Tiket setelah pembatalan',
-                'room_id' => $room->id,
+                'floor_id' => $floor->id,
             ]))
             ->assertRedirect();
 
@@ -198,6 +203,46 @@ class TicketManagementTest extends TestCase
             ->assertDontSee('Belum ada field tambahan untuk layanan ini.');
     }
 
+    public function test_every_service_form_offers_optional_supporting_attachments(): void
+    {
+        $pemohon = $this->createUser([Role::Pemohon]);
+
+        foreach (ServiceType::query()->active()->orderBy('sort_order')->get() as $service) {
+            $this->actingAs($pemohon)
+                ->get(route('tickets.create', ['service_type_id' => $service->id]))
+                ->assertOk()
+                ->assertSee('Lampiran')
+                ->assertSee('opsional')
+                ->assertSee('Dokumen atau gambar')
+                ->assertSee('Maks. 5 berkas')
+                ->assertDontSee('Bagian ini boleh dikosongkan.')
+                ->assertSee('name="attachments[', false);
+        }
+    }
+
+    public function test_global_attachment_policy_rejects_executable_uploads(): void
+    {
+        Storage::fake('local');
+
+        $pemohon = $this->createUser([Role::Pemohon]);
+        $service = ServiceType::query()->where('code', 'SVC-02')->firstOrFail();
+        $policy = AttachmentPolicy::query()
+            ->whereNull('service_type_id')
+            ->where('type_key', 'supporting')
+            ->firstOrFail();
+
+        $this->actingAs($pemohon)
+            ->post(route('tickets.store'), $this->payloadFor($service, [
+                'attachments' => [
+                    $policy->id => [UploadedFile::fake()->create('malware.exe', 20, 'application/x-msdownload')],
+                ],
+            ]))
+            ->assertRedirect()
+            ->assertSessionHasErrors("attachments.{$policy->id}");
+
+        $this->assertDatabaseCount('tickets', 0);
+    }
+
     public function test_svc01_and_svc05_require_a_location(): void
     {
         $pemohon = $this->createUser([Role::Pemohon]);
@@ -209,7 +254,7 @@ class TicketManagementTest extends TestCase
                 'subject' => 'Koneksi kantor bermasalah',
             ]))
             ->assertRedirect()
-            ->assertSessionHasErrors('room_id');
+            ->assertSessionHasErrors('floor_id');
 
         $this->actingAs($pemohon)
             ->post(route('tickets.store'), $this->payloadFor($svc05, [
@@ -217,7 +262,7 @@ class TicketManagementTest extends TestCase
                 'fields' => array_merge($this->fieldsFor($svc05), ['request_subtype' => 'request']),
             ]))
             ->assertRedirect()
-            ->assertSessionHasErrors('room_id');
+            ->assertSessionHasErrors('floor_id');
 
         $this->assertDatabaseCount('tickets', 0);
     }
@@ -225,13 +270,13 @@ class TicketManagementTest extends TestCase
     public function test_hardware_subtype_cannot_override_the_service_ticket_class(): void
     {
         $pemohon = $this->createUser([Role::Pemohon]);
-        $room = $this->createRoom();
+        $floor = $this->createFloor();
         $service = ServiceType::query()->where('code', 'SVC-05')->firstOrFail();
 
         $this->actingAs($pemohon)
             ->post(route('tickets.store'), $this->payloadFor($service, [
                 'subject' => 'Perbaikan laptop kantor',
-                'room_id' => $room->id,
+                'floor_id' => $floor->id,
                 'fields' => array_merge($this->fieldsFor($service), ['request_subtype' => 'repair']),
             ]))
             ->assertRedirect();
@@ -284,7 +329,7 @@ class TicketManagementTest extends TestCase
     public function test_failed_creation_does_not_reuse_a_reserved_number_on_retry(): void
     {
         $pemohon = $this->createUser([Role::Pemohon]);
-        $room = $this->createRoom();
+        $floor = $this->createFloor();
         $service = ServiceType::query()->where('code', 'SVC-01')->firstOrFail();
 
         Ticket::creating(function (): void {
@@ -294,7 +339,7 @@ class TicketManagementTest extends TestCase
         try {
             $response = $this->actingAs($pemohon)->post(route('tickets.store'), $this->payloadFor($service, [
                 'subject' => 'Tiket yang gagal disimpan',
-                'room_id' => $room->id,
+                'floor_id' => $floor->id,
             ]));
 
             $this->assertSame(500, $response->getStatusCode());
@@ -305,7 +350,7 @@ class TicketManagementTest extends TestCase
         $this->actingAs($pemohon)
             ->post(route('tickets.store'), $this->payloadFor($service, [
                 'subject' => 'Tiket retry',
-                'room_id' => $room->id,
+                'floor_id' => $floor->id,
             ]))
             ->assertRedirect();
 
@@ -342,18 +387,18 @@ class TicketManagementTest extends TestCase
     public function test_ticket_numbers_are_separated_by_class_and_increment_without_reuse(): void
     {
         $pemohon = $this->createUser([Role::Pemohon]);
-        $room = $this->createRoom();
+        $floor = $this->createFloor();
         $svc01 = ServiceType::query()->where('code', 'SVC-01')->firstOrFail();
         $svc02 = ServiceType::query()->where('code', 'SVC-02')->firstOrFail();
         $svc03 = ServiceType::query()->where('code', 'SVC-03')->firstOrFail();
 
         $this->actingAs($pemohon)->post(route('tickets.store'), $this->payloadFor($svc01, [
             'subject' => 'Koneksi pertama',
-            'room_id' => $room->id,
+            'floor_id' => $floor->id,
         ]))->assertRedirect();
         $this->actingAs($pemohon)->post(route('tickets.store'), $this->payloadFor($svc01, [
             'subject' => 'Koneksi kedua',
-            'room_id' => $room->id,
+            'floor_id' => $floor->id,
         ]))->assertRedirect();
         $this->actingAs($pemohon)->post(route('tickets.store'), $this->payloadFor($svc02, [
             'subject' => 'Permintaan data pertama',
@@ -480,12 +525,11 @@ class TicketManagementTest extends TestCase
         ]);
     }
 
-    private function createRoom(): Room
+    private function createFloor(): Floor
     {
         $building = Building::query()->create(['name' => 'Gedung Utama', 'is_active' => true]);
-        $floor = Floor::query()->create(['building_id' => $building->id, 'name' => 'Lantai 1', 'sort_order' => 1, 'is_active' => true]);
 
-        return Room::query()->create(['floor_id' => $floor->id, 'name' => 'Ruang 101', 'is_active' => true]);
+        return Floor::query()->create(['building_id' => $building->id, 'name' => 'Lantai 1', 'sort_order' => 1, 'is_active' => true]);
     }
 
     /** @return array<string, mixed> */
@@ -497,7 +541,7 @@ class TicketManagementTest extends TestCase
             'subject' => 'Permintaan layanan',
             'description' => 'Deskripsi permintaan layanan yang cukup jelas.',
             'priority' => Priority::Sedang->value,
-            'room_id' => null,
+            'floor_id' => null,
             'fields' => $this->fieldsFor($service),
         ], $overrides);
     }

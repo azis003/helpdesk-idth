@@ -128,21 +128,21 @@
 
                 @if ($locationRequired)
                     <div>
-                        <label for="room_id" class="ui-field-label">Lokasi <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only">wajib</span></label>
-                        <p id="room_id-help" class="ui-field-help">Wajib untuk layanan ini.</p>
-                        <select id="room_id" name="room_id" required class="ui-select mt-2" @error('room_id') aria-invalid="true" aria-describedby="room_id-error" @else aria-describedby="room_id-help" @enderror>
-                            <option value="">Pilih lokasi</option>
+                        <label for="floor_id" class="ui-field-label">Lokasi <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only">wajib</span></label>
+                        <p id="floor_id-help" class="ui-field-help">Pilih gedung dan lantai. Wajib untuk layanan ini.</p>
+                        <select id="floor_id" name="floor_id" required class="ui-select mt-2" @error('floor_id') aria-invalid="true" aria-describedby="floor_id-error" @else aria-describedby="floor_id-help" @enderror>
+                            <option value="">Pilih gedung dan lantai</option>
                             @foreach ($buildings as $building)
-                                @foreach ($building->floors as $floor)
-                                    <optgroup label="{{ $building->name }} — {{ $floor->name }}">
-                                        @foreach ($floor->rooms as $room)
-                                            <option value="{{ $room->id }}" @selected((string) old('room_id') === (string) $room->id)>{{ $room->name }}</option>
+                                @if ($building->floors->isNotEmpty())
+                                    <optgroup label="{{ $building->name }}">
+                                        @foreach ($building->floors as $floor)
+                                            <option value="{{ $floor->id }}" @selected((string) old('floor_id') === (string) $floor->id)>{{ $building->name }} — {{ $floor->name }}</option>
                                         @endforeach
                                     </optgroup>
-                                @endforeach
+                                @endif
                             @endforeach
                         </select>
-                        @error('room_id')<p id="room_id-error" class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+                        @error('floor_id')<p id="floor_id-error" class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
                     </div>
                 @endif
             </div>
@@ -156,21 +156,24 @@
             @endif
 
             @if ($serviceAttachmentPolicies->isNotEmpty())
-                <div class="mt-6 space-y-4 border-t border-[#e7eef1] pt-6">
-                    <div>
-                        <p class="ui-field-label">Lampiran</p>
-                        <p class="ui-field-help">Tambahkan berkas pendukung bila diperlukan.</p>
-                    </div>
+                <div class="mt-6 border-t border-[#e7eef1] pt-6">
+                    <p class="ui-field-label">Lampiran <span class="font-normal text-[#78909a]">(opsional)</span></p>
+                    <div class="mt-3 space-y-4">
                     @foreach ($serviceAttachmentPolicies as $policy)
                         @php
                             $accept = collect($policy->allowed_mimes ?? [])->merge(collect($policy->allowed_extensions ?? [])->map(fn ($extension) => '.'.ltrim($extension, '.')))->implode(',');
+                            $fileSize = $policy->max_file_size_kb % 1024 === 0
+                                ? intdiv($policy->max_file_size_kb, 1024).' MB'
+                                : $policy->max_file_size_kb.' KB';
+                            $formatHint = $policy->service_type_id === null ? 'Dokumen atau gambar · ' : '';
                         @endphp
-                        <div class="rounded-xl border border-[#e5edef] bg-[#fbfdfd] p-4 sm:p-5">
+                        <div class="{{ $loop->last ? '' : 'border-b border-[#e7eef1] pb-4' }}">
                             <label for="attachment-policy-{{ $policy->id }}" class="ui-field-label">{{ $policy->label }}</label>
-                            <p id="attachment-policy-{{ $policy->id }}-help" class="ui-field-help">Maksimal {{ $policy->max_file_count }} berkas, {{ $policy->max_file_size_kb }} KB per berkas{{ $policy->allowed_extensions ? ' · '.implode(', ', $policy->allowed_extensions) : '' }}.</p>
-                            <input id="attachment-policy-{{ $policy->id }}" name="attachments[{{ $policy->id }}][]" type="file" class="ui-input mt-2 file:mr-3 file:rounded-md file:border-0 file:bg-[#e8f7fb] file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-[#1d5d72]" multiple @if ($accept !== '') accept="{{ $accept }}" @endif aria-describedby="attachment-policy-{{ $policy->id }}-help">
+                            <p id="attachment-policy-{{ $policy->id }}-help" class="ui-field-help">{{ $formatHint }}Maks. {{ $policy->max_file_count }} berkas · {{ $fileSize }} per berkas.</p>
+                            <input id="attachment-policy-{{ $policy->id }}" name="attachments[{{ $policy->id }}][]" type="file" class="ui-file-input mt-2" multiple @if ($accept !== '') accept="{{ $accept }}" @endif aria-describedby="attachment-policy-{{ $policy->id }}-help">
                         </div>
                     @endforeach
+                    </div>
                 </div>
             @endif
         </div>
