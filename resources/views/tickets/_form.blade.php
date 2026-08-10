@@ -13,7 +13,7 @@
 <div class="ui-page-header">
     <div>
         <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Tiket baru</p>
-        <h1 class="ui-page-title">Isi formulir layanan</h1>
+        <h1 class="ui-page-title">Isi Formulir Layanan</h1>
     </div>
     <a href="{{ route('tickets.create') }}" class="ui-btn ui-btn-ghost">Ganti layanan</a>
 </div>
@@ -116,7 +116,6 @@
 
                 <div>
                     <label for="priority" class="ui-field-label">Prioritas <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only">wajib</span></label>
-                    <p id="priority-help" class="ui-field-help">Tim TI dapat menyesuaikannya saat triase.</p>
                     <select id="priority" name="priority" required class="ui-select mt-2" @error('priority') aria-invalid="true" aria-describedby="priority-error" @else aria-describedby="priority-help" @enderror>
                         <option value="">Pilih prioritas</option>
                         @foreach (\App\Enums\Priority::labels() as $value => $label)

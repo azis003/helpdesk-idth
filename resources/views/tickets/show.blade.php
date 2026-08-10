@@ -312,7 +312,7 @@
                             </div>
                             @if ($commentPublicPolicies->isNotEmpty())
                                 <fieldset class="space-y-3">
-                                    <legend class="ui-field-label">Lampiran pendukung</legend>
+                                    <!-- <legend class="ui-field-label">Lampiran pendukung</legend> -->
                                     @foreach ($commentPublicPolicies as $policy)
                                         @php
                                             $accept = collect($policy->allowed_mimes ?? [])->merge(collect($policy->allowed_extensions ?? [])->map(fn ($extension) => '.'.ltrim($extension, '.')))->implode(',');
