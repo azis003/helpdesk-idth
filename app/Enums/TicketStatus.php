@@ -32,4 +32,67 @@ enum TicketStatus: string
             self::Dibatalkan => 'Dibatalkan',
         };
     }
+
+    /**
+     * Tiket yang masih ditangani tim TI dan belum menunggu pemohon.
+     *
+     * @return list<self>
+     */
+    public static function activeCases(): array
+    {
+        return [
+            self::Baru,
+            self::Diproses,
+            self::Dikerjakan,
+            self::MenungguPersetujuan,
+            self::MenungguPihakKetiga,
+        ];
+    }
+
+    /**
+     * Tiket yang berhenti sampai pemohon memberi tanggapan.
+     *
+     * @return list<self>
+     */
+    public static function requesterActionCases(): array
+    {
+        return [
+            self::MenungguPemohon,
+            self::MenungguKonfirmasi,
+        ];
+    }
+
+    /**
+     * Status akhir yang tidak lagi memerlukan tindak lanjut.
+     *
+     * @return list<self>
+     */
+    public static function closedCases(): array
+    {
+        return [
+            self::Ditutup,
+            self::Ditolak,
+            self::TidakDisetujui,
+            self::Dibatalkan,
+        ];
+    }
+
+    public function isClosed(): bool
+    {
+        return in_array($this, self::closedCases(), true);
+    }
+
+    public function needsRequesterAction(): bool
+    {
+        return in_array($this, self::requesterActionCases(), true);
+    }
+
+    /**
+     * @param  list<self>  $cases
+     * @return list<string>
+     */
+    public static function valuesOf(array $cases): array
+    {
+        return array_map(static fn (self $case): string => $case->value, $cases);
+    }
 }
