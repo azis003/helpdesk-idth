@@ -16,7 +16,7 @@
 @section('content')
     <div class="ui-page-header">
         <div>
-            <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#ffd44f] !shadow-[0_0_0_4px_#fff0b9]" aria-hidden="true"></span>Ruang kerja Agen Tier 1</p>
+            <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#ffd44f] !shadow-[0_0_0_4px_#fff0b9]" aria-hidden="true"></span>Ruang Kerja</p>
             <h1 class="ui-page-title">Antrean Tier 1</h1>
             <p class="ui-page-description">Ambil tiket Baru yang paling mendesak, lalu lanjutkan ke triase awal dengan jejak penanganan yang jelas.</p>
         </div>
