@@ -5,6 +5,7 @@
 
 @php
     $actor = auth()->user();
+    $isRequester = (int) $ticket->requester_id === (int) $actor->getKey();
     $isOperationalAgent = $actor->hasAnyRole([\App\Enums\Role::AgenTier1, \App\Enums\Role::AgenTier2]);
     $fromAllTickets = request()->query('from') === 'all' && $actor->can('viewAll', \App\Models\Ticket::class);
     $workAreaTab = $ticket->status === \App\Enums\TicketStatus::Baru && $ticket->assigned_to_id === null ? 'queue' : 'mine';
@@ -41,8 +42,9 @@
     $currentUserInitials = strtoupper(collect(preg_split('/\s+/', trim($actor->name)))->filter()->take(2)->map(fn (string $part): string => mb_substr($part, 0, 1))->implode(''));
     $isClosed = $ticket->status?->isClosed() ?? false;
     $canCancel = $actor->can('cancel', $ticket);
-    $canClaim = $canClaim ?? false;
     $canTriage = $canTriage ?? false;
+    $canChangePriority = $canChangePriority ?? false;
+    $canReject = $canReject ?? false;
     $canAssignTierTwo = $canAssignTierTwo ?? false;
     $canReturnToTierOne = $canReturnToTierOne ?? false;
     $tierTwoUsers = $tierTwoUsers ?? collect();
@@ -65,6 +67,7 @@
     $canReopen = $canReopen ?? false;
     $slaMetrics = $slaMetrics ?? null;
     $approvalRequest = $approvalRequest ?? null;
+    $approvalDecisionNote = $approvalDecisionNote ?? $approvalRequest?->decision_note;
     $canDecideApproval = $canDecideApproval ?? false;
     $commentPublicPolicies = $commentPublicPolicies ?? collect();
     $commentInternalPolicies = $commentInternalPolicies ?? collect();
@@ -77,7 +80,24 @@
     $internalFieldValues = $internalFieldValues ?? collect();
     $activeWait = $activeWait ?? null;
     $lastTimedOutWait = $lastTimedOutWait ?? null;
-    $showActionPanel = $canTriage
+    $isNewQueueTicket = $ticket->status === \App\Enums\TicketStatus::Baru
+        && $ticket->assigned_to_id === null
+        && $ticket->assigned_tier === null;
+    $isMyActiveTicket = $isOperationalAgent
+        && (int) $ticket->assigned_to_id === (int) $actor->getKey()
+        && in_array($ticket->status, [
+            \App\Enums\TicketStatus::Diproses,
+            \App\Enums\TicketStatus::Dikerjakan,
+        ], true);
+    $canTriage = $canTriage && $isNewQueueTicket;
+    $canQueueTriage = $canTriage;
+    $showQueueActions = $isNewQueueTicket
+        && ($canChangePriority || $canReject || $canQueueTriage);
+    $showMyTicketActions = $isMyActiveTicket
+        && ($canComplete || $canRequestInformation || $canRequestApproval || $canStartThirdParty);
+    $showActionPanel = $canQueueTriage
+        || $canChangePriority
+        || $canReject
         || $canAssignTierTwo
         || $canReturnToTierOne
         || $canCommentInternal
@@ -93,25 +113,15 @@
         || $canVerifyDatabaseChange
         || $canDecideApproval
         || $approvalRequest;
-    $showHeaderActions = $canCancel
-        || $canClaim
-        || $canTriage
-        || $canAssignTierTwo
-        || $canReturnToTierOne
-        || $canCommentPublic
-        || $canCommentInternal
-        || $canRequestInformation
+    $showHeaderActions = $showQueueActions
+        || $showMyTicketActions
+        || $canCancel
         || $canRequesterReply
-        || $canStartThirdParty
         || $canResumeThirdParty
-        || $canRequestApproval
-        || $canComplete
+        || $canDecideApproval
         || $canConfirm
         || $canNotSatisfied
-        || $canReopen
-        || $canStartDatabaseChange
-        || $canVerifyDatabaseChange
-        || $canDecideApproval;
+        || $canReopen;
     $currentPriority = old('priority', $ticket->priority?->value);
     $currentOutcome = old('outcome', 'self');
     $estimateDeadline = $slaMetrics['deadline_at'] ?? null;
@@ -149,133 +159,107 @@
 
 @section('content')
     <div class="ticket-reference-content ticket-reference-content--operational">
-        <nav class="mb-5" aria-label="Navigasi detail tiket">
-            <a href="{{ $workAreaUrl }}" class="ui-action-link inline-flex items-center gap-2">
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m15 19-7-7 7-7" />
-                </svg>
-                {{ $workAreaLabel }}
-            </a>
-        </nav>
-
-        <header class="ticket-reference-page-header">
-            <div class="min-w-0">
-                <div class="flex flex-wrap items-center gap-2.5">
-                    <h1 class="ticket-reference-number">{{ $ticketLabel }}</h1>
-                    <x-status-badge :status="$ticket->status" class="!border-[#b9c7ff] !bg-[#e7ebff] !text-[#0037b0]" />
-                    <x-priority-badge :priority="$ticket->priority" class="!border-[#d6dce8] !bg-[#f1f4f8] !text-[#25344c]" />
-                </div>
-                <p class="ticket-reference-subtitle">Dibuat pada {{ $submittedAt }} WIB</p>
-            </div>
-
-            @if ($showHeaderActions)
-                <div class="ticket-reference-page-actions" role="group" aria-label="Tindakan tiket">
-                    @if ($canClaim)
-                        <form method="POST" action="{{ route('tickets.claim', $ticket) }}" class="ticket-reference-action-form">
-                            @csrf
-                            <button type="submit" class="ticket-reference-action-button ticket-reference-action-button--primary" data-ticket-claim-button>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m-5-5 5 5 5-5M5 4h14" /></svg>
-                                <span>Ambil Tiket</span>
+        <x-tickets.detail-header
+            :back-url="$workAreaUrl"
+            :back-label="$workAreaLabel"
+            :ticket-label="$ticketLabel"
+            :status="$ticket->status"
+            :priority="$ticket->priority"
+            :submitted-at="$submittedAt"
+            :show-actions="$showHeaderActions"
+        >
+            <x-slot:actions>
+                    @if ($showQueueActions)
+                        @if ($canChangePriority)
+                            <button type="button" data-ui-modal-open="ticket-priority-modal" class="ticket-reference-action-menu-item ticket-reference-action-menu-item--neutral">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="M5 7h14M5 12h14M5 17h14" /><circle cx="9" cy="7" r="2" fill="currentColor" stroke="none" /><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none" /><circle cx="11" cy="17" r="2" fill="currentColor" stroke="none" /></svg>
+                                <span>Ubah Prioritas</span>
                             </button>
-                        </form>
-                    @elseif ($canTriage)
-                        <button type="button" data-ui-modal-open="ticket-triage-modal" class="ticket-reference-action-button ticket-reference-action-button--primary">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 6h14M8 12h8m-5 6h2" /></svg>
-                            <span>Triase</span>
-                        </button>
-                    @elseif ($canComplete)
-                        <button type="button" data-ui-modal-open="ticket-complete-modal" class="ticket-reference-action-button ticket-reference-action-button--success">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path stroke-linecap="round" stroke-linejoin="round" d="m8.5 12 2.3 2.3 4.7-4.7" /></svg>
-                            <span>Selesaikan</span>
-                        </button>
+                        @endif
+
+                        @if ($canReject)
+                            <button type="button" data-ui-modal-open="ticket-reject-modal" class="ticket-reference-action-menu-item ticket-reference-action-menu-item--danger">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path stroke-linecap="round" d="m9 9 6 6m0-6-6 6" /></svg>
+                                <span>Tolak</span>
+                            </button>
+                        @endif
+
+                        @if ($canQueueTriage)
+                            <button type="button" data-ui-modal-open="ticket-triage-modal" class="ticket-reference-action-menu-item ticket-reference-action-menu-item--primary">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 6h14M8 12h8m-5 6h2" /></svg>
+                                <span>Triase</span>
+                            </button>
+                        @endif
+                    @elseif ($showMyTicketActions)
+                        @if ($canComplete)
+                            <button type="button" data-ui-modal-open="ticket-complete-modal" class="ticket-reference-action-menu-item ticket-reference-action-menu-item--success">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path stroke-linecap="round" stroke-linejoin="round" d="m8.5 12 2.3 2.3 4.7-4.7" /></svg>
+                                <span>Selesai</span>
+                            </button>
+                        @endif
+
+                        @if ($canRequestInformation)
+                            <button type="button" data-ui-modal-open="ticket-request-information-modal" class="ticket-reference-action-menu-item ticket-reference-action-menu-item--warning">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path stroke-linecap="round" d="M9.8 9.2a2.4 2.4 0 1 1 3.4 2.2c-.8.4-1.2.9-1.2 1.6m0 3h.01" /></svg>
+                                <span>Kembalikan ke Pelapor</span>
+                            </button>
+                        @endif
+
+                        @if ($canRequestApproval)
+                            <button type="button" data-ui-modal-open="ticket-request-approval-modal" class="ticket-reference-action-menu-item ticket-reference-action-menu-item--primary">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m12 3.5 7 2.5v5.3c0 4.1-2.8 7.5-7 9.2-4.2-1.7-7-5.1-7-9.2V6l7-2.5Z" /><path stroke-linecap="round" stroke-linejoin="round" d="m8.8 11.8 2.1 2.1 4.4-4.4" /></svg>
+                                <span>Minta Approval</span>
+                            </button>
+                        @endif
+
+                        @if ($canStartThirdParty)
+                            <button type="button" data-ui-modal-open="ticket-third-party-modal" class="ticket-reference-action-menu-item ticket-reference-action-menu-item--neutral">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="8" cy="8" r="3" /><circle cx="17" cy="10" r="2.5" /><path stroke-linecap="round" d="M3.5 19a4.5 4.5 0 0 1 9 0m1.5-1a3.5 3.5 0 0 1 7 0" /></svg>
+                                <span>Pending</span>
+                            </button>
+                        @endif
                     @elseif ($canConfirm || $canNotSatisfied)
-                        <button type="button" data-ui-modal-open="ticket-confirmation-modal" class="ticket-reference-action-button ticket-reference-action-button--success">
+                        <button type="button" data-ui-modal-open="ticket-confirmation-modal" class="ticket-reference-action-menu-item ticket-reference-action-menu-item--success">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path stroke-linecap="round" stroke-linejoin="round" d="m8.5 12 2.3 2.3 4.7-4.7" /></svg>
                             <span>Konfirmasi</span>
                         </button>
                     @elseif ($canResumeThirdParty)
-                        <button type="button" data-ui-modal-open="ticket-third-party-modal" class="ticket-reference-action-button ticket-reference-action-button--primary">
+                        <button type="button" data-ui-modal-open="ticket-third-party-modal" class="ticket-reference-action-menu-item ticket-reference-action-menu-item--primary">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h13m-5-5 5 5-5 5" /></svg>
                             <span>Lanjutkan</span>
                         </button>
                     @elseif ($canReopen)
-                        <button type="button" data-ui-modal-open="ticket-reopen-modal" class="ticket-reference-action-button ticket-reference-action-button--reopen">
+                        <button type="button" data-ui-modal-open="ticket-reopen-modal" class="ticket-reference-action-menu-item ticket-reference-action-menu-item--warning">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v5h5M4.5 12A8 8 0 1 0 7 6.4L4 9" /></svg>
                             <span>Buka Kembali</span>
                         </button>
                     @endif
 
-                    @if ($canAssignTierTwo)
-                        <button type="button" data-ui-modal-open="ticket-assign-tier-two-modal" class="ticket-reference-action-button ticket-reference-action-button--neutral">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="8" r="3" /><path stroke-linecap="round" d="M4 19a5 5 0 0 1 10 0m2-8h5m-2.5-2.5v5" /></svg>
-                            <span>Tugaskan</span>
-                        </button>
-                    @elseif ($canReturnToTierOne)
-                        <button type="button" data-ui-modal-open="ticket-return-tier-one-modal" class="ticket-reference-action-button ticket-reference-action-button--warning">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m9 7-5 5 5 5M4 12h10a6 6 0 0 1 6 6" /></svg>
-                            <span>Kembalikan</span>
-                        </button>
-                    @endif
-
-                    @if ($canCommentPublic || $canRequesterReply)
-                        <a href="#ticket-reply-heading" class="ticket-reference-action-button ticket-reference-action-button--neutral">
+                    @if ($canRequesterReply)
+                        <a href="#ticket-reply-heading" class="ticket-reference-action-menu-item ticket-reference-action-menu-item--primary">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5.5h16v11H8l-4 3v-14Z" /><path stroke-linecap="round" d="M8 9h8M8 12h5" /></svg>
-                            <span>Balas</span>
+                            <span>Balas ke Tim TI</span>
                         </a>
                     @endif
 
-                    @if ($canRequestInformation)
-                        <button type="button" data-ui-modal-open="ticket-request-information-modal" class="ticket-reference-action-button ticket-reference-action-button--warning">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path stroke-linecap="round" d="M9.8 9.2a2.4 2.4 0 1 1 3.4 2.2c-.8.4-1.2.9-1.2 1.6m0 3h.01" /></svg>
-                            <span>Minta Info</span>
-                        </button>
-                    @endif
-
-                    @if ($canCommentInternal)
-                        <button type="button" data-ui-modal-open="ticket-internal-comment-modal" class="ticket-reference-action-button ticket-reference-action-button--neutral">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 4.5h12v15H6zM9 8h6m-6 4h6m-6 4h4" /></svg>
-                            <span>Catatan Internal</span>
-                        </button>
-                    @endif
-
-                    @if ($canRequestApproval)
-                        <button type="button" data-ui-modal-open="ticket-request-approval-modal" class="ticket-reference-action-button ticket-reference-action-button--warning">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m12 3.5 7 2.5v5.3c0 4.1-2.8 7.5-7 9.2-4.2-1.7-7-5.1-7-9.2V6l7-2.5Z" /><path stroke-linecap="round" stroke-linejoin="round" d="m8.8 11.8 2.1 2.1 4.4-4.4" /></svg>
-                            <span>Persetujuan</span>
-                        </button>
-                    @elseif ($canStartThirdParty)
-                        <button type="button" data-ui-modal-open="ticket-third-party-modal" class="ticket-reference-action-button ticket-reference-action-button--neutral">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="8" cy="8" r="3" /><circle cx="17" cy="10" r="2.5" /><path stroke-linecap="round" d="M3.5 19a4.5 4.5 0 0 1 9 0m1.5-1a3.5 3.5 0 0 1 7 0" /></svg>
-                            <span>Pihak Ketiga</span>
-                        </button>
-                    @endif
-
-                    @if ($canStartDatabaseChange || $canVerifyDatabaseChange)
-                        <button type="button" data-ui-modal-open="ticket-database-change-modal" class="ticket-reference-action-button ticket-reference-action-button--neutral">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3" /><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" /></svg>
-                            <span>Kontrol Data</span>
-                        </button>
-                    @endif
-
                     @if ($canDecideApproval && $approvalRequest)
-                        <button type="button" data-ui-modal-open="ticket-approval-decision-modal" class="ticket-reference-action-button ticket-reference-action-button--primary">
+                        <button type="button" data-ui-modal-open="ticket-approval-decision-modal" class="ticket-reference-action-menu-item ticket-reference-action-menu-item--primary">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m12 3.5 7 2.5v5.3c0 4.1-2.8 7.5-7 9.2-4.2-1.7-7-5.1-7-9.2V6l7-2.5Z" /></svg>
                             <span>Putuskan</span>
                         </button>
                     @endif
 
                     @if ($canCancel)
-                        <form method="POST" action="{{ route('tickets.cancel', $ticket) }}" class="ticket-reference-action-form" data-swal-confirm="Batalkan tiket ini? Tiket hanya dapat dibatalkan selama statusnya masih Baru.">
+                        <form method="POST" action="{{ route('tickets.cancel', $ticket) }}" class="ticket-reference-action-menu-form" data-swal-confirm="Batalkan tiket ini? Tiket hanya dapat dibatalkan selama statusnya masih Baru.">
                             @csrf
-                            <button type="submit" class="ticket-reference-action-button ticket-reference-action-button--danger">
+                            <button type="submit" class="ticket-reference-action-menu-item ticket-reference-action-menu-item--danger">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path stroke-linecap="round" d="m9 9 6 6m0-6-6 6" /></svg>
                                 <span>Batalkan</span>
                             </button>
                         </form>
                     @endif
-                </div>
-            @endif
-        </header>
+            </x-slot:actions>
+        </x-tickets.detail-header>
 
         @if ($ticket->status === \App\Enums\TicketStatus::Ditolak && filled($ticket->rejection_reason))
             <div class="ticket-reference-alert mt-6" role="status">
@@ -284,10 +268,10 @@
             </div>
         @endif
 
-        @if ($ticket->status === \App\Enums\TicketStatus::TidakDisetujui && filled($approvalRequest?->decision_note))
+        @if ($ticket->status === \App\Enums\TicketStatus::TidakDisetujui && filled($approvalDecisionNote))
             <div class="ticket-reference-alert mt-6" role="status">
                 <p class="ticket-reference-alert-title">Catatan keputusan</p>
-                <p class="ticket-reference-alert-body">{{ $approvalRequest->decision_note }}</p>
+                <p class="ticket-reference-alert-body">{{ $approvalDecisionNote }}</p>
             </div>
         @endif
 
@@ -404,9 +388,9 @@
                         <div class="ticket-reference-reply mt-5">
                             <div class="ticket-reference-avatar" aria-hidden="true">{{ $currentUserInitials }}</div>
                             <div class="min-w-0 flex-1">
-                                <label for="ticket-public-reply-disabled" class="ticket-reference-field-label">Balasan ke Pemohon</label>
+                                <label for="ticket-public-reply-disabled" class="ticket-reference-field-label">{{ $isRequester ? 'Balasan ke Tim TI' : 'Balasan ke Pemohon' }}</label>
                                 <textarea id="ticket-public-reply-disabled" rows="5" disabled class="ticket-reference-textarea mt-1.5 disabled:cursor-not-allowed disabled:bg-[#f3f5fa]" placeholder="Ketik pesan atau informasi tambahan di sini..."></textarea>
-                                <p class="ticket-reference-file-help mt-2">Balasan tidak tersedia pada status tiket ini.</p>
+                                <p class="ticket-reference-file-help mt-2">{{ $isRequester && $isClosed ? 'Balasan tidak tersedia karena tiket sudah berstatus akhir.' : 'Balasan tidak tersedia pada status tiket ini.' }}</p>
                             </div>
                         </div>
                     @endif
@@ -767,6 +751,62 @@
             @if ($showActionPanel)
             <div class="contents">
 
+            @if ($canChangePriority)
+                <x-ui.modal-panel id="ticket-priority-modal" labelledby="priority-heading" :auto-open="$errors->any() && old('_action_modal') === 'ticket-priority-modal'">
+                <section class="ui-panel" aria-labelledby="priority-heading">
+                    <div class="ui-panel-header">
+                        <div>
+                            <h2 id="priority-heading" class="ui-section-title">Ubah Prioritas</h2>
+                            <p class="ui-section-description">Pilih prioritas yang sesuai dengan dampak dan urgensi tiket.</p>
+                        </div>
+                    </div>
+                    <form method="POST" action="{{ route('tickets.priority.update', $ticket) }}" class="space-y-4 p-5 sm:p-6" data-ticket-priority-form>
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="_action_modal" value="ticket-priority-modal">
+                        <div>
+                            <label for="ticket-priority" class="ui-field-label">Prioritas <span class="text-rose-600" aria-hidden="true">*</span></label>
+                            <select id="ticket-priority" name="priority" required class="ui-select mt-2">
+                                @foreach ($priorityOptions as $value => $label)
+                                    <option value="{{ $value }}" @selected($currentPriority === $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            @error('priority')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label for="priority-change-reason" class="ui-field-label">Alasan perubahan <span class="text-rose-600" aria-hidden="true">*</span></label>
+                            <textarea id="priority-change-reason" name="reason" rows="3" required maxlength="1000" class="ui-textarea mt-2" placeholder="Jelaskan mengapa prioritas perlu disesuaikan.">{{ old('reason') }}</textarea>
+                            @error('reason')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+                        </div>
+                        <button type="submit" class="ui-btn ui-btn-primary w-full" data-ticket-priority-submit>Simpan Prioritas</button>
+                    </form>
+                </section>
+                </x-ui.modal-panel>
+            @endif
+
+            @if ($canReject)
+                <x-ui.modal-panel id="ticket-reject-modal" labelledby="reject-heading" :auto-open="$errors->any() && old('_action_modal') === 'ticket-reject-modal'">
+                <section class="ui-panel border-l-4 border-l-rose-500" aria-labelledby="reject-heading">
+                    <div class="ui-panel-header">
+                        <div>
+                            <h2 id="reject-heading" class="ui-section-title">Tolak Tiket</h2>
+                            <p class="ui-section-description">Tiket yang ditolak tidak lagi berada di antrean Helpdesk.</p>
+                        </div>
+                    </div>
+                    <form method="POST" action="{{ route('tickets.reject', $ticket) }}" class="space-y-4 p-5 sm:p-6" data-ticket-reject-form>
+                        @csrf
+                        <input type="hidden" name="_action_modal" value="ticket-reject-modal">
+                        <div>
+                            <label for="ticket-reject-reason" class="ui-field-label">Alasan penolakan <span class="text-rose-600" aria-hidden="true">*</span></label>
+                            <textarea id="ticket-reject-reason" name="reason" rows="4" required maxlength="2000" class="ui-textarea mt-2 !border-rose-200" placeholder="Jelaskan alasan yang perlu diketahui Pelapor.">{{ old('reason') }}</textarea>
+                            @error('reason')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+                        </div>
+                        <button type="submit" class="ui-btn ui-btn-danger w-full" data-ticket-reject-submit>Tolak Tiket</button>
+                    </form>
+                </section>
+                </x-ui.modal-panel>
+            @endif
+
             @if ($canCommentInternal)
                 <x-ui.modal-panel id="ticket-internal-comment-modal" labelledby="internal-comment-heading" :auto-open="$errors->any() && old('_action_modal') === 'ticket-internal-comment-modal'">
                 <section class="ui-panel border-l-4 border-l-[#e4a72c]" aria-labelledby="internal-comment-heading">
@@ -811,7 +851,7 @@
                 <section class="ui-panel border-l-4 border-l-[#147a79]" aria-labelledby="request-information-heading">
                     <div class="ui-panel-header">
                         <div>
-                            <h2 id="request-information-heading" class="ui-section-title">Minta Informasi Tambahan</h2>
+                            <h2 id="request-information-heading" class="ui-section-title">Kembalikan ke Pelapor</h2>
                             <p class="ui-section-description">Tiket akan menunggu balasan Pemohon maksimal 3 hari kerja.</p>
                         </div>
                     </div>
@@ -823,7 +863,7 @@
                             <textarea id="request-information-body" name="body" rows="4" required class="ui-textarea mt-2" placeholder="Jelaskan informasi atau bukti yang perlu dilengkapi Pemohon.">{{ old('body') }}</textarea>
                             @error('body')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
                         </div>
-                        <button type="submit" class="ui-btn ui-btn-secondary w-full" data-ticket-communication-submit>Minta informasi dan tunggu Pemohon</button>
+                        <button type="submit" class="ui-btn ui-btn-secondary w-full" data-ticket-communication-submit>Kirim ke Pelapor dan tunggu balasan</button>
                     </form>
                 </section>
                 </x-ui.modal-panel>
@@ -1020,20 +1060,20 @@
                 <x-ui.modal-panel id="ticket-third-party-modal" labelledby="third-party-heading" :auto-open="$errors->any() && old('_action_modal') === 'ticket-third-party-modal'">
                 <section class="ui-panel border-l-4 border-l-[#2bb8aa]" aria-labelledby="third-party-heading">
                     <div class="ui-panel-header">
-                        <h2 id="third-party-heading" class="ui-section-title">{{ $canResumeThirdParty ? 'Menunggu pihak ketiga' : 'Tunggu pihak ketiga' }}</h2>
+                        <h2 id="third-party-heading" class="ui-section-title">{{ $canResumeThirdParty ? 'Pending tiket' : 'Pending tiket' }}</h2>
                     </div>
                     @if ($canResumeThirdParty && $activeWait)
                         <div class="space-y-3 px-5 pb-1 sm:px-6">
                             <dl class="grid gap-3 rounded-xl bg-[#f4fbfa] p-4 text-sm">
-                                <div><dt class="text-xs font-extrabold uppercase tracking-[0.08em] text-[#78909a]">Pihak ketiga</dt><dd class="mt-1 font-extrabold text-[#35505b]">{{ $activeWait->third_party_name }}</dd></div>
+                                <div><dt class="text-xs font-extrabold uppercase tracking-[0.08em] text-[#78909a]">Alasan pending</dt><dd class="mt-1 font-extrabold text-[#35505b]">{{ $activeWait->third_party_name }}</dd></div>
                                 <div><dt class="text-xs font-extrabold uppercase tracking-[0.08em] text-[#78909a]">Mulai menunggu</dt><dd class="mt-1 font-bold text-[#526f79]">{{ $activeWait->started_at?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}@if ($activeWait->follow_up_date) · Follow-up {{ $activeWait->follow_up_date->translatedFormat('d M Y') }}@endif</dd></div>
                             </dl>
                             <form method="POST" action="{{ route('tickets.resume-third-party', $ticket) }}" class="space-y-3" data-ticket-communication-form>
                                 @csrf
                                 <input type="hidden" name="_action_modal" value="ticket-third-party-modal">
                                 <div>
-                                    <label for="third-party-resume-reason" class="ui-field-label">Catatan penyelesaian</label>
-                                    <textarea id="third-party-resume-reason" name="reason" rows="3" class="ui-textarea mt-2" placeholder="Opsional: tulis hasil follow-up pihak ketiga.">{{ old('reason') }}</textarea>
+                                    <label for="third-party-resume-reason" class="ui-field-label">Catatan pelanjutan</label>
+                                    <textarea id="third-party-resume-reason" name="reason" rows="3" class="ui-textarea mt-2" placeholder="Opsional: tulis alasan tiket dapat dilanjutkan.">{{ old('reason') }}</textarea>
                                 </div>
                                 <button type="submit" class="ui-btn ui-btn-primary w-full" data-ticket-communication-submit>Lanjutkan pengerjaan</button>
                             </form>
@@ -1043,18 +1083,18 @@
                             @csrf
                             <input type="hidden" name="_action_modal" value="ticket-third-party-modal">
                             <div>
-                                <label for="third-party-name" class="ui-field-label">Nama pihak ketiga <span class="text-rose-600" aria-hidden="true">*</span></label>
-                                <input id="third-party-name" name="third_party_name" value="{{ old('third_party_name') }}" required maxlength="150" class="ui-input mt-2" placeholder="Contoh: Vendor jaringan">
+                                <label for="third-party-name" class="ui-field-label">Alasan pending <span class="text-rose-600" aria-hidden="true">*</span></label>
+                                <input id="third-party-name" name="third_party_name" value="{{ old('third_party_name') }}" required maxlength="150" class="ui-input mt-2" placeholder="Contoh: Menunggu vendor atau jadwal perubahan">
                             </div>
                             <div>
                                 <label for="third-party-follow-up" class="ui-field-label">Tanggal follow-up</label>
                                 <input id="third-party-follow-up" type="date" name="follow_up_date" value="{{ old('follow_up_date') }}" class="ui-input mt-2">
                             </div>
                             <div>
-                                <label for="third-party-note" class="ui-field-label">Catatan</label>
-                                <textarea id="third-party-note" name="note" rows="3" maxlength="1000" class="ui-textarea mt-2" placeholder="Opsional: detail permintaan atau nomor referensi.">{{ old('note') }}</textarea>
+                                <label for="third-party-note" class="ui-field-label">Catatan pending</label>
+                                <textarea id="third-party-note" name="note" rows="3" maxlength="1000" class="ui-textarea mt-2" placeholder="Opsional: jelaskan detail atau tindak lanjut yang dibutuhkan.">{{ old('note') }}</textarea>
                             </div>
-                            <button type="submit" class="ui-btn ui-btn-secondary w-full" data-ticket-communication-submit>Tandai menunggu pihak ketiga</button>
+                            <button type="submit" class="ui-btn ui-btn-secondary w-full" data-ticket-communication-submit>Simpan Pending</button>
                         </form>
                     @endif
                 </section>
@@ -1073,7 +1113,7 @@
                         <fieldset>
                             <legend class="ui-field-label">Hasil triase <span class="text-rose-600" aria-hidden="true">*</span></legend>
                             <div class="mt-2 grid gap-2">
-                                @foreach ([['self', 'Kerjakan sendiri'], ['tier_2', 'Tugaskan Tier 2'], ['reject', 'Tolak']] as [$value, $label])
+                                @foreach ([['self', 'Ambil dan kerjakan sendiri'], ['tier_2', 'Tugaskan ke Agen Tier 2']] as [$value, $label])
                                     <label class="flex cursor-pointer gap-3 rounded-xl border border-[#dfe8ec] bg-[#fbfdfd] p-3 transition hover:border-[#8bd7ee] has-[:checked]:border-[#75d5f3] has-[:checked]:bg-[#f1fbfe]">
                                         <input type="radio" name="outcome" value="{{ $value }}" class="mt-1 h-4 w-4 border-[#a9bbc2] text-[#147a79] focus:ring-[#2bb8aa]" @checked($currentOutcome === $value) data-ticket-triage-outcome>
                                         <span class="block text-sm font-extrabold text-[#35505b]">{{ $label }}</span>
@@ -1083,26 +1123,9 @@
                             @error('outcome')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
                         </fieldset>
 
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div class="rounded-xl border border-[#dce9ed] bg-[#f8fbfc] p-4">
-                                <p class="ui-field-label">Layanan tiket</p>
-                                <p class="mt-2 text-sm font-extrabold text-[#35505b]">{{ $serviceLabel }}</p>
-                            </div>
-                            <div>
-                                <label for="triage-priority" class="ui-field-label">Prioritas <span class="text-rose-600" aria-hidden="true">*</span></label>
-                                <select id="triage-priority" name="priority" required class="ui-select mt-2">
-                                    @foreach ($priorityOptions as $value => $label)
-                                        <option value="{{ $value }}" @selected($currentPriority === $value)>{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                                @error('priority')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
-                            </div>
-                        </div>
-
-                        <div class="max-w-2xl">
-                            <label for="priority-reason" class="ui-field-label">Alasan perubahan prioritas</label>
-                            <textarea id="priority-reason" name="priority_reason" rows="3" class="ui-textarea mt-2" placeholder="Isi jika prioritas berubah.">{{ old('priority_reason') }}</textarea>
-                            @error('priority_reason')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+                        <div class="rounded-xl border border-[#dce9ed] bg-[#f8fbfc] p-4">
+                            <p class="ui-field-label">Layanan tiket</p>
+                            <p class="mt-2 text-sm font-extrabold text-[#35505b]">{{ $serviceLabel }}</p>
                         </div>
 
                         <div data-ticket-triage-panel="tier_2" class="space-y-4 rounded-xl border border-[#dfe8ec] bg-[#f8fbfc] p-4" @if ($currentOutcome !== 'tier_2') hidden @endif>
@@ -1131,13 +1154,6 @@
                                 </ul>
                                 <p class="mt-2 text-xs leading-5 text-[#78909a] {{ $ticketSuggestions->isNotEmpty() ? 'hidden' : '' }}" data-ticket-suggestion-empty>Belum ada teknisi Tier 2 dengan keahlian yang sesuai layanan ini.</p>
                             </div>
-                        </div>
-
-                        <div data-ticket-triage-panel="reject" class="rounded-xl border border-rose-200 bg-[#fff7f8] p-4" @if ($currentOutcome !== 'reject') hidden @endif>
-                            <label for="rejection-reason" class="ui-field-label !text-[#9f1239]">Alasan penolakan</label>
-                            <textarea id="rejection-reason" name="rejection_reason" rows="4" class="ui-textarea mt-2 !border-rose-200 !bg-white" placeholder="Jelaskan alasan yang perlu diketahui Pemohon.">{{ old('rejection_reason') }}</textarea>
-                            <p class="ui-field-help !text-[#9f1239]">Alasan ini akan terlihat pada detail tiket Pemohon.</p>
-                            @error('rejection_reason')<p class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
                         </div>
 
                         <button type="submit" class="ui-btn ui-btn-primary w-full" data-ticket-triage-submit>

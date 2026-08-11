@@ -7,10 +7,12 @@ use App\Enums\Role;
 use App\Enums\TicketCommentVisibility;
 use App\Enums\TicketStatus;
 use App\Http\Requests\AssignTicketRequest;
+use App\Http\Requests\ChangeTicketPriorityRequest;
 use App\Http\Requests\CompleteTicketRequest;
 use App\Http\Requests\InternalTicketFieldRequest;
 use App\Http\Requests\NotSatisfiedTicketRequest;
 use App\Http\Requests\ReopenTicketRequest;
+use App\Http\Requests\RejectTicketRequest;
 use App\Http\Requests\RequestApprovalRequest;
 use App\Http\Requests\ReturnTicketRequest;
 use App\Http\Requests\StartDatabaseChangeExecutionRequest;
@@ -28,7 +30,6 @@ use App\Models\User;
 use App\Services\DatabaseChangeControlService;
 use App\Services\DomainAuthorization;
 use App\Services\RequesterTicketList;
-use App\Services\RequesterTicketPresenter;
 use App\Services\SkillSuggestionService;
 use App\Services\TeamChairTicketProjection;
 use App\Services\TicketApprovalService;
@@ -58,7 +59,6 @@ class TicketController extends Controller
         private readonly TicketSlaService $sla,
         private readonly DatabaseChangeControlService $specialControls,
         private readonly TeamChairTicketProjection $teamChairProjection,
-        private readonly RequesterTicketPresenter $requesterPresenter,
         private readonly RequesterTicketList $requesterList,
     ) {}
 
@@ -487,6 +487,8 @@ class TicketController extends Controller
         });
 
         $canTriage = $actor->can('triage', $ticket);
+        $canChangePriority = $actor->can('changePriority', $ticket);
+        $canReject = $actor->can('reject', $ticket);
         $canClaim = $actor->can('claim', $ticket)
             && $ticket->status === TicketStatus::Baru
             && $ticket->assigned_to_id === null;
@@ -528,28 +530,12 @@ class TicketController extends Controller
             ? $this->skillSuggestions->forServiceType($ticket->serviceType, $tierTwoUsers, $ticket->problemCategory)
             : collect();
 
-        if ($this->isRequesterOnly($actor, $ticket, $canSeeInternal)) {
-            return view('tickets.requester-show', [
-                'ticket' => $this->requesterPresenter->present(
-                    $ticket,
-                    $slaMetrics,
-                    $approvalRequest?->decision_note,
-                ),
-                'actions' => [
-                    'cancel' => $canCancel,
-                    'reply' => $canRequesterReply,
-                    'confirm' => $canConfirm,
-                    'notSatisfied' => $canNotSatisfied,
-                    'reopen' => $canReopen,
-                ],
-                'replyAttachmentPolicies' => $commentPublicPolicies,
-            ]);
-        }
-
         return view('tickets.show', [
             'ticket' => $ticket,
             'canSeeInternal' => $canSeeInternal,
             'canTriage' => $canTriage,
+            'canChangePriority' => $canChangePriority,
+            'canReject' => $canReject,
             'canClaim' => $canClaim,
             'canAssignTierTwo' => $canAssignTierTwo,
             'canReturnToTierOne' => $canReturnToTierOne,
@@ -573,7 +559,8 @@ class TicketController extends Controller
             'canNotSatisfied' => $canNotSatisfied,
             'canReopen' => $canReopen,
             'slaMetrics' => $slaMetrics,
-            'approvalRequest' => $approvalRequest,
+            'approvalRequest' => $canSeeInternal || $canDecideApproval ? $approvalRequest : null,
+            'approvalDecisionNote' => $approvalRequest?->decision_note,
             'canDecideApproval' => $canDecideApproval,
             'commentPublicPolicies' => $commentPublicPolicies,
             'commentInternalPolicies' => $commentInternalPolicies,
@@ -588,18 +575,6 @@ class TicketController extends Controller
         ]);
     }
 
-    /**
-     * The dedicated requester screen is only for the ticket owner without any
-     * internal capability. Agents, approvers and Super Admin keep the full
-     * operational view even when they happen to own the ticket.
-     */
-    private function isRequesterOnly(User $actor, Ticket $ticket, bool $canSeeInternal): bool
-    {
-        return ! $canSeeInternal
-            && $actor->hasRole(Role::Pemohon)
-            && (int) $ticket->requester_id === (int) $actor->getKey();
-    }
-
     public function requestApproval(RequestApprovalRequest $request, Ticket $ticket): RedirectResponse
     {
         $this->approvals->request(
@@ -611,6 +586,35 @@ class TicketController extends Controller
         return redirect()
             ->route('tickets.show', $ticket)
             ->with('success', 'Tiket berhasil dikirim untuk persetujuan Manajer TI.');
+    }
+
+    public function updatePriority(ChangeTicketPriorityRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $priority = Priority::from((string) $request->validated('priority'));
+
+        $this->workflow->changePriority(
+            $request->user(),
+            $ticket,
+            $priority,
+            (string) $request->validated('reason'),
+        );
+
+        return redirect()
+            ->route('tickets.show', $ticket)
+            ->with('success', 'Prioritas tiket berhasil diperbarui.');
+    }
+
+    public function reject(RejectTicketRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $this->workflow->reject(
+            $request->user(),
+            $ticket,
+            (string) $request->validated('reason'),
+        );
+
+        return redirect()
+            ->route('tickets.show', $ticket)
+            ->with('success', 'Tiket ditolak dan tidak lagi berada di antrean Helpdesk.');
     }
 
     public function complete(CompleteTicketRequest $request, Ticket $ticket): RedirectResponse

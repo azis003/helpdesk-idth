@@ -154,6 +154,11 @@ class TicketManagementTest extends TestCase
         $this->actingAs($pemohon)
             ->get(route('tickets.show', $ticket))
             ->assertOk()
+            ->assertViewIs('tickets.show')
+            ->assertSee('ticket-reference-content', false)
+            ->assertSee('ticket-reference-page-header', false)
+            ->assertSee('Tindakan')
+            ->assertSee('Batalkan')
             ->assertSee($ticket->ticket_number)
             ->assertSee('Wi-Fi tidak dapat digunakan')
             ->assertSee('screenshot.png');

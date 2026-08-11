@@ -120,9 +120,30 @@ class TicketPolicy
         return $actor->isActive()
             && ! $this->isReadOnlyTeamChair($actor)
             && $actor->hasRole(Role::AgenTier1)
-            && $ticket->assigned_tier === Role::AgenTier1->value
-            && (int) $ticket->assigned_to_id === (int) $actor->getKey()
-            && in_array($ticket->status, [TicketStatus::Diproses, TicketStatus::Dikerjakan], true);
+            && (
+                $this->isNewQueueTicket($ticket)
+                || (
+                    $ticket->assigned_tier === Role::AgenTier1->value
+                    && (int) $ticket->assigned_to_id === (int) $actor->getKey()
+                    && in_array($ticket->status, [TicketStatus::Diproses, TicketStatus::Dikerjakan], true)
+                )
+            );
+    }
+
+    public function changePriority(User $actor, Ticket $ticket): bool
+    {
+        return $actor->isActive()
+            && ! $this->isReadOnlyTeamChair($actor)
+            && $actor->hasRole(Role::AgenTier1)
+            && $this->isNewQueueTicket($ticket);
+    }
+
+    public function reject(User $actor, Ticket $ticket): bool
+    {
+        return $actor->isActive()
+            && ! $this->isReadOnlyTeamChair($actor)
+            && $actor->hasRole(Role::AgenTier1)
+            && $this->isNewQueueTicket($ticket);
     }
 
     public function assignTierTwo(User $actor, Ticket $ticket): bool
@@ -169,6 +190,10 @@ class TicketPolicy
             return false;
         }
 
+        if ($ticket->status->isClosed()) {
+            return false;
+        }
+
         if ($this->hasPendingApproval($actor, $ticket)) {
             return true;
         }
@@ -179,13 +204,8 @@ class TicketPolicy
                 && $ticket->status === TicketStatus::MenungguPemohon;
         }
 
-        return $this->isAssignedAgent($actor, $ticket)
-            && in_array($ticket->status, [
-                TicketStatus::Diproses,
-                TicketStatus::Dikerjakan,
-                TicketStatus::MenungguPemohon,
-                TicketStatus::MenungguPihakKetiga,
-            ], true);
+        return $actor->hasAnyRole([Role::AgenTier1, Role::AgenTier2])
+            && $this->view($actor, $ticket);
     }
 
     public function commentInternal(User $actor, Ticket $ticket): bool
@@ -301,6 +321,13 @@ class TicketPolicy
             && ! $this->isReadOnlyTeamChair($actor)
             && $actor->hasAnyRole([Role::AgenTier1, Role::AgenTier2])
             && (int) $ticket->assigned_to_id === (int) $actor->getKey();
+    }
+
+    private function isNewQueueTicket(Ticket $ticket): bool
+    {
+        return $ticket->status === TicketStatus::Baru
+            && $ticket->assigned_to_id === null
+            && $ticket->assigned_tier === null;
     }
 
     private function serviceCode(Ticket $ticket): ?string

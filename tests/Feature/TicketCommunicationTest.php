@@ -90,7 +90,8 @@ class TicketCommunicationTest extends TestCase
         $this->actingAs($agent)
             ->get(route('tickets.show', $ticket))
             ->assertOk()
-            ->assertSee('ticket-reference-page-actions')
+            ->assertSee('ticket-reference-action-menu')
+            ->assertSee('Tindakan')
             ->assertSee('Tambahkan Balasan')
             ->assertSee('ticket-reference-reply')
             ->assertSee('Balasan ke Pemohon')
@@ -126,6 +127,68 @@ class TicketCommunicationTest extends TestCase
             ->post(route('notifications.read', $notification->id))
             ->assertRedirect(route('tickets.show', $ticket));
         $this->assertNotNull($notification->fresh()->read_at);
+    }
+
+    public function test_helpdesk_public_comment_stays_enabled_for_visible_ticket_until_final_status(): void
+    {
+        $requester = $this->createUser([Role::Pemohon]);
+        $helpdesk = $this->createUser([Role::AgenTier1]);
+        $otherAgent = $this->createUser([Role::AgenTier1]);
+        $service = ServiceType::query()->where('code', 'SVC-01')->firstOrFail();
+        $ticket = $this->assignedTicket($requester->id, $otherAgent->id, $service->id);
+
+        $activeStatuses = [
+            TicketStatus::Baru,
+            TicketStatus::Diproses,
+            TicketStatus::Dikerjakan,
+            TicketStatus::MenungguPersetujuan,
+            TicketStatus::MenungguPemohon,
+            TicketStatus::MenungguPihakKetiga,
+            TicketStatus::MenungguKonfirmasi,
+        ];
+
+        foreach ($activeStatuses as $status) {
+            $ticket->forceFill([
+                'status' => $status,
+                'assigned_to_id' => $status === TicketStatus::Baru ? null : $otherAgent->id,
+                'assigned_tier' => $status === TicketStatus::Baru ? null : Role::AgenTier1->value,
+            ])->save();
+
+            $body = "Balasan Helpdesk pada status {$status->label()}.";
+
+            $this->actingAs($helpdesk)
+                ->get(route('tickets.show', $ticket))
+                ->assertOk()
+                ->assertSee('Balasan ke Pemohon')
+                ->assertSee('Kirim Pesan');
+
+            $this->actingAs($helpdesk)
+                ->post(route('tickets.comments.public', $ticket), ['body' => $body])
+                ->assertRedirect()
+                ->assertSessionHasNoErrors();
+
+            $this->assertDatabaseHas('ticket_comments', [
+                'ticket_id' => $ticket->id,
+                'author_id' => $helpdesk->id,
+                'visibility' => TicketCommentVisibility::Public->value,
+                'body' => $body,
+            ]);
+        }
+
+        foreach (TicketStatus::closedCases() as $status) {
+            $ticket->forceFill(['status' => $status])->save();
+
+            $this->actingAs($helpdesk)
+                ->get(route('tickets.show', $ticket))
+                ->assertOk()
+                ->assertDontSee('Kirim Pesan');
+
+            $this->actingAs($helpdesk)
+                ->post(route('tickets.comments.public', $ticket), [
+                    'body' => "Komentar setelah {$status->label()}.",
+                ])
+                ->assertForbidden();
+        }
     }
 
     public function test_requester_wait_reply_restores_assignee_and_resumes_sla(): void

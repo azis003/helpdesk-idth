@@ -151,6 +151,108 @@ class TicketWorkflowService
         return $handled;
     }
 
+    public function changePriority(User $actor, Ticket $ticket, Priority $priority, string $reason): Ticket
+    {
+        $this->authorization->authorize($actor, 'changePriority', $ticket, 'ticket.priority.change');
+        $reason = trim($reason);
+
+        if ($reason === '') {
+            $this->auditLogger->denied($actor, 'ticket.priority.change', $ticket, 'Alasan perubahan prioritas wajib diisi.');
+
+            throw ValidationException::withMessages([
+                'reason' => 'Alasan perubahan prioritas wajib diisi.',
+            ]);
+        }
+
+        $result = $this->database->transaction(function () use ($actor, $ticket, $priority, $reason): Ticket {
+            $lockedTicket = Ticket::query()
+                ->with(['problemCategory', 'serviceType'])
+                ->whereKey($ticket->getKey())
+                ->lockForUpdate()
+                ->first();
+
+            if ($lockedTicket === null) {
+                $this->auditLogger->denied($actor, 'ticket.priority.change', $ticket, 'Tiket tidak ditemukan.');
+
+                throw ValidationException::withMessages(['ticket' => 'Tiket tidak ditemukan.']);
+            }
+
+            $this->authorization->authorize($actor, 'changePriority', $lockedTicket, 'ticket.priority.change');
+
+            if ($lockedTicket->priority === $priority) {
+                return $lockedTicket->fresh(['requester', 'creator', 'assignee', 'serviceType', 'problemCategory']);
+            }
+
+            $before = $this->snapshot($lockedTicket);
+            $fromPriority = $lockedTicket->priority?->value;
+            $occurredAt = now();
+            $lockedTicket->forceFill(['priority' => $priority])->save();
+            $this->recordPriorityHistory($lockedTicket, $fromPriority, $priority, $actor, $reason, $occurredAt);
+            $this->recordStatusHistory(
+                $lockedTicket,
+                $lockedTicket->status,
+                $lockedTicket->status,
+                'ticket.priority.changed',
+                $actor,
+                $reason,
+                ['from_priority' => $fromPriority, 'to_priority' => $priority->value],
+                $occurredAt,
+            );
+            $this->auditLogger->succeeded(
+                $actor,
+                'ticket.priority.changed',
+                $lockedTicket,
+                $reason,
+                $before,
+                $this->snapshot($lockedTicket),
+            );
+
+            return $lockedTicket->fresh(['requester', 'creator', 'assignee', 'serviceType', 'problemCategory']);
+        });
+
+        $recipientIds = collect([$result->requester_id, $result->created_by_id, $result->assigned_to_id])
+            ->filter()
+            ->map(fn ($id): int => (int) $id)
+            ->reject(fn (int $id): bool => $id === (int) $actor->getKey())
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($recipientIds !== []) {
+            $priorityLabel = $result->priority?->label() ?? 'Belum ditentukan';
+            $this->notifications->send(
+                $result,
+                'ticket_priority_changed',
+                'Prioritas tiket diperbarui',
+                "Prioritas tiket {$result->ticket_number} diubah menjadi {$priorityLabel}.",
+                $recipientIds,
+                "ticket:{$result->getKey()}:priority:{$result->priority?->value}",
+            );
+        }
+
+        return $result;
+    }
+
+    public function reject(User $actor, Ticket $ticket, string $reason): Ticket
+    {
+        $this->authorization->authorize($actor, 'reject', $ticket, 'ticket.reject');
+        $reason = trim($reason);
+
+        if ($reason === '') {
+            $this->auditLogger->denied($actor, 'ticket.reject', $ticket, 'Alasan penolakan wajib diisi.');
+
+            throw ValidationException::withMessages([
+                'reason' => 'Alasan penolakan wajib diisi.',
+            ]);
+        }
+
+        return $this->triage($actor, $ticket, [
+            'outcome' => TicketTriageOutcome::Reject->value,
+            'priority' => $ticket->priority?->value,
+            'rejection_reason' => $reason,
+        ]);
+    }
+
     /**
      * @param  array<string, mixed>  $data
      */
@@ -159,7 +261,7 @@ class TicketWorkflowService
         $this->authorization->authorize($actor, 'triage', $ticket, 'ticket.triage');
 
         $outcome = TicketTriageOutcome::tryFrom((string) ($data['outcome'] ?? ''));
-        $priority = Priority::tryFrom((string) ($data['priority'] ?? ''));
+        $priority = Priority::tryFrom((string) ($data['priority'] ?? $ticket->priority?->value ?? ''));
 
         if ($outcome === null || $priority === null) {
             $this->auditLogger->denied($actor, 'ticket.triage', $ticket, 'Data triase tidak lengkap atau tidak valid.');
@@ -193,9 +295,14 @@ class TicketWorkflowService
                 return null;
             }
 
-            if (! in_array($lockedTicket->status, [TicketStatus::Diproses, TicketStatus::Dikerjakan], true)
-                || (int) $lockedTicket->assigned_to_id !== (int) $actor->getKey()
-                || $lockedTicket->assigned_tier !== Role::AgenTier1->value) {
+            $isNewQueueTicket = $lockedTicket->status === TicketStatus::Baru
+                && $lockedTicket->assigned_to_id === null
+                && $lockedTicket->assigned_tier === null;
+            $isOwnedTierOneTicket = in_array($lockedTicket->status, [TicketStatus::Diproses, TicketStatus::Dikerjakan], true)
+                && (int) $lockedTicket->assigned_to_id === (int) $actor->getKey()
+                && $lockedTicket->assigned_tier === Role::AgenTier1->value;
+
+            if (! $isNewQueueTicket && ! $isOwnedTierOneTicket) {
                 $failure = 'Tiket harus ditugaskan kepada Anda sebagai Agen Tier 1 sebelum ditriase.';
                 $this->auditLogger->denied($actor, 'ticket.triage', $lockedTicket, $failure);
 
@@ -273,8 +380,8 @@ class TicketWorkflowService
                 $newAssigneeId = $selectedUser->getKey();
                 $newTier = Role::AgenTier2->value;
             } else {
-                $newAssigneeId = $fromUserId;
-                $newTier = $fromTier ?: Role::AgenTier1->value;
+                $newAssigneeId = null;
+                $newTier = null;
             }
 
             $rejectionReason = $outcome === TicketTriageOutcome::Reject

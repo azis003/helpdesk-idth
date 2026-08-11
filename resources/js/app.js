@@ -705,6 +705,36 @@ uiModals.forEach((modal) => {
     }
 });
 
+const ticketActionMenus = [...document.querySelectorAll('[data-ticket-action-menu]')];
+
+ticketActionMenus.forEach((menu) => {
+    const summary = menu.querySelector('summary');
+
+    menu.querySelectorAll('[data-ui-modal-open], button[type="submit"], a[href]').forEach((action) => {
+        action.addEventListener('click', () => {
+            menu.open = false;
+        });
+    });
+
+    menu.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || ! menu.open) {
+            return;
+        }
+
+        event.preventDefault();
+        menu.open = false;
+        summary?.focus();
+    });
+});
+
+document.addEventListener('click', (event) => {
+    ticketActionMenus.forEach((menu) => {
+        if (menu.open && ! menu.contains(event.target)) {
+            menu.open = false;
+        }
+    });
+});
+
 const submitFeedbackForms = [...document.querySelectorAll('[data-submit-feedback]')];
 
 submitFeedbackForms.forEach((form) => {

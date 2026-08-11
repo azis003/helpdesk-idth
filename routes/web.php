@@ -52,6 +52,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
         Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
         Route::post('/tickets/{ticket}/request-approval', [TicketController::class, 'requestApproval'])->name('tickets.request-approval');
+        Route::put('/tickets/{ticket}/priority', [TicketController::class, 'updatePriority'])->name('tickets.priority.update');
+        Route::post('/tickets/{ticket}/reject', [TicketController::class, 'reject'])->name('tickets.reject');
         Route::post('/tickets/{ticket}/complete', [TicketController::class, 'complete'])->name('tickets.complete');
         Route::post('/tickets/{ticket}/resolve', [TicketController::class, 'complete'])->name('tickets.resolve');
         Route::post('/tickets/{ticket}/attachments', [TicketController::class, 'uploadAttachment'])->name('tickets.attachments.store');

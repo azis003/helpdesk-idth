@@ -19,7 +19,7 @@ class TriageTicketRequest extends FormRequest
         return [
             'outcome' => ['required', Rule::in(['self', 'tier_2', 'reject'])],
             'problem_category_id' => ['nullable', 'integer', 'exists:problem_categories,id'],
-            'priority' => ['required', Rule::in(array_keys(Priority::labels()))],
+            'priority' => ['nullable', Rule::in(array_keys(Priority::labels()))],
             'category_reason' => ['nullable', 'string', 'max:1000'],
             'priority_reason' => ['nullable', 'string', 'max:1000'],
             'assigned_to_id' => ['nullable', 'integer', 'exists:users,id'],
@@ -49,7 +49,6 @@ class TriageTicketRequest extends FormRequest
             'outcome.in' => 'Hasil triase tidak valid.',
             'problem_category_id.integer' => 'Kategori masalah yang dipilih tidak valid.',
             'problem_category_id.exists' => 'Kategori masalah yang dipilih tidak ditemukan.',
-            'priority.required' => 'Prioritas tiket wajib dipilih.',
             'priority.in' => 'Prioritas tiket tidak valid.',
             'category_reason.max' => 'Alasan perubahan kategori maksimal 1.000 karakter.',
             'priority_reason.max' => 'Alasan perubahan prioritas maksimal 1.000 karakter.',
