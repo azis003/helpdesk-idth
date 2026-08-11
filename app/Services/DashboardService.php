@@ -166,8 +166,10 @@ class DashboardService
         );
         $queueTickets = $isTier1
             ? $this->ticketRelations(clone $queueQuery)
-                ->orderForTierOneQueue()
-                ->limit(8)
+                ->orderByDesc('submitted_at')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->limit(5)
                 ->get()
             : collect();
         $queueCount = $isTier1 ? (clone $queueQuery)->count() : 0;
@@ -196,6 +198,33 @@ class DashboardService
             ->filter(fn (array $entry): bool => (bool) ($entry['metrics']['overdue'] ?? false))
             ->values();
 
+        // Keep the five Helpdesk summary buckets mutually exclusive:
+        // verification queue first, then active Tier 2 tickets, then final
+        // tickets, with the remainder representing direct Helpdesk handling.
+        $periodTicketQuery = $this->withinTicketPeriod(Ticket::query(), $start, $end);
+        $totalTicketCount = (clone $periodTicketQuery)->count();
+        $queueStatuses = [
+            TicketStatus::Baru->value,
+            TicketStatus::Diproses->value,
+        ];
+        $finishedStatuses = [
+            TicketStatus::Ditutup->value,
+            TicketStatus::Dibatalkan->value,
+            TicketStatus::Ditolak->value,
+            TicketStatus::TidakDisetujui->value,
+        ];
+        $queueTicketCount = (clone $periodTicketQuery)
+            ->whereIn('status', $queueStatuses)
+            ->count();
+        $finishedTicketCount = (clone $periodTicketQuery)
+            ->whereIn('status', $finishedStatuses)
+            ->count();
+        $technicianTicketCount = (clone $periodTicketQuery)
+            ->whereNotIn('status', array_merge($queueStatuses, $finishedStatuses))
+            ->where('assigned_tier', Role::AgenTier2->value)
+            ->count();
+        $selfHandledTicketCount = max(0, $totalTicketCount - $queueTicketCount - $technicianTicketCount - $finishedTicketCount);
+
         $pendingApprovals = ApprovalRequest::query()
             ->pending()
             ->whereHas('ticket', function (Builder $query) use ($user, $start, $end): void {
@@ -223,6 +252,13 @@ class DashboardService
             'approval_waiting_count' => (clone $approvalWaitingQuery)->count(),
             'approval_waiting_tickets' => $approvalWaitingTickets,
             'pending_approvals' => $pendingApprovals,
+            'summary' => [
+                'total' => $totalTicketCount,
+                'queue' => $queueTicketCount,
+                'self_handled' => $selfHandledTicketCount,
+                'technician' => $technicianTicketCount,
+                'finished' => $finishedTicketCount,
+            ],
         ];
     }
 
@@ -495,6 +531,13 @@ class DashboardService
             'approval_waiting_count' => 0,
             'approval_waiting_tickets' => collect(),
             'pending_approvals' => collect(),
+            'summary' => [
+                'total' => 0,
+                'queue' => 0,
+                'self_handled' => 0,
+                'technician' => 0,
+                'finished' => 0,
+            ],
         ];
     }
 

@@ -14,6 +14,10 @@
             \App\Enums\Role::Approver,
             \App\Enums\Role::KetuaTimKerja,
         ]);
+    $isHelpdeskDashboard = $agentDashboard['visible']
+        && ! $isSuperAdmin
+        && ! $isTeamChair
+        && $user->hasAnyRole([\App\Enums\Role::AgenTier1, \App\Enums\Role::AgenTier2]);
     $formatDate = static fn ($value): string => $value?->timezone($periodTimezone)->locale('id')->translatedFormat('d M Y, H:i') ?? 'Belum tercatat';
     $formatMinutes = static function (?int $minutes): string {
         if ($minutes === null) {
@@ -41,6 +45,9 @@
 @endphp
 
 @section('content')
+    @if ($isHelpdeskDashboard)
+        @include('dashboard.helpdesk')
+    @else
     <section class="ui-portal-hero" aria-labelledby="dashboard-title">
         @if ($isRequesterOnly)
             <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -360,4 +367,5 @@
 
     @endif
 
+    @endif
 @endsection

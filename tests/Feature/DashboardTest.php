@@ -97,9 +97,10 @@ class DashboardTest extends TestCase
             ->assertViewHas('requesterDashboard.total_ticket_count', 3);
     }
 
-    public function test_agent_dashboard_shows_queue_responsibility_waiting_and_sla_risk(): void
+    public function test_agent_dashboard_shows_queue_and_responsibility(): void
     {
         $agent = $this->createUser([Role::AgenTier1], ['name' => 'Agen Operasional']);
+        $technician = $this->createUser([Role::AgenTier2], ['name' => 'Teknisi Operasional']);
         $requester = $this->createUser([Role::Pemohon]);
         $service = ServiceType::query()->where('code', 'SVC-01')->firstOrFail();
         $calendar = ServiceCalendar::query()->active()->firstOrFail();
@@ -115,6 +116,26 @@ class DashboardTest extends TestCase
         $waitingTicket = $this->assignedTicket($agent->id, $requester->id, 'Tiket menunggu pemohon', TicketStatus::MenungguPemohon);
         $nearTicket = $this->assignedTicket($agent->id, $requester->id, 'Tiket mendekati SLA', TicketStatus::Dikerjakan);
         $overdueTicket = $this->assignedTicket($agent->id, $requester->id, 'Tiket terlewat SLA', TicketStatus::Dikerjakan);
+        Ticket::factory()->create([
+            'subject' => 'Tiket dikerjakan teknisi',
+            'requester_id' => $requester->id,
+            'created_by_id' => $requester->id,
+            'service_type_id' => $service->id,
+            'status' => TicketStatus::Dikerjakan,
+            'assigned_to_id' => $technician->id,
+            'assigned_tier' => Role::AgenTier2->value,
+            'submitted_at' => now()->subHour(),
+        ]);
+        Ticket::factory()->create([
+            'subject' => 'Tiket sudah selesai',
+            'requester_id' => $requester->id,
+            'created_by_id' => $requester->id,
+            'service_type_id' => $service->id,
+            'status' => TicketStatus::Ditutup,
+            'assigned_to_id' => $technician->id,
+            'assigned_tier' => Role::AgenTier2->value,
+            'submitted_at' => now()->subHour(),
+        ]);
 
         TicketSlaSegment::query()->create([
             'ticket_id' => $nearTicket->id,
@@ -140,20 +161,37 @@ class DashboardTest extends TestCase
             'calendar_version' => $calendar->version,
             'started_at' => now()->subDays(2)->setTime(8, 0),
         ]);
+        $reportedAtLabel = $queueTicket->submitted_at
+            ->copy()
+            ->timezone(config('app.timezone'))
+            ->locale('id')
+            ->translatedFormat('l, d M Y H:i');
 
         $this->actingAs($agent)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Antrean Baru')
+            ->assertSee('Total Tiket')
+            ->assertSee('Tiket Antri')
+            ->assertSee('Dikerjakan Sendiri')
+            ->assertSee('Dikerjakan Teknisi')
+            ->assertSee('Tiket Selesai')
             ->assertSee($queueTicket->subject)
+            ->assertSee($reportedAtLabel)
             ->assertSee($waitingTicket->subject)
-            ->assertSee('Mendekati SLA')
-            ->assertSee('Terlewat SLA')
             ->assertSee($nearTicket->subject)
-            ->assertSee($overdueTicket->subject);
+            ->assertSee($overdueTicket->subject)
+            ->assertViewHas('agentDashboard', function (array $dashboard): bool {
+                return $dashboard['summary'] === [
+                    'total' => 6,
+                    'queue' => 1,
+                    'self_handled' => 3,
+                    'technician' => 1,
+                    'finished' => 1,
+                ];
+            });
     }
 
-    public function test_authorized_overall_dashboard_contains_operational_distributions(): void
+    public function test_helpdesk_dashboard_omits_removed_overall_analytics(): void
     {
         $admin = $this->createUser([Role::SuperAdmin]);
         $agent = $this->createUser([Role::AgenTier1], ['name' => 'Agen Beban']);
@@ -203,14 +241,10 @@ class DashboardTest extends TestCase
         $this->actingAs($agent)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertSee('Dasbor menyeluruh')
-            ->assertSee('Sebaran layanan')
-            ->assertSee('Jaringan Kantor')
-            ->assertSee('Beban kerja per agen')
-            ->assertSee('Agen Beban')
-            ->assertSee('Sumber pembuatan tiket')
-            ->assertSee('Dibuat mandiri oleh Pemohon')
-            ->assertSee('Persetujuan mandiri');
+            ->assertDontSee('Analitik periode')
+            ->assertDontSee('Dasbor menyeluruh')
+            ->assertDontSee('Tiket Berisiko SLA')
+            ->assertDontSee('Menunggu Tindak Lanjut');
 
         $this->actingAs($requester)
             ->get(route('dashboard'))
