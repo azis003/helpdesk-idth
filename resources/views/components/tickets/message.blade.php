@@ -1,30 +1,51 @@
-@props(['message', 'variant' => 'default'])
+@props(['message', 'variant' => 'default', 'requesterId' => null])
+
+@php
+    $isOperationalMessage = $message instanceof \App\Models\TicketComment;
+    $authorName = $isOperationalMessage ? ($message->author?->name ?? 'Sistem') : $message->authorName;
+    $authorLabel = $isOperationalMessage
+        ? ($message->visibility === \App\Enums\TicketCommentVisibility::Internal
+            ? 'Catatan Internal'
+            : ((int) $message->author_id === (int) $requesterId ? 'Pemohon' : 'Tim TI'))
+        : $message->roleLabel();
+    $initial = $isOperationalMessage
+        ? strtoupper(mb_substr($authorName, 0, 1))
+        : $message->initial();
+    $createdAt = $isOperationalMessage ? $message->created_at : $message->createdAt;
+    $body = $isOperationalMessage ? $message->body : $message->body;
+    $messageAttachments = $isOperationalMessage
+        ? $message->attachments->map(fn ($attachment): array => [
+            'name' => $attachment->original_name,
+            'url' => route('attachments.download', $attachment),
+        ])
+        : collect($message->attachments);
+@endphp
 
 @if ($variant === 'reference')
     <article class="rounded-lg border border-[#c4c5d7] bg-[#f8f9ff] p-4">
         <header class="flex flex-wrap items-start justify-between gap-3">
             <div class="flex min-w-0 items-center gap-3">
-                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#dce9ff] text-xs font-bold text-[#0037b0]" aria-hidden="true">{{ $message->initial() }}</span>
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#dce9ff] text-xs font-bold text-[#0037b0]" aria-hidden="true">{{ $initial }}</span>
                 <div class="min-w-0">
-                    <p class="truncate text-sm font-bold text-[#0b1c30]">{{ $message->authorName }}</p>
-                    <p class="mt-0.5 text-xs text-[#434655]">{{ $message->roleLabel() }}</p>
+                    <p class="truncate text-sm font-bold text-[#0b1c30]">{{ $authorName }}</p>
+                    <p class="mt-0.5 text-xs text-[#434655]">{{ $authorLabel }}</p>
                 </div>
             </div>
 
-            @if ($message->createdAt)
-                <time class="text-xs text-[#434655]" datetime="{{ $message->createdAt->toIso8601String() }}">{{ $message->createdAt->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }} WIB</time>
+            @if ($createdAt)
+                <time class="text-xs text-[#434655]" datetime="{{ $createdAt->toIso8601String() }}">{{ $createdAt->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }} WIB</time>
             @endif
         </header>
 
-        <p class="mt-4 whitespace-pre-line text-sm leading-6 text-[#434655]">{{ $message->body }}</p>
+        <p class="mt-4 whitespace-pre-line text-sm leading-6 text-[#434655]">{{ $body }}</p>
 
-        @if ($message->hasAttachments())
+        @if ($messageAttachments->isNotEmpty())
             <ul class="mt-4 flex flex-wrap gap-2 border-t border-[#c4c5d7] pt-3">
-                @foreach ($message->attachments as $attachment)
+                @foreach ($messageAttachments as $attachment)
                     <li>
-                        <a href="{{ $attachment['url'] }}" class="inline-flex items-center gap-1.5 rounded-md border border-[#c4c5d7] bg-white px-2.5 py-1.5 text-xs font-bold text-[#0037b0] hover:border-[#0037b0]">
+                        <a href="{{ $attachment['url'] }}" class="inline-flex max-w-full items-center gap-1.5 rounded-md border border-[#c4c5d7] bg-white px-2.5 py-1.5 text-xs font-bold text-[#0037b0] hover:border-[#0037b0]">
                             <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
-                            {{ $attachment['name'] }}
+                            <span class="truncate">{{ $attachment['name'] }}</span>
                         </a>
                     </li>
                 @endforeach

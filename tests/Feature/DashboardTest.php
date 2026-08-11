@@ -171,7 +171,7 @@ class DashboardTest extends TestCase
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('Total Tiket')
-            ->assertSee('Tiket Antri')
+            ->assertSee('Antrian Tiket')
             ->assertSee('Dikerjakan Sendiri')
             ->assertSee('Dikerjakan Teknisi')
             ->assertSee('Tiket Selesai')

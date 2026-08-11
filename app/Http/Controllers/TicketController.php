@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\Priority;
 use App\Enums\Role;
 use App\Enums\TicketCommentVisibility;
+use App\Enums\TicketStatus;
 use App\Http\Requests\AssignTicketRequest;
 use App\Http\Requests\CompleteTicketRequest;
 use App\Http\Requests\InternalTicketFieldRequest;
@@ -129,24 +130,7 @@ class TicketController extends Controller
 
         });
 
-        $query->when($search !== '', function (Builder $ticketQuery) use ($search): void {
-            $like = "%{$search}%";
-
-            $ticketQuery->where(function (Builder $searchQuery) use ($like): void {
-                $searchQuery
-                    ->where('ticket_number', 'like', $like)
-                    ->orWhere('subject', 'like', $like)
-                    ->orWhere('service_type_code_snapshot', 'like', $like)
-                    ->orWhere('service_type_name_snapshot', 'like', $like)
-                    ->orWhere('requester_name_snapshot', 'like', $like)
-                    ->orWhere('requester_nip_snapshot', 'like', $like)
-                    ->orWhereHas('serviceType', function (Builder $serviceQuery) use ($like): void {
-                        $serviceQuery
-                            ->where('code', 'like', $like)
-                            ->orWhere('name', 'like', $like);
-                    });
-            });
-        });
+        $this->applyTicketSearch($query, $search);
 
         $tickets = $query->paginate($perPage)->withQueryString();
         $requesterActions = $tickets->getCollection()
@@ -230,18 +214,113 @@ class TicketController extends Controller
     public function queue(Request $request): mixed
     {
         $actor = $request->user();
-        $this->authorization->authorize($actor, 'viewQueue', Ticket::class, 'ticket.queue.view');
+        $requestedTab = $request->query('tab');
+        $activeTab = $requestedTab === null && $actor->hasRole(Role::AgenTier2)
+            ? 'mine'
+            : ((string) $requestedTab === 'mine' ? 'mine' : 'queue');
+        $isMine = $activeTab === 'mine';
 
-        $tickets = Ticket::query()
-            ->newQueue()
-            ->with(['serviceType', 'requester', 'problemCategory'])
-            ->orderForTierOneQueue()
+        $this->authorization->authorize(
+            $actor,
+            $isMine ? 'viewAssigned' : 'viewQueue',
+            Ticket::class,
+            $isMine ? 'ticket.assigned.view' : 'ticket.queue.view',
+        );
+
+        $queueCount = Ticket::query()->newQueue()->count();
+        $mineQuery = Ticket::query()
+            ->where('assigned_to_id', $actor->getKey())
+            ->whereNotIn('status', TicketStatus::valuesOf(TicketStatus::closedCases()));
+        $mineCount = (clone $mineQuery)->count();
+
+        $ticketsQuery = $isMine
+            ? (clone $mineQuery)
+                ->with(['serviceType', 'requester', 'problemCategory', 'assignee'])
+                ->orderByDesc('updated_at')
+                ->orderByDesc('id')
+            : Ticket::query()
+                ->newQueue()
+                ->with(['serviceType', 'requester', 'problemCategory'])
+                ->orderForTierOneQueue();
+
+        $tickets = $ticketsQuery
             ->paginate(20)
             ->withQueryString();
 
         return view('tickets.queue', [
             'tickets' => $tickets,
+            'activeTab' => $activeTab,
+            'queueCount' => $queueCount,
+            'mineCount' => $mineCount,
+            'canViewQueue' => $actor->can('viewQueue', Ticket::class),
+            'canViewAssigned' => $actor->can('viewAssigned', Ticket::class),
         ]);
+    }
+
+    public function all(Request $request): mixed
+    {
+        $actor = $request->user();
+        $this->authorization->authorize($actor, 'viewAll', Ticket::class, 'ticket.all.view');
+
+        $search = trim((string) $request->query('q', ''));
+        $perPage = (int) $request->query('per_page', 10);
+
+        if (! in_array($perPage, [10, 25, 50], true)) {
+            $perPage = 10;
+        }
+
+        $query = Ticket::query()
+            ->with(['serviceType', 'requester', 'creator', 'assignee'])
+            ->orderByDesc('submitted_at')
+            ->orderByDesc('id');
+
+        $this->applyTicketSearch($query, $search);
+
+        $tickets = $query->paginate($perPage)->withQueryString();
+        $requesterActions = $tickets->getCollection()
+            ->mapWithKeys(fn (Ticket $ticket): array => [
+                $ticket->getKey() => $this->requesterActionFor($actor, $ticket),
+            ])
+            ->all();
+
+        return view('tickets.index', [
+            'tickets' => $tickets,
+            'canViewQueue' => $actor->can('viewQueue', Ticket::class),
+            'isTeamChair' => false,
+            'canAccessTickets' => true,
+            'showFilters' => true,
+            'search' => $search,
+            'perPage' => $perPage,
+            'requesterActions' => $requesterActions,
+            'isAllTickets' => true,
+        ]);
+    }
+
+    private function applyTicketSearch(Builder $query, string $search): void
+    {
+        if ($search === '') {
+            return;
+        }
+
+        $like = "%{$search}%";
+
+        $query->where(function (Builder $searchQuery) use ($like): void {
+            $searchQuery
+                ->where('ticket_number', 'like', $like)
+                ->orWhere('subject', 'like', $like)
+                ->orWhere('service_type_code_snapshot', 'like', $like)
+                ->orWhere('service_type_name_snapshot', 'like', $like)
+                ->orWhere('requester_name_snapshot', 'like', $like)
+                ->orWhere('requester_nip_snapshot', 'like', $like)
+                ->orWhereHas('serviceType', function (Builder $serviceQuery) use ($like): void {
+                    $serviceQuery
+                        ->where('code', 'like', $like)
+                        ->orWhere('name', 'like', $like);
+                })
+                ->orWhereHas('assignee', function (Builder $assigneeQuery) use ($like): void {
+                    $assigneeQuery->where('name', 'like', $like);
+                });
+        });
     }
 
     public function create(Request $request): mixed
@@ -408,6 +487,9 @@ class TicketController extends Controller
         });
 
         $canTriage = $actor->can('triage', $ticket);
+        $canClaim = $actor->can('claim', $ticket)
+            && $ticket->status === TicketStatus::Baru
+            && $ticket->assigned_to_id === null;
         $canAssignTierTwo = $actor->can('assignTierTwo', $ticket);
         $canReturnToTierOne = $actor->can('returnToTierOne', $ticket);
         $canCommentPublic = $actor->can('commentPublic', $ticket);
@@ -468,6 +550,7 @@ class TicketController extends Controller
             'ticket' => $ticket,
             'canSeeInternal' => $canSeeInternal,
             'canTriage' => $canTriage,
+            'canClaim' => $canClaim,
             'canAssignTierTwo' => $canAssignTierTwo,
             'canReturnToTierOne' => $canReturnToTierOne,
             'canCommentPublic' => $canCommentPublic,

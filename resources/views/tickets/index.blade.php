@@ -7,13 +7,25 @@
     $search = $search ?? '';
     $perPage = $perPage ?? 10;
     $requesterActions = $requesterActions ?? [];
+    $isAllTickets = $isAllTickets ?? false;
     $canCreateTicket = auth()->user()->can('create', \App\Models\Ticket::class);
-    $ticketListLabel = $isTeamChair && $hasPersonalScope
+    $priorityDots = [
+        'kritis' => 'bg-[#be123c]',
+        'tinggi' => 'bg-[#e11d48]',
+        'sedang' => 'bg-[#e4a72c]',
+        'rendah' => 'bg-[#2bb8aa]',
+    ];
+    $ticketListLabel = $isAllTickets
+        ? 'Semua Tiket'
+        : ($isTeamChair && $hasPersonalScope
         ? 'Tiket saya dan tim'
-        : ($isTeamChair ? 'Tiket tim' : 'Tiket saya');
-    $pageDescription = $isTeamChair
+        : ($isTeamChair ? 'Tiket tim' : 'Tiket saya'));
+    $pageDescription = $isAllTickets
+        ? 'Lihat seluruh tiket yang pernah dibuat, termasuk status, prioritas, dan penanggung jawabnya.'
+        : ($isTeamChair
         ? 'Pantau nomor tiket, layanan, status, dan detail penanganan anggota tim dalam mode baca saja.'
-        : 'Lihat nomor tiket, layanan, status, dan tindakan yang perlu Anda selesaikan.';
+        : 'Lihat nomor tiket, layanan, status, dan tindakan yang perlu Anda selesaikan.');
+    $listRoute = $isAllTickets ? route('tickets.all') : route('tickets.index');
 @endphp
 
 @section('title', $ticketListLabel.' — '.$branding['application_name'])
@@ -23,13 +35,13 @@
 @section('content')
     <div class="ui-page-header">
         <div>
-            <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>{{ $isTeamChair ? 'Pemantauan tim' : 'Pelacakan permintaan' }}</p>
+            <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>{{ $isAllTickets ? 'Pengelolaan tiket' : ($isTeamChair ? 'Pemantauan tim' : 'Pelacakan permintaan') }}</p>
             <h1 class="ui-page-title">{{ $ticketListLabel }}</h1>
             <p class="ui-page-description">{{ $pageDescription }}</p>
         </div>
         <div class="flex flex-wrap gap-2">
             @if ($canViewQueue)
-                <a href="{{ route('tickets.queue') }}" class="ui-btn ui-btn-secondary">Antrean Tier 1</a>
+                <a href="{{ route('tickets.queue') }}" class="ui-btn ui-btn-secondary">Antrian Tiket</a>
             @endif
             @if ($canCreateTicket)
                 <a href="{{ route('tickets.create') }}" class="ui-btn ui-btn-primary">Buat tiket <span aria-hidden="true">→</span></a>
@@ -37,19 +49,12 @@
         </div>
     </div>
 
-    <section class="mt-8 overflow-hidden rounded-lg border border-[#d7dde0] bg-white shadow-[0_2px_8px_rgba(36,57,67,0.06)]" aria-labelledby="tickets-list-heading">
-        <div class="flex flex-col gap-2 bg-[#075998] px-5 py-5 text-white sm:flex-row sm:items-center sm:justify-between sm:px-8">
-            <div>
-                <h2 id="tickets-list-heading" class="text-xl font-extrabold tracking-tight">Daftar tiket</h2>
-            </div>
-            @if ($search !== '')
-                <span class="inline-flex w-fit items-center rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white">Pencarian aktif</span>
-            @endif
-        </div>
+    <section class="mt-4 overflow-hidden rounded-xl border border-[#dfe8ec] bg-white shadow-[0_1px_3px_rgba(33,57,67,0.08)]" aria-labelledby="tickets-list-heading">
+        <h2 id="tickets-list-heading" class="sr-only">{{ $isAllTickets ? 'Daftar seluruh tiket' : 'Daftar tiket' }}</h2>
 
         @if ($showFilters)
-            <div class="border-b border-[#e5eaed] px-5 py-5 sm:px-8">
-                <form method="GET" action="{{ route('tickets.index') }}" class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between" role="search" aria-label="Cari tiket">
+            <div class="border-b border-[#e5eaed] px-5 py-4 sm:px-8">
+                <form method="GET" action="{{ $listRoute }}" class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between" role="search" aria-label="Cari tiket">
                     <div class="flex items-center gap-2 text-sm text-[#17212b]">
                         <label for="ticket-per-page" class="font-bold">Tampilkan</label>
                         <select id="ticket-per-page" name="per_page" class="h-10 rounded-lg border border-[#d7e0e4] bg-white px-3 text-sm text-[#35505b] outline-none focus:border-[#0a87c9] focus:ring-2 focus:ring-[#0a87c9]/15" onchange="this.form.submit()">
@@ -68,24 +73,32 @@
                 </form>
 
                 @if ($search !== '')
-                    <p class="mt-3 text-xs text-[#718088]">Menampilkan hasil untuk “<span class="font-bold text-[#35505b]">{{ $search }}</span>”. <a href="{{ route('tickets.index', ['per_page' => $perPage]) }}" class="font-extrabold text-[#147a79] underline decoration-[#a8e5dd] underline-offset-2 hover:text-[#0f5f5e]">Hapus pencarian</a></p>
+                    <p class="mt-3 text-xs text-[#718088]">Menampilkan hasil untuk “<span class="font-bold text-[#35505b]">{{ $search }}</span>”. <a href="{{ $listRoute.'?per_page='.$perPage }}" class="font-extrabold text-[#147a79] underline decoration-[#a8e5dd] underline-offset-2 hover:text-[#0f5f5e]">Hapus pencarian</a></p>
                 @endif
             </div>
         @endif
 
         <div class="hidden overflow-x-auto md:block">
-            <table class="min-w-[760px] w-full border-collapse text-left text-sm">
-                <caption class="sr-only">Daftar tiket dengan nomor tiket, layanan, status, dan aksi</caption>
-                <thead class="bg-[#fbfcfd] text-[#34495a]">
-                    <tr>
-                        <th scope="col" class="w-16 border-b border-[#cfd6da] px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide">No</th>
-                        <th scope="col" class="min-w-[21rem] border-b border-[#cfd6da] px-4 py-3 text-xs font-extrabold uppercase tracking-wide">No Tiket</th>
-                        <th scope="col" class="min-w-[15rem] border-b border-[#cfd6da] px-4 py-3 text-xs font-extrabold uppercase tracking-wide">Layanan</th>
-                        <th scope="col" class="min-w-[11rem] border-b border-[#cfd6da] px-4 py-3 text-xs font-extrabold uppercase tracking-wide">Status</th>
-                        <th scope="col" class="min-w-[17rem] border-b border-[#cfd6da] px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide">Aksi</th>
+            <table class="w-full min-w-[76rem] border-collapse text-left">
+                <caption class="sr-only">Daftar tiket dengan nomor tiket, layanan, judul, status, prioritas, dan aksi</caption>
+                <thead>
+                    <tr class="border-b border-[#dfe8ec] bg-[#f1f5f9] text-xs font-semibold uppercase leading-4 tracking-[0.04em] text-[#5b7683]">
+                        <th scope="col" class="w-[4rem] px-4 py-3">No</th>
+                        <th scope="col" class="min-w-[21rem] px-4 py-3">No Tiket</th>
+                        <th scope="col" class="min-w-[15rem] px-4 py-3">Layanan</th>
+                        <th scope="col" class="min-w-[18rem] px-4 py-3">Judul</th>
+                        @if ($isAllTickets)
+                            <th scope="col" class="min-w-[13rem] px-4 py-3">Pemohon</th>
+                        @endif
+                        <th scope="col" class="min-w-[11rem] px-4 py-3">Status</th>
+                        @if ($isAllTickets)
+                            <th scope="col" class="min-w-[13rem] px-4 py-3">Penanggung jawab</th>
+                        @endif
+                        <th scope="col" class="min-w-[9rem] px-4 py-3">Prioritas</th>
+                        <th scope="col" class="min-w-[13rem] px-4 py-3 text-center">Aksi</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="text-[0.8125rem] leading-[1.125rem] text-[#17303c]">
                     @forelse ($tickets as $ticket)
                         @php
                             $ticketRouteTarget = $isTeamChair ? $ticket->id : $ticket;
@@ -93,24 +106,41 @@
                             $ticketNumber = $isTeamChair ? $ticket->ticketLabel() : ($ticket->ticket_number ?? 'Tiket #'.$ticket->id);
                             $serviceCode = $isTeamChair ? $ticket->serviceCode : ($ticket->service_type_code_snapshot ?: $ticket->serviceType?->code);
                             $serviceName = $isTeamChair ? $ticket->serviceLabel() : ($ticket->service_type_name_snapshot ?: $ticket->serviceType?->name);
+                            $requesterName = $isAllTickets ? ($ticket->requester_name_snapshot ?: $ticket->requester?->name ?: 'Pemohon belum tercatat') : null;
+                            $assigneeName = $isAllTickets ? ($ticket->assignee?->name ?: 'Belum ditugaskan') : null;
                             $requesterAction = $requesterActions[$ticketId] ?? null;
+                            $ticketDetailUrl = $isAllTickets
+                                ? route('tickets.show', ['ticket' => $ticket, 'from' => 'all'])
+                                : route('tickets.show', $ticketRouteTarget);
                         @endphp
-                        <tr class="odd:bg-[#f8fafb] even:bg-white hover:bg-[#eef7fc]">
-                            <td class="border-b border-[#e5eaed] px-4 py-5 text-center font-semibold text-[#172d45]">{{ ($tickets->firstItem() ?? 1) + $loop->index }}</td>
-                            <td class="border-b border-[#e5eaed] px-4 py-5">
-                                <span class="block text-xs font-extrabold text-[#1d5d72]">{{ $ticketNumber }}</span>
-                                <span class="mt-1 block max-w-[28rem] font-bold leading-5 text-[#112b49]">{{ $ticket->subject }}</span>
+                        <tr class="border-b border-[#eaf0f2] transition-colors hover:bg-[#fbfdfd]">
+                            <td class="px-4 py-2.5 font-semibold text-[#5b7683]">{{ ($tickets->firstItem() ?? 1) + $loop->index }}</td>
+                            <td class="whitespace-nowrap px-4 py-2.5">
+                                <a href="{{ $ticketDetailUrl }}" class="text-[0.8125rem] font-semibold leading-[1.125rem] text-[#1d5d72] hover:text-[#0a87c9] hover:underline" aria-label="Lihat detail {{ $ticketNumber }}">{{ $ticketNumber }}</a>
                             </td>
-                            <td class="border-b border-[#e5eaed] px-4 py-5">
+                            <td class="whitespace-nowrap px-4 py-2.5">
                                 <span class="block text-xs font-extrabold text-[#1d5d72]">{{ $serviceCode ?: '—' }}</span>
-                                <span class="mt-1 block max-w-[18rem] leading-5 text-[#172d45]">{{ $serviceName ?: 'Layanan belum tersedia' }}</span>
+                                <span class="mt-1 block max-w-[18rem] leading-5 text-[#51707c]">{{ $serviceName ?: 'Layanan belum tersedia' }}</span>
                             </td>
-                            <td class="border-b border-[#e5eaed] px-4 py-5"><x-status-badge :status="$ticket->status" /></td>
-                            <td class="border-b border-[#e5eaed] px-4 py-5 text-center">
+                            <td class="px-4 py-2.5"><div class="max-w-[28rem] truncate font-bold leading-5 text-[#112b49]">{{ $ticket->subject }}</div></td>
+                            @if ($isAllTickets)
+                                <td class="px-4 py-2.5 text-[#51707c]">{{ $requesterName }}</td>
+                            @endif
+                            <td class="px-4 py-2.5"><x-status-badge :status="$ticket->status" /></td>
+                            @if ($isAllTickets)
+                                <td class="px-4 py-2.5 text-[#51707c]">{{ $assigneeName }}</td>
+                            @endif
+                            <td class="px-4 py-2.5">
+                                <span class="ui-badge inline-flex items-center gap-1.5 text-[#35505b]">
+                                    <span class="h-1.5 w-1.5 rounded-full {{ $priorityDots[$ticket->priority?->value] ?? 'bg-[#c3ced3]' }}" aria-hidden="true"></span>
+                                    {{ $ticket->priority?->label() ?? 'Belum ditentukan' }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-2.5 text-center">
                                 <div class="flex flex-wrap items-center justify-center gap-2">
-                                    <a href="{{ route('tickets.show', $ticketRouteTarget) }}" class="ui-btn ui-btn-ghost min-h-9 px-3 py-1.5 text-xs" aria-label="Lihat detail {{ $ticketNumber }}">Lihat</a>
+                                    <a href="{{ $ticketDetailUrl }}" class="ui-btn ui-btn-ghost min-h-9 px-3 py-1.5 text-xs" aria-label="Lihat detail {{ $ticketNumber }}">Lihat</a>
                                     @if ($requesterAction)
-                                        <a href="{{ route('tickets.show', $ticketRouteTarget) }}" class="ui-btn ui-btn-secondary min-h-9 px-3 py-1.5 text-xs" aria-label="{{ $requesterAction['description'] }}" title="{{ $requesterAction['description'] }}">{{ $requesterAction['label'] }}</a>
+                                        <a href="{{ $ticketDetailUrl }}" class="ui-btn ui-btn-secondary min-h-9 px-3 py-1.5 text-xs" aria-label="{{ $requesterAction['description'] }}" title="{{ $requesterAction['description'] }}">{{ $requesterAction['label'] }}</a>
                                     @endif
                                 </div>
                                 @if ($requesterAction)
@@ -120,11 +150,11 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-4 py-14 text-center text-[#718088]">
+                            <td colspan="{{ $isAllTickets ? 9 : 7 }}" class="px-4 py-14 text-center text-[#718088]">
                                 <p class="text-base font-extrabold text-[#35505b]">{{ $search !== '' ? 'Tidak ada tiket yang cocok dengan pencarian.' : 'Belum ada tiket pada daftar ini.' }}</p>
-                                <p class="mx-auto mt-2 max-w-lg text-sm leading-6">{{ $search !== '' ? 'Coba gunakan nomor tiket atau judul yang berbeda.' : ($isTeamChair ? 'Tiket anggota tim yang dipantau akan muncul di sini setelah tercatat.' : 'Tiket yang Anda ajukan akan muncul di sini setelah dikirim.') }}</p>
+                                <p class="mx-auto mt-2 max-w-lg text-sm leading-6">{{ $search !== '' ? 'Coba gunakan nomor tiket atau judul yang berbeda.' : ($isAllTickets ? 'Tiket yang dibuat akan muncul di sini setelah tercatat.' : ($isTeamChair ? 'Tiket anggota tim yang dipantau akan muncul di sini setelah tercatat.' : 'Tiket yang Anda ajukan akan muncul di sini setelah dikirim.')) }}</p>
                                 @if ($search !== '')
-                                    <a href="{{ route('tickets.index', ['per_page' => $perPage]) }}" class="ui-action-link mt-4 inline-flex">Hapus pencarian</a>
+                                    <a href="{{ $listRoute.'?per_page='.$perPage }}" class="ui-action-link mt-4 inline-flex">Hapus pencarian</a>
                                 @elseif ($canCreateTicket)
                                     <a href="{{ route('tickets.create') }}" class="ui-btn ui-btn-primary mt-5">Buat tiket pertama</a>
                                 @endif
@@ -135,7 +165,7 @@
             </table>
         </div>
 
-        <div class="divide-y divide-[#e5eaed] md:hidden">
+        <div class="divide-y divide-[#eaf0f2] md:hidden">
             @forelse ($tickets as $ticket)
                 @php
                     $ticketRouteTarget = $isTeamChair ? $ticket->id : $ticket;
@@ -143,27 +173,52 @@
                     $ticketNumber = $isTeamChair ? $ticket->ticketLabel() : ($ticket->ticket_number ?? 'Tiket #'.$ticket->id);
                     $serviceCode = $isTeamChair ? $ticket->serviceCode : ($ticket->service_type_code_snapshot ?: $ticket->serviceType?->code);
                     $serviceName = $isTeamChair ? $ticket->serviceLabel() : ($ticket->service_type_name_snapshot ?: $ticket->serviceType?->name);
+                    $requesterName = $isAllTickets ? ($ticket->requester_name_snapshot ?: $ticket->requester?->name ?: 'Pemohon belum tercatat') : null;
+                    $assigneeName = $isAllTickets ? ($ticket->assignee?->name ?: 'Belum ditugaskan') : null;
                     $requesterAction = $requesterActions[$ticketId] ?? null;
+                    $ticketDetailUrl = $isAllTickets
+                        ? route('tickets.show', ['ticket' => $ticket, 'from' => 'all'])
+                        : route('tickets.show', $ticketRouteTarget);
                 @endphp
                 <article class="p-5">
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
-                            <p class="text-xs font-bold uppercase tracking-wide text-[#78909a]">No. {{ ($tickets->firstItem() ?? 1) + $loop->index }}</p>
-                            <p class="mt-1 text-xs font-extrabold text-[#1d5d72]">{{ $ticketNumber }}</p>
+                            <p class="text-xs font-bold uppercase tracking-wide text-[#78909a]">No. {{ ($tickets->firstItem() ?? 1) + $loop->index }} · {{ $serviceCode ?: '—' }}</p>
+                            <a href="{{ $ticketDetailUrl }}" class="mt-1 block text-xs font-extrabold text-[#1d5d72] hover:underline">{{ $ticketNumber }}</a>
                             <h3 class="mt-1 line-clamp-2 font-bold leading-5 text-[#112b49]">{{ $ticket->subject }}</h3>
                         </div>
-                        <x-status-badge :status="$ticket->status" class="shrink-0" />
+                        <div class="flex shrink-0 flex-col items-end gap-1.5">
+                            <x-status-badge :status="$ticket->status" />
+                        </div>
                     </div>
 
-                    <div class="mt-4 rounded-lg bg-[#f8fafb] p-4">
+                    <div class="mt-3 grid gap-3 sm:grid-cols-2">
                         <p class="text-xs font-bold uppercase tracking-wide text-[#78909a]">Layanan</p>
                         <p class="mt-1 text-sm leading-5 text-[#172d45]">{{ $serviceCode ?: '—' }}{{ $serviceName ? ' · '.$serviceName : '' }}</p>
                     </div>
 
+                    @if ($isAllTickets)
+                        <div class="mt-3 grid gap-3 rounded-lg border border-[#e5eaed] p-4 sm:grid-cols-2">
+                            <div>
+                                <p class="text-xs font-bold uppercase tracking-wide text-[#78909a]">Pemohon</p>
+                                <p class="mt-1 text-sm leading-5 text-[#35505b]">{{ $requesterName }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold uppercase tracking-wide text-[#78909a]">Penanggung jawab</p>
+                                <p class="mt-1 text-sm leading-5 text-[#35505b]">{{ $assigneeName }}</p>
+                            </div>
+                        </div>
+                    @endif
+
+                    <div class="ui-badge mt-3 inline-flex items-center gap-1.5 text-[#35505b]">
+                        <span class="h-1.5 w-1.5 rounded-full {{ $priorityDots[$ticket->priority?->value] ?? 'bg-[#c3ced3]' }}" aria-hidden="true"></span>
+                        Prioritas {{ $ticket->priority?->label() ?? 'belum ditentukan' }}
+                    </div>
+
                     <div class="mt-4 flex flex-wrap items-center gap-2">
-                        <a href="{{ route('tickets.show', $ticketRouteTarget) }}" class="ui-btn ui-btn-ghost min-h-10 px-3 py-2 text-xs" aria-label="Lihat detail {{ $ticketNumber }}">Lihat</a>
+                        <a href="{{ $ticketDetailUrl }}" class="ui-btn ui-btn-ghost min-h-10 px-3 py-2 text-xs" aria-label="Lihat detail {{ $ticketNumber }}">Lihat</a>
                         @if ($requesterAction)
-                            <a href="{{ route('tickets.show', $ticketRouteTarget) }}" class="ui-btn ui-btn-secondary min-h-10 px-3 py-2 text-xs" aria-label="{{ $requesterAction['description'] }}">{{ $requesterAction['label'] }}</a>
+                            <a href="{{ $ticketDetailUrl }}" class="ui-btn ui-btn-secondary min-h-10 px-3 py-2 text-xs" aria-label="{{ $requesterAction['description'] }}">{{ $requesterAction['label'] }}</a>
                         @endif
                     </div>
                     @if ($requesterAction)
@@ -173,9 +228,9 @@
             @empty
                 <div class="px-5 py-12 text-center text-[#718088]">
                     <p class="text-base font-extrabold text-[#35505b]">{{ $search !== '' ? 'Tidak ada tiket yang cocok dengan pencarian.' : 'Belum ada tiket pada daftar ini.' }}</p>
-                    <p class="mx-auto mt-2 max-w-lg text-sm leading-6">{{ $search !== '' ? 'Coba gunakan nomor tiket atau judul yang berbeda.' : ($isTeamChair ? 'Tiket anggota tim yang dipantau akan muncul di sini setelah tercatat.' : 'Tiket yang Anda ajukan akan muncul di sini setelah dikirim.') }}</p>
+                    <p class="mx-auto mt-2 max-w-lg text-sm leading-6">{{ $search !== '' ? 'Coba gunakan nomor tiket atau judul yang berbeda.' : ($isAllTickets ? 'Tiket yang dibuat akan muncul di sini setelah tercatat.' : ($isTeamChair ? 'Tiket anggota tim yang dipantau akan muncul di sini setelah tercatat.' : 'Tiket yang Anda ajukan akan muncul di sini setelah dikirim.')) }}</p>
                     @if ($search !== '')
-                        <a href="{{ route('tickets.index', ['per_page' => $perPage]) }}" class="ui-action-link mt-4 inline-flex">Hapus pencarian</a>
+                        <a href="{{ $listRoute.'?per_page='.$perPage }}" class="ui-action-link mt-4 inline-flex">Hapus pencarian</a>
                     @elseif ($canCreateTicket)
                         <a href="{{ route('tickets.create') }}" class="ui-btn ui-btn-primary mt-5">Buat tiket pertama</a>
                     @endif
@@ -183,7 +238,7 @@
             @endforelse
         </div>
 
-        <div class="flex flex-col gap-3 border-t border-[#e5eaed] px-5 py-4 text-sm text-[#718088] sm:flex-row sm:items-center sm:justify-between sm:px-8">
+        <div class="flex flex-col gap-3 border-t border-[#e5eaed] px-4 py-3 text-[0.78rem] text-[#6b818a] sm:flex-row sm:items-center sm:justify-between sm:px-8">
             <p>
                 @if ($tickets->total() > 0)
                     Menampilkan {{ $tickets->firstItem() }}–{{ $tickets->lastItem() }} dari {{ $tickets->total() }} tiket
@@ -192,7 +247,7 @@
                 @endif
             </p>
             @if ($tickets->hasPages())
-                <div>{{ $tickets->links() }}</div>
+                    <div>{{ $tickets->onEachSide(1)->links() }}</div>
             @endif
         </div>
     </section>

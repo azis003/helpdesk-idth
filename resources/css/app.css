@@ -2055,6 +2055,32 @@
         outline-offset: 3px;
     }
 
+    .ticket-reference-action-button--primary {
+        background: #0037b0;
+        color: #ffffff;
+        box-shadow: 0 7px 15px rgba(0, 55, 176, 0.2);
+    }
+
+    .ticket-reference-action-button--primary:hover,
+    .ticket-reference-action-button--primary:focus-visible {
+        background: #1d4ed8;
+        color: #ffffff;
+    }
+
+    .ticket-reference-action-button--neutral {
+        border-color: #c4c5d7;
+        background: #ffffff;
+        color: #0b1c30;
+        box-shadow: none;
+    }
+
+    .ticket-reference-action-button--neutral:hover,
+    .ticket-reference-action-button--neutral:focus-visible {
+        border-color: #0037b0;
+        background: #eff4ff;
+        color: #0037b0;
+    }
+
     .ticket-reference-action-button--danger {
         background: #ba1a1a;
         color: #ffffff;
@@ -2339,6 +2365,41 @@
         line-height: var(--type-body-md-line);
         padding: 1rem;
         text-align: center;
+    }
+
+    /* Operational detail keeps the same card language as the Pemohon view.
+     * Its role-specific forms remain available, but no longer introduce a
+     * second visual system on the same ticket. */
+    .ticket-reference-content--operational .ui-panel,
+    .ticket-reference-content--operational .ui-ticket-detail-section {
+        border-color: #c4c5d7;
+        border-radius: 0.75rem;
+        background: #ffffff;
+        box-shadow: none;
+    }
+
+    .ticket-reference-content--operational .ui-panel-header {
+        border-bottom-color: #c4c5d7;
+        background: #f8f9ff;
+        padding: 1.1rem 1.25rem;
+    }
+
+    .ticket-reference-content--operational .ui-ticket-action-area {
+        gap: 1.5rem;
+    }
+
+    .ticket-reference-content--operational .ui-ticket-action-summary {
+        border-color: #c4c5d7;
+        border-radius: 0.75rem;
+        background: #f8f9ff;
+        padding: 1.1rem 1.25rem;
+        box-shadow: none;
+    }
+
+    .ticket-reference-content--operational .ui-ticket-action-area > .ui-panel {
+        border-color: #c4c5d7;
+        border-radius: 0.75rem;
+        box-shadow: none;
     }
 
     .ticket-reference-alert {

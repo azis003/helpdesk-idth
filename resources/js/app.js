@@ -988,25 +988,6 @@ ticketForms.forEach((ticketForm) => {
     });
 });
 
-const queueClaimForms = document.querySelectorAll('[data-queue-claim]');
-
-queueClaimForms.forEach((claimForm) => {
-    claimForm.addEventListener('submit', () => {
-        const button = claimForm.querySelector('[data-queue-claim-button]');
-        const label = claimForm.querySelector('[data-queue-claim-label]');
-        const loading = claimForm.querySelector('[data-queue-claim-loading]');
-
-        if (!button) {
-            return;
-        }
-
-        button.disabled = true;
-        button.setAttribute('aria-busy', 'true');
-        label?.classList.add('hidden');
-        loading?.classList.remove('hidden');
-    });
-});
-
 const triageForms = document.querySelectorAll('[data-ticket-triage-form]');
 
 triageForms.forEach((triageForm) => {

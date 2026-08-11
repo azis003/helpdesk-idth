@@ -90,6 +90,11 @@ class TicketCommunicationTest extends TestCase
         $this->actingAs($agent)
             ->get(route('tickets.show', $ticket))
             ->assertOk()
+            ->assertSee('ticket-reference-page-actions')
+            ->assertSee('Tambahkan Balasan')
+            ->assertSee('ticket-reference-reply')
+            ->assertSee('Balasan ke Pemohon')
+            ->assertSee('Catatan Internal')
             ->assertSee('Langkah perbaikan sudah dilakukan dan sedang diverifikasi.')
             ->assertSee('Catatan vendor: cek konfigurasi port uplink.');
 

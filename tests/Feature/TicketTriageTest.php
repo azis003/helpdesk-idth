@@ -52,6 +52,150 @@ class TicketTriageTest extends TestCase
             ]);
     }
 
+    public function test_work_area_separates_shared_queue_and_personal_tickets_by_tab(): void
+    {
+        $agent = $this->createUser([Role::AgenTier1]);
+        $requester = $this->createUser([Role::Pemohon]);
+        $queueTicket = Ticket::factory()->create([
+            'subject' => 'Tiket pada antrian bersama',
+            'requester_id' => $requester->id,
+            'created_by_id' => $requester->id,
+            'status' => TicketStatus::Baru,
+            'assigned_to_id' => null,
+        ]);
+        $mineTicket = Ticket::factory()->create([
+            'subject' => 'Tiket pada tanggung jawab saya',
+            'requester_id' => $requester->id,
+            'created_by_id' => $requester->id,
+            'status' => TicketStatus::Dikerjakan,
+            'assigned_to_id' => $agent->id,
+            'assigned_tier' => Role::AgenTier1->value,
+        ]);
+
+        $this->actingAs($agent)
+            ->get(route('tickets.queue', ['tab' => 'queue']))
+            ->assertOk()
+            ->assertSee('Antrian Tiket')
+            ->assertSee($queueTicket->subject)
+            ->assertDontSee($mineTicket->subject);
+
+        $this->actingAs($agent)
+            ->get(route('tickets.queue', ['tab' => 'mine']))
+            ->assertOk()
+            ->assertSee('Tiket Saya')
+            ->assertSee($mineTicket->subject)
+            ->assertDontSee($queueTicket->subject);
+    }
+
+    public function test_work_area_tabs_keep_the_requester_table_shape_and_compact_empty_state(): void
+    {
+        $agent = $this->createUser([Role::AgenTier1]);
+
+        foreach (['queue', 'mine'] as $tab) {
+            $this->actingAs($agent)
+                ->get(route('tickets.queue', ['tab' => $tab]))
+                ->assertOk()
+                ->assertSeeInOrder(['No', 'No Tiket', 'Layanan', 'Judul', 'Status', 'Prioritas'])
+                ->assertSee('Tidak ada data')
+                ->assertDontSee('Tiket yang belum diambil')
+                ->assertDontSee('Ambil tiket');
+        }
+    }
+
+    public function test_tier_one_can_open_new_ticket_detail_and_claim_before_triage(): void
+    {
+        $agent = $this->createUser([Role::AgenTier1]);
+        $ticket = Ticket::factory()->create([
+            'status' => TicketStatus::Baru,
+            'assigned_to_id' => null,
+        ]);
+
+        $this->actingAs($agent)
+            ->get(route('tickets.show', $ticket))
+            ->assertOk()
+            ->assertSee('Ambil Tiket')
+            ->assertSee('ticket-reference-page-actions')
+            ->assertSee('ticket-reference-action-button--primary')
+            ->assertDontSee('Ambil tiket dan lanjutkan')
+            ->assertSee('ticket-reference-content')
+            ->assertSee('ticket-description-heading')
+            ->assertSee('Informasi Tiket')
+            ->assertSee('Aktivitas Tiket')
+            ->assertDontSee('Simpan triase');
+
+        $this->actingAs($agent)
+            ->post(route('tickets.claim', $ticket))
+            ->assertRedirect(route('tickets.show', $ticket))
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($agent)
+            ->get(route('tickets.show', $ticket->fresh()))
+            ->assertOk()
+            ->assertSee('Triase tiket')
+            ->assertSee('data-ui-modal-open="ticket-triage-modal"', false)
+            ->assertSee('id="ticket-triage-modal"', false)
+            ->assertDontSee('ui-ticket-action-summary')
+            ->assertDontSee('Penanganan');
+    }
+
+    public function test_tier_two_sees_only_personal_tickets_in_the_work_area(): void
+    {
+        $technician = $this->createUser([Role::AgenTier2]);
+        $assignedTicket = Ticket::factory()->create([
+            'subject' => 'Tiket teknisi saya',
+            'status' => TicketStatus::Dikerjakan,
+            'assigned_to_id' => $technician->id,
+            'assigned_tier' => Role::AgenTier2->value,
+        ]);
+        $queueTicket = Ticket::factory()->create([
+            'subject' => 'Tiket yang menunggu Helpdesk',
+            'status' => TicketStatus::Baru,
+            'assigned_to_id' => null,
+        ]);
+
+        $this->actingAs($technician)
+            ->get(route('tickets.queue'))
+            ->assertOk()
+            ->assertSee('Tiket Saya')
+            ->assertSee($assignedTicket->subject)
+            ->assertDontSee($queueTicket->subject);
+
+        $this->actingAs($technician)
+            ->get(route('tickets.queue', ['tab' => 'queue']))
+            ->assertForbidden();
+
+        $this->actingAs($technician)
+            ->get(route('tickets.all'))
+            ->assertForbidden();
+    }
+
+    public function test_all_tickets_list_contains_tickets_outside_the_current_assignment(): void
+    {
+        $agent = $this->createUser([Role::AgenTier1]);
+        $otherRequester = $this->createUser([Role::Pemohon]);
+        $first = Ticket::factory()->create([
+            'subject' => 'Tiket yang sedang saya kerjakan',
+            'assigned_to_id' => $agent->id,
+            'assigned_tier' => Role::AgenTier1->value,
+            'status' => TicketStatus::Dikerjakan,
+        ]);
+        $second = Ticket::factory()->create([
+            'subject' => 'Tiket milik penanggung jawab lain',
+            'requester_id' => $otherRequester->id,
+            'created_by_id' => $otherRequester->id,
+            'status' => TicketStatus::Ditutup,
+            'assigned_to_id' => null,
+        ]);
+
+        $this->actingAs($agent)
+            ->get(route('tickets.all'))
+            ->assertOk()
+            ->assertSee('Semua Tiket')
+            ->assertSee('Daftar seluruh tiket')
+            ->assertSee($first->subject)
+            ->assertSee($second->subject);
+    }
+
     public function test_second_claim_gets_clear_failure_after_first_agent_wins(): void
     {
         $winner = $this->createUser([Role::AgenTier1], ['username' => 'agent.winner']);
@@ -139,7 +283,7 @@ class TicketTriageTest extends TestCase
             ->assertOk()
             ->assertSee('Triase tiket')
             ->assertSee($category->name)
-            ->assertSee('Histori tiket');
+            ->assertSee('Aktivitas Tiket');
     }
 
     public function test_tier_one_can_assign_tier_two_using_manual_choice_while_saving_skill_suggestions(): void

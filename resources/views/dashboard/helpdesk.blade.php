@@ -100,7 +100,7 @@
                 <dd class="hd-stat-value">{{ $agentDashboard['summary']['total'] }}</dd>
             </div>
             <div class="hd-stat-card">
-                <div class="hd-stat-card-head"><dt>Tiket Antri</dt><span class="hd-stat-icon hd-stat-icon--blue" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M5 6.5h14M5 12h14M5 17.5h9" /><path stroke-linecap="round" d="M18 17.5h.01" /></svg></span></div>
+                <div class="hd-stat-card-head"><dt>Antrian Tiket</dt><span class="hd-stat-icon hd-stat-icon--blue" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M5 6.5h14M5 12h14M5 17.5h9" /><path stroke-linecap="round" d="M18 17.5h.01" /></svg></span></div>
                 <dd class="hd-stat-value">{{ $agentDashboard['summary']['queue'] }}</dd>
             </div>
             <div class="hd-stat-card">
@@ -125,16 +125,16 @@
                     <div class="hd-section-heading">
                         <span class="hd-section-icon hd-section-icon--danger" aria-hidden="true">!</span>
                         <div>
-                            <h2 id="helpdesk-queue-heading" class="hd-section-title">Antrean Tiket Terbaru</h2>
+                            <h2 id="helpdesk-queue-heading" class="hd-section-title">Antrian Tiket</h2>
                         </div>
                     </div>
-                    <a href="{{ $isTierOne ? route('tickets.queue') : route('tickets.index') }}" class="hd-link">Lihat semua</a>
+                    <a href="{{ $isTierOne ? route('tickets.queue') : route('tickets.queue', ['tab' => 'mine']) }}" class="hd-link">Lihat semua</a>
                 </div>
 
                 @if ($isTierOne && $queueTickets->isNotEmpty())
                     <div class="hd-table-wrap">
                         <table class="hd-table">
-                            <caption class="sr-only">Lima tiket Baru terbaru untuk Agen Tier 1</caption>
+                            <caption class="sr-only">Lima tiket pada antrian untuk Agen Tier 1</caption>
                             <thead>
                                 <tr>
                                     <th scope="col">No Tiket</th>
@@ -175,8 +175,8 @@
                     <div class="hd-empty-state hd-empty-state--panel">
                         <span class="hd-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M5 6.5h14v11H5zM8 9.5h8M8 13h5" /></svg></span>
                         <h3>{{ $isTierOne ? 'Belum ada tiket terbaru pada antrean ini.' : 'Belum ada tiket yang ditugaskan.' }}</h3>
-                        <p>{{ $isTierOne ? 'Tiket Baru dari Pemohon akan muncul di sini setelah tercatat.' : 'Tiket Tier 2 yang ditugaskan kepada Anda akan muncul di sini.' }}</p>
-                        <a href="{{ $isTierOne ? route('tickets.queue') : route('tickets.index') }}" class="hd-secondary-button">Buka daftar tiket</a>
+                        <p>{{ $isTierOne ? 'Tiket dari Pemohon yang belum diambil akan muncul di sini setelah tercatat.' : 'Tiket Tier 2 yang ditugaskan kepada Anda akan muncul di sini.' }}</p>
+                        <a href="{{ $isTierOne ? route('tickets.queue') : route('tickets.queue', ['tab' => 'mine']) }}" class="hd-secondary-button">Buka Antrian Tiket</a>
                     </div>
                 @endif
             </section>
@@ -188,7 +188,7 @@
                 <div class="hd-panel-header">
                     <div class="hd-section-heading">
                         <span class="hd-section-icon hd-section-icon--blue" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3" /><path stroke-linecap="round" d="M5.5 19a6.5 6.5 0 0 1 13 0" /></svg></span>
-                        <h2 id="helpdesk-assigned-heading" class="hd-section-title">Tugas Saya</h2>
+                        <h2 id="helpdesk-assigned-heading" class="hd-section-title">Tiket Saya</h2>
                     </div>
                     <span class="hd-panel-count">{{ $agentDashboard['assigned_count'] }} Aktif</span>
                 </div>
@@ -203,7 +203,7 @@
                         <p class="hd-empty-state hd-empty-state--compact">Belum ada tiket yang ditugaskan kepada Anda.</p>
                     @endforelse
                 </div>
-                <a href="{{ route('tickets.index') }}" class="hd-outline-button">Lihat semua tugas</a>
+                <a href="{{ route('tickets.queue', ['tab' => 'mine']) }}" class="hd-outline-button">Buka Tiket Saya</a>
             </section>
 
             <section class="hd-panel" aria-labelledby="helpdesk-announcements-heading">

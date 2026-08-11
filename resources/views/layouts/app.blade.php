@@ -13,7 +13,12 @@
         $currentUser = auth()->user()->loadMissing('roles');
         $isSuperAdmin = $currentUser->hasRole(\App\Enums\Role::SuperAdmin);
         $isTier1 = $currentUser->hasRole(\App\Enums\Role::AgenTier1);
+        $isTier2 = $currentUser->hasRole(\App\Enums\Role::AgenTier2);
         $isTeamChair = $currentUser->hasRole(\App\Enums\Role::KetuaTimKerja);
+        $canAccessWorkQueue = ! $isTeamChair && ($isTier1 || $isTier2);
+        $canViewAllTickets = $currentUser->can('viewAll', \App\Models\Ticket::class);
+        $isAllTicketPage = request()->routeIs('tickets.all')
+            || (request()->routeIs('tickets.show') && request()->query('from') === 'all');
         $canAccessTickets = ! $isTeamChair
             && $currentUser->hasAnyRole([\App\Enums\Role::Pemohon, \App\Enums\Role::AgenTier1, \App\Enums\Role::AgenTier2]);
         $ticketListLabel = $isTeamChair && $canAccessTickets
@@ -103,16 +108,21 @@
                     <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m3 12 9-8 9 8M5 10v10h5v-6h4v6h5V10" /></svg></span>
                     <span class="ui-nav-label">Dasbor</span>
                 </a>
-                @if ($canAccessTickets || $isTeamChair)
+                @if ($canAccessWorkQueue)
+                    <a href="{{ route('tickets.queue', $isTier1 ? [] : ['tab' => 'mine']) }}" class="ui-nav-link {{ request()->routeIs('tickets.queue') || (request()->routeIs('tickets.show') && ! $isAllTicketPage) ? 'is-active' : '' }}" aria-label="Antrian Tiket" title="Antrian Tiket" @if (request()->routeIs('tickets.queue')) aria-current="page" @endif>
+                        <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M5 6.5h14M5 12h14M5 17.5h9" /><path stroke-linecap="round" d="M18 17.5h.01" /></svg></span>
+                        <span class="ui-nav-label">Antrian Tiket</span>
+                    </a>
+                @elseif ($canAccessTickets || $isTeamChair)
                     <a href="{{ route('tickets.index') }}" class="ui-nav-link {{ request()->routeIs('tickets.index', 'tickets.show', 'tickets.cancel') ? 'is-active' : '' }}" aria-label="{{ $ticketListLabel }}" title="{{ $ticketListLabel }}">
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 9h8M8 12h5M8 15h7" /></svg></span>
                         <span class="ui-nav-label">{{ $ticketListLabel }}</span>
                     </a>
                 @endif
-                @if ($isTier1)
-                    <a href="{{ route('tickets.queue') }}" class="ui-nav-link {{ request()->routeIs('tickets.queue') ? 'is-active' : '' }}" aria-label="Antrean Tier 1" title="Antrean Tier 1">
-                        <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 6.5h14M5 12h14M5 17.5h9" /><path stroke-linecap="round" d="M18 17.5h.01" /></svg></span>
-                        <span class="ui-nav-label">Antrean Tier 1</span>
+                @if ($isTier1 && $canViewAllTickets)
+                    <a href="{{ route('tickets.all') }}" class="ui-nav-link {{ $isAllTicketPage ? 'is-active' : '' }}" aria-label="Semua Tiket" title="Semua Tiket" @if ($isAllTicketPage) aria-current="page" @endif>
+                        <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 9h8M8 12h5M8 15h7" /></svg></span>
+                        <span class="ui-nav-label">Semua Tiket</span>
                     </a>
                 @endif
                 @if ($canReviewApprovals)
@@ -286,11 +296,13 @@
                                     <span class="ml-1 rounded-full bg-[#e4a72c] px-1.5 py-0.5 text-[0.62rem] text-white">{{ $unreadNotificationCount }}</span>
                                 @endif
                             </a>
-                            @if ($canAccessTickets || $isTeamChair)
+                            @if ($canAccessWorkQueue)
+                                <a href="{{ route('tickets.queue', $isTier1 ? [] : ['tab' => 'mine']) }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.queue') || (request()->routeIs('tickets.show') && ! $isAllTicketPage) ? 'is-active' : '' }}">Antrian Tiket</a>
+                            @elseif ($canAccessTickets || $isTeamChair)
                                 <a href="{{ route('tickets.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.index', 'tickets.show', 'tickets.cancel') ? 'is-active' : '' }}">{{ $ticketListLabel }}</a>
                             @endif
-                            @if ($isTier1)
-                                <a href="{{ route('tickets.queue') }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.queue') ? 'is-active' : '' }}">Antrean Tier 1</a>
+                            @if ($isTier1 && $canViewAllTickets)
+                                <a href="{{ route('tickets.all') }}" class="ui-mobile-nav-link {{ $isAllTicketPage ? 'is-active' : '' }}" @if ($isAllTicketPage) aria-current="page" @endif>Semua Tiket</a>
                             @endif
                             @if ($canReviewApprovals)
                                 <a href="{{ route('approvals.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('approvals.*') ? 'is-active' : '' }}">Persetujuan</a>
