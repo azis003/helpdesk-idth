@@ -30,9 +30,7 @@
                 @yield('content')
 
                 <footer class="ui-login-footer">
-                    <p>{{ $branding['organization_name'] }} · {{ $branding['application_name'] }}</p>
-                    <p>{{ $branding['footer_text'] }}</p>
-                    <p>Gunakan akun internal yang telah diberikan kepada Anda.</p>
+                    <p>&copy; {{ now()->year }} {{ $branding['organization_name'] }}. Hak cipta dilindungi.</p>
                 </footer>
             </div>
         </main>

@@ -55,13 +55,13 @@
     .ui-login-shell {
         display: flex;
         min-height: 100vh;
-        background: #ffffff;
+        background: #f8f9ff;
     }
 
     .ui-login-accent {
         width: 0.55rem;
         flex: 0 0 0.55rem;
-        background: #ffd438;
+        background: #1d4ed8;
     }
 
     .ui-login-main {
@@ -69,7 +69,7 @@
         min-width: 0;
         min-height: 100vh;
         flex: 1;
-        background: #ffffff;
+        background: #f8f9ff;
         padding: 2.25rem 1.25rem 1.25rem;
     }
 
@@ -84,20 +84,20 @@
         display: inline-flex;
         width: max-content;
         flex-direction: column;
-        color: #202427;
+        color: #0b1c30;
         text-decoration: none;
     }
 
     .ui-login-logo:focus-visible {
         border-radius: 0.2rem;
-        outline: 3px solid #55b9df;
+        outline: 3px solid #1d4ed8;
         outline-offset: 5px;
     }
 
     .ui-login-wordmark {
         display: inline-flex;
         align-items: center;
-        color: #17191a;
+        color: #0b1c30;
         font-size: 2.45rem;
         font-weight: 900;
         letter-spacing: -0.09em;
@@ -109,12 +109,12 @@
         width: 0.35rem;
         margin-right: 0.28rem;
         transform: skew(-24deg);
-        background: #ffd438;
+        background: #1d4ed8;
     }
 
     .ui-login-logo-caption {
         margin-top: 0.45rem;
-        color: #737b7f;
+        color: #434655;
         font-size: var(--type-body-sm-size);
         line-height: var(--type-body-sm-line);
         letter-spacing: 0.02em;
@@ -122,7 +122,7 @@
 
     .ui-login-title {
         margin-top: 3rem;
-        color: #3f4548;
+        color: #0b1c30;
         font-size: var(--type-h1-size);
         font-weight: 700;
         line-height: var(--type-h1-line);
@@ -131,7 +131,7 @@
     .ui-login-description {
         max-width: 26rem;
         margin-top: 0.5rem;
-        color: #6d767a;
+        color: #434655;
         font-size: var(--type-body-md-size);
         line-height: var(--type-body-md-line);
     }
@@ -146,7 +146,7 @@
     }
 
     .ui-login-form .ui-field-label {
-        color: #24282b;
+        color: #0b1c30;
         font-size: var(--type-label-size);
         font-weight: 600;
         line-height: var(--type-label-line);
@@ -155,8 +155,8 @@
     .ui-login-form .ui-input.ui-login-input {
         height: 2.3rem;
         margin-top: 0.25rem;
-        border-color: #c8ced1;
-        border-radius: 0.2rem;
+        border-color: #c4c5d7;
+        border-radius: 0.5rem;
         padding: 0.45rem 0.7rem;
         font-size: var(--type-body-md-size);
         line-height: var(--type-body-md-line);
@@ -164,8 +164,8 @@
     }
 
     .ui-login-form .ui-input.ui-login-input:focus {
-        border-color: #69b7dc;
-        box-shadow: 0 0 0 2px rgba(105, 183, 220, 0.2);
+        border-color: #1d4ed8;
+        box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.16);
     }
 
     .ui-login-form .ui-field-help {
@@ -177,10 +177,10 @@
         align-self: flex-start;
         min-height: 2.2rem;
         margin-top: 0.05rem;
-        border: 1px solid #e5bd22;
-        border-radius: 0.25rem;
-        background: #ffd438;
-        color: #2b2c2d;
+        border: 1px solid #0037b0;
+        border-radius: 0.5rem;
+        background: #1d4ed8;
+        color: #ffffff;
         cursor: pointer;
         font-size: var(--type-label-size);
         font-weight: 600;
@@ -190,18 +190,18 @@
     }
 
     .ui-login-submit:hover {
-        border-color: #d4aa12;
-        background: #ffcf20;
+        border-color: #0037b0;
+        background: #0037b0;
     }
 
     .ui-login-submit:focus-visible {
-        outline: 3px solid #55b9df;
+        outline: 3px solid #1d4ed8;
         outline-offset: 3px;
     }
 
     .ui-login-note,
     .ui-login-footer {
-        color: #90979a;
+        color: #64748b;
         font-size: var(--type-body-sm-size);
         line-height: var(--type-body-sm-line);
     }
