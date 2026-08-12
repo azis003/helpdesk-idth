@@ -5,6 +5,10 @@
     $building = $building ?? null;
     $useOld = old('_location_form') === $formId;
     $nameValue = $useOld ? old('name') : ($building?->name ?? '');
+
+    // Presentasional saja - tidak mengubah logika maupun data.
+    $locFormRequiredMark = 'text-[color:var(--tm-danger-600)]';
+    $locFormFooter = 'mt-5 flex flex-col-reverse gap-2 border-t border-[color:var(--tm-border-subtle)] pt-5 sm:flex-row sm:justify-end';
 @endphp
 
 <form method="POST" action="{{ $action }}" data-ui-modal-form class="p-5 sm:p-6">
@@ -15,12 +19,12 @@
     <input type="hidden" name="_location_form" value="{{ $formId }}">
 
     <div>
-        <label for="{{ $prefix }}-name" class="ui-field-label">Nama gedung <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only"> wajib</span></label>
+        <label for="{{ $prefix }}-name" class="ui-field-label">Nama gedung <span class="{{ $locFormRequiredMark }}" aria-hidden="true">*</span><span class="sr-only"> wajib</span></label>
         <input id="{{ $prefix }}-name" name="name" type="text" value="{{ $nameValue }}" required maxlength="150" data-ui-modal-focus class="ui-input mt-2" placeholder="Contoh: Gedung Utama" @error('name') aria-invalid="true" aria-describedby="{{ $prefix }}-name-error" @enderror>
-        @error('name')<p id="{{ $prefix }}-name-error" data-ui-validation-error class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+        @error('name')<x-field-error id="{{ $prefix }}-name-error" data-ui-validation-error :message="$message" />@enderror
     </div>
 
-    <div class="mt-5 flex flex-col-reverse gap-2 border-t border-[#edf2f4] pt-4 sm:flex-row sm:justify-end">
+    <div class="{{ $locFormFooter }}">
         @if ($isModal)
             <button type="button" data-ui-modal-close class="ui-btn ui-btn-ghost">Tutup</button>
         @endif

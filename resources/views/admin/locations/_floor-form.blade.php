@@ -7,6 +7,11 @@
     $useOld = old('_location_form') === $formId;
     $nameValue = $useOld ? old('name') : ($floor?->name ?? '');
     $sortOrderValue = $useOld ? old('sort_order', 0) : ($floor?->sort_order ?? 0);
+
+    // Presentasional saja - tidak mengubah logika maupun data.
+    $locFormRequiredMark = 'text-[color:var(--tm-danger-600)]';
+    $locFormNote = 'mb-4 flex items-center gap-2 rounded-[var(--tm-r-sm)] border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-sunken)] px-3 py-2.5 text-sm text-[color:var(--tm-text-muted)]';
+    $locFormFooter = 'mt-5 flex flex-col-reverse gap-2 border-t border-[color:var(--tm-border-subtle)] pt-5 sm:flex-row sm:justify-end';
 @endphp
 
 <form method="POST" action="{{ $action }}" data-ui-modal-form class="p-5 sm:p-6">
@@ -17,24 +22,27 @@
     <input type="hidden" name="_location_form" value="{{ $formId }}">
 
     @if ($building)
-        <p class="mb-4 rounded-lg bg-[#f8fafb] px-3 py-2 text-sm text-[#607681]">Gedung: <span class="font-bold text-[#17313c]">{{ $building->name }}</span></p>
+        <p class="{{ $locFormNote }}">
+            <svg class="h-4 w-4 shrink-0 text-[color:var(--tm-brand-600)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 20V5.5A1.5 1.5 0 0 1 6.5 4h7A1.5 1.5 0 0 1 15 5.5V20M15 10h2.5A1.5 1.5 0 0 1 19 11.5V20M3.5 20h17" /><path stroke-linecap="round" d="M8 8h4M8 12h4M8 16h4" /></svg>
+            <span class="min-w-0">Gedung: <span class="font-bold text-[color:var(--tm-text)]">{{ $building->name }}</span></span>
+        </p>
     @endif
 
     <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_8rem]">
         <div>
-            <label for="{{ $prefix }}-name" class="ui-field-label">Nama lantai <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only"> wajib</span></label>
+            <label for="{{ $prefix }}-name" class="ui-field-label">Nama lantai <span class="{{ $locFormRequiredMark }}" aria-hidden="true">*</span><span class="sr-only"> wajib</span></label>
             <input id="{{ $prefix }}-name" name="name" type="text" value="{{ $nameValue }}" required maxlength="100" data-ui-modal-focus class="ui-input mt-2" placeholder="Contoh: Lantai 1" @error('name') aria-invalid="true" aria-describedby="{{ $prefix }}-name-error" @enderror>
-            @error('name')<p id="{{ $prefix }}-name-error" data-ui-validation-error class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+            @error('name')<x-field-error id="{{ $prefix }}-name-error" data-ui-validation-error :message="$message" />@enderror
         </div>
 
         <div>
             <label for="{{ $prefix }}-order" class="ui-field-label">Urutan</label>
-            <input id="{{ $prefix }}-order" name="sort_order" type="number" min="0" max="999" value="{{ $sortOrderValue }}" class="ui-input mt-2" @error('sort_order') aria-invalid="true" aria-describedby="{{ $prefix }}-order-error" @enderror>
-            @error('sort_order')<p id="{{ $prefix }}-order-error" data-ui-validation-error class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+            <input id="{{ $prefix }}-order" name="sort_order" type="number" min="0" max="999" value="{{ $sortOrderValue }}" class="ui-input mt-2 tabular-nums" @error('sort_order') aria-invalid="true" aria-describedby="{{ $prefix }}-order-error" @enderror>
+            @error('sort_order')<x-field-error id="{{ $prefix }}-order-error" data-ui-validation-error :message="$message" />@enderror
         </div>
     </div>
 
-    <div class="mt-5 flex flex-col-reverse gap-2 border-t border-[#edf2f4] pt-4 sm:flex-row sm:justify-end">
+    <div class="{{ $locFormFooter }}">
         @if ($isModal)
             <button type="button" data-ui-modal-close class="ui-btn ui-btn-ghost">Tutup</button>
         @endif
