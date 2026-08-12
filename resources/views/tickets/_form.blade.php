@@ -8,15 +8,20 @@
         ->values();
     $teamName = $actor->currentTeamMembership?->workTeam?->name;
     $displayValue = static fn (mixed $value): string => filled($value) ? (string) $value : 'Belum diisi';
+
+    // Presentasional saja - tidak mengubah data, logika, maupun alur pengiriman tiket.
+    $formRequiredMark = 'text-[color:var(--tm-danger-600)]';
+    $formDivider = 'border-[color:var(--tm-border-subtle)]';
+    $formIconTile = 'mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--tm-r-sm)] bg-[color:var(--tm-brand-50)] text-[color:var(--tm-brand-700)]';
+    $formSectionIconTile = 'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--tm-r-sm)] bg-[color:var(--tm-brand-50)] text-[color:var(--tm-brand-700)]';
+    $formMetaLabel = 'text-xs font-extrabold uppercase tracking-[0.08em] text-[color:var(--tm-text-faint)]';
+    $formMetaValue = 'mt-1 text-sm font-bold text-[color:var(--tm-text)]';
+    $formAlertDanger = 'mb-5 rounded-[var(--tm-r-md)] border border-[color:var(--tm-danger-200)] bg-[color:var(--tm-danger-50)] px-4 py-3 text-sm font-semibold text-[color:var(--tm-danger-700)]';
 @endphp
 
-<div class="ui-page-header">
-    <div>
-        <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Tiket baru</p>
-        <h1 class="ui-page-title">Isi Formulir Layanan</h1>
-    </div>
+<x-page-header eyebrow="Tiket baru" title="Isi Formulir Layanan">
     <a href="{{ route('tickets.create') }}" class="ui-btn ui-btn-ghost">Ganti layanan</a>
-</div>
+</x-page-header>
 
 <form method="POST" action="{{ route('tickets.store') }}" enctype="multipart/form-data" data-ticket-form data-loading-message="Mengirim tiket..." class="ui-panel mt-6 overflow-hidden" aria-labelledby="reporter-heading request-form-heading">
     @csrf
@@ -33,7 +38,7 @@
         </div>
         <div class="p-5 sm:p-6">
             @if ($canCreateForOthers)
-                <label for="requester_id" class="ui-field-label">Pemohon <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only">wajib</span></label>
+                <label for="requester_id" class="ui-field-label">Pemohon <span class="{{ $formRequiredMark }}" aria-hidden="true">*</span><span class="sr-only">wajib</span></label>
                 <p id="requester_id-help" class="ui-field-help">Pilih pegawai yang menyampaikan permintaan.</p>
                 <select id="requester_id" name="requester_id" required class="ui-select mt-2" @error('requester_id') aria-invalid="true" aria-describedby="requester_id-error" @else aria-describedby="requester_id-help" @enderror>
                     <option value="">Pilih pemohon</option>
@@ -41,43 +46,43 @@
                         <option value="{{ $requester->id }}" @selected((string) old('requester_id') === (string) $requester->id)>{{ $requester->name }}{{ $requester->nip ? ' — NIP '.$requester->nip : '' }}</option>
                     @endforeach
                 </select>
-                @error('requester_id')<p id="requester_id-error" class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+                @error('requester_id')<x-field-error id="requester_id-error" :message="$message" />@enderror
             @else
                 <dl class="grid gap-4 sm:grid-cols-2">
                     <div class="flex items-start gap-3">
-                        <span class="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f1fbfe] text-[#147a79]" aria-hidden="true">
+                        <span class="{{ $formIconTile }}" aria-hidden="true">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.2" /><path stroke-linecap="round" d="M5.5 19.2a6.5 6.5 0 0 1 13 0" /></svg>
                         </span>
                         <div>
-                            <dt class="text-xs font-extrabold uppercase tracking-[0.08em] text-[#78909a]">Nama</dt>
-                            <dd class="mt-1 text-sm font-bold text-[#35505b]">{{ $displayValue($actor->name) }}</dd>
+                            <dt class="{{ $formMetaLabel }}">Nama</dt>
+                            <dd class="{{ $formMetaValue }}">{{ $displayValue($actor->name) }}</dd>
                         </div>
                     </div>
                     <div class="flex items-start gap-3">
-                        <span class="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f1fbfe] text-[#147a79]" aria-hidden="true">
+                        <span class="{{ $formIconTile }}" aria-hidden="true">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5h15M6 19.5V7.2a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v12.3M9 10h6M9 13.5h6M9 17h3" /></svg>
                         </span>
                         <div>
-                            <dt class="text-xs font-extrabold uppercase tracking-[0.08em] text-[#78909a]">Tim kerja</dt>
-                            <dd class="mt-1 text-sm font-bold text-[#35505b]">{{ $displayValue($teamName) }}</dd>
+                            <dt class="{{ $formMetaLabel }}">Tim kerja</dt>
+                            <dd class="{{ $formMetaValue }}">{{ $displayValue($teamName) }}</dd>
                         </div>
                     </div>
                     <div class="flex items-start gap-3">
-                        <span class="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f1fbfe] text-[#147a79]" aria-hidden="true">
+                        <span class="{{ $formIconTile }}" aria-hidden="true">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4.5" y="5.5" width="15" height="13" rx="1.5" /><path stroke-linecap="round" d="M8 9h8M8 12.5h4M8 16h6" /></svg>
                         </span>
                         <div>
-                            <dt class="text-xs font-extrabold uppercase tracking-[0.08em] text-[#78909a]">NIP</dt>
-                            <dd class="mt-1 text-sm font-bold text-[#35505b]">{{ $displayValue($actor->nip) }}</dd>
+                            <dt class="{{ $formMetaLabel }}">NIP</dt>
+                            <dd class="{{ $formMetaValue }} tabular-nums">{{ $displayValue($actor->nip) }}</dd>
                         </div>
                     </div>
                     <div class="flex items-start gap-3">
-                        <span class="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f1fbfe] text-[#147a79]" aria-hidden="true">
+                        <span class="{{ $formIconTile }}" aria-hidden="true">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4.5" y="6.5" width="15" height="11" rx="1.5" /><path stroke-linecap="round" stroke-linejoin="round" d="m5.5 8 6.5 5 6.5-5" /></svg>
                         </span>
                         <div class="min-w-0">
-                            <dt class="text-xs font-extrabold uppercase tracking-[0.08em] text-[#78909a]">Email</dt>
-                            <dd class="mt-1 break-all text-sm font-bold text-[#35505b]">{{ $displayValue($actor->email) }}</dd>
+                            <dt class="{{ $formMetaLabel }}">Email</dt>
+                            <dd class="{{ $formMetaValue }} break-all">{{ $displayValue($actor->email) }}</dd>
                         </div>
                     </div>
                 </dl>
@@ -86,9 +91,9 @@
         </div>
     </section>
 
-    <section class="border-t border-[#e7eef1]" aria-labelledby="request-form-heading">
+    <section class="border-t {{ $formDivider }}" aria-labelledby="request-form-heading">
         <div class="ui-panel-header flex items-start gap-3">
-            <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#fff4d7] text-[#9a6700]" aria-hidden="true">
+            <span class="{{ $formSectionIconTile }}" aria-hidden="true">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 4.5h9l3 3v12H6zM14 4.5v3h4M9 12h6M9 15.5h4" /><path stroke-linecap="round" d="m15.5 15.5 1.2 1.2 2.8-2.8" /></svg>
             </span>
             <div class="min-w-0">
@@ -98,36 +103,36 @@
         </div>
         <div class="p-5 sm:p-6">
             @error('service_type_id')
-                <div class="mb-5 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700" role="alert">{{ $message }}</div>
+                <div class="{{ $formAlertDanger }}" role="alert">{{ $message }}</div>
             @enderror
 
             <div class="space-y-5">
                 <div>
-                    <label for="subject" class="ui-field-label">Judul <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only">wajib</span></label>
+                    <label for="subject" class="ui-field-label">Judul <span class="{{ $formRequiredMark }}" aria-hidden="true">*</span><span class="sr-only">wajib</span></label>
                     <input id="subject" name="subject" value="{{ old('subject') }}" required maxlength="150" class="ui-input mt-2" placeholder="Contoh: Wi-Fi lantai 2 tidak tersambung" @error('subject') aria-invalid="true" aria-describedby="subject-error" @enderror>
-                    @error('subject')<p id="subject-error" class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+                    @error('subject')<x-field-error id="subject-error" :message="$message" />@enderror
                 </div>
 
                 <div>
-                    <label for="description" class="ui-field-label">Deskripsi <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only">wajib</span></label>
+                    <label for="description" class="ui-field-label">Deskripsi <span class="{{ $formRequiredMark }}" aria-hidden="true">*</span><span class="sr-only">wajib</span></label>
                     <textarea id="description" name="description" rows="5" required maxlength="10000" class="ui-textarea mt-2" placeholder="Apa yang terjadi, kapan mulai, dan apa dampaknya?" @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description') }}</textarea>
-                    @error('description')<p id="description-error" class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+                    @error('description')<x-field-error id="description-error" :message="$message" />@enderror
                 </div>
 
                 <div>
-                    <label for="priority" class="ui-field-label">Prioritas <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only">wajib</span></label>
+                    <label for="priority" class="ui-field-label">Prioritas <span class="{{ $formRequiredMark }}" aria-hidden="true">*</span><span class="sr-only">wajib</span></label>
                     <select id="priority" name="priority" required class="ui-select mt-2" @error('priority') aria-invalid="true" aria-describedby="priority-error" @else aria-describedby="priority-help" @enderror>
                         <option value="">Pilih prioritas</option>
                         @foreach (\App\Enums\Priority::labels() as $value => $label)
                             <option value="{{ $value }}" @selected(old('priority') === $value)>{{ $label }}</option>
                         @endforeach
                     </select>
-                    @error('priority')<p id="priority-error" class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+                    @error('priority')<x-field-error id="priority-error" :message="$message" />@enderror
                 </div>
 
                 @if ($locationRequired)
                     <div>
-                        <label for="floor_id" class="ui-field-label">Lokasi <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only">wajib</span></label>
+                        <label for="floor_id" class="ui-field-label">Lokasi <span class="{{ $formRequiredMark }}" aria-hidden="true">*</span><span class="sr-only">wajib</span></label>
                         <p id="floor_id-help" class="ui-field-help">Pilih gedung dan lantai. Wajib untuk layanan ini.</p>
                         <select id="floor_id" name="floor_id" required class="ui-select mt-2" @error('floor_id') aria-invalid="true" aria-describedby="floor_id-error" @else aria-describedby="floor_id-help" @enderror>
                             <option value="">Pilih gedung dan lantai</option>
@@ -141,13 +146,13 @@
                                 @endif
                             @endforeach
                         </select>
-                        @error('floor_id')<p id="floor_id-error" class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
+                        @error('floor_id')<x-field-error id="floor_id-error" :message="$message" />@enderror
                     </div>
                 @endif
             </div>
 
             @if ($requesterFields->isNotEmpty())
-                <div class="mt-6 space-y-4 border-t border-[#e7eef1] pt-6">
+                <div class="mt-6 space-y-4 border-t {{ $formDivider }} pt-6">
                     @foreach ($requesterFields as $field)
                         <x-tickets.dynamic-field :field="$field" :service="$selectedServiceType" />
                     @endforeach
@@ -155,8 +160,8 @@
             @endif
 
             @if ($serviceAttachmentPolicies->isNotEmpty())
-                <div class="mt-6 border-t border-[#e7eef1] pt-6">
-                    <p class="ui-field-label">Lampiran <span class="font-normal text-[#78909a]">(opsional)</span></p>
+                <div class="mt-6 border-t {{ $formDivider }} pt-6">
+                    <p class="ui-field-label">Lampiran <span class="font-normal text-[color:var(--tm-text-faint)]">(opsional)</span></p>
                     <div class="mt-3 space-y-4">
                     @foreach ($serviceAttachmentPolicies as $policy)
                         @php
@@ -166,9 +171,9 @@
                                 : $policy->max_file_size_kb.' KB';
                             $formatHint = $policy->service_type_id === null ? 'Dokumen atau gambar · ' : '';
                         @endphp
-                        <div class="{{ $loop->last ? '' : 'border-b border-[#e7eef1] pb-4' }}">
+                        <div class="{{ $loop->last ? '' : 'border-b border-[color:var(--tm-border-subtle)] pb-4' }}">
                             <label for="attachment-policy-{{ $policy->id }}" class="ui-field-label">{{ $policy->label }}</label>
-                            <p id="attachment-policy-{{ $policy->id }}-help" class="ui-field-help">{{ $formatHint }}Maks. {{ $policy->max_file_count }} berkas · {{ $fileSize }} per berkas.</p>
+                            <p id="attachment-policy-{{ $policy->id }}-help" class="ui-field-help tabular-nums">{{ $formatHint }}Maks. {{ $policy->max_file_count }} berkas · {{ $fileSize }} per berkas.</p>
                             <input id="attachment-policy-{{ $policy->id }}" name="attachments[{{ $policy->id }}][]" type="file" class="ui-file-input mt-2" multiple @if ($accept !== '') accept="{{ $accept }}" @endif aria-describedby="attachment-policy-{{ $policy->id }}-help">
                         </div>
                     @endforeach
