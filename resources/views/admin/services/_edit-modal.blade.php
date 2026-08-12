@@ -22,30 +22,58 @@
         : $serviceType->skills->pluck('id')->map(fn ($id): int => (int) $id)->all();
     $activeFields = $serviceType->activeFieldDefinitions;
     $nextFieldOrder = ((int) ($activeFields->max('sort_order') ?? 0)) + 1;
+
+    // Presentasional saja - tidak mengubah data, logika, maupun alur formulir.
+    $svcPanel = 'relative h-[calc(100dvh-2rem)] max-h-[calc(100dvh-2rem)] w-full max-w-6xl overflow-y-auto overscroll-contain rounded-[var(--tm-r-lg)] border border-[color:var(--tm-border)] bg-[color:var(--tm-surface)] shadow-[var(--tm-sh-xl)] sm:h-[calc(100dvh-4rem)] sm:max-h-[calc(100dvh-4rem)]';
+    $svcHeader = 'sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface)] px-5 py-4 sm:px-7';
+    $svcIconTile = 'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--tm-r-sm)] bg-[color:var(--tm-brand-50)] text-[color:var(--tm-brand-700)]';
+    $svcClose = 'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--tm-r-sm)] border border-[color:var(--tm-border)] bg-[color:var(--tm-surface)] text-[color:var(--tm-text-muted)] transition-[background-color,border-color,color] duration-[var(--tm-dur-fast)] ease-[var(--tm-ease)] hover:bg-[color:var(--tm-n-100)] hover:text-[color:var(--tm-text)]';
+    $svcCard = 'rounded-[var(--tm-r-md)] border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface)]';
+    $svcSummary = 'ui-disclosure-summary flex items-center gap-4 px-4 py-3.5';
+    $svcSummaryTitle = 'block text-sm font-extrabold text-[color:var(--tm-text)]';
+    $svcSummaryHint = 'mt-0.5 block text-xs text-[color:var(--tm-text-muted)]';
+    $svcSummaryMeta = 'text-xs font-bold tabular-nums text-[color:var(--tm-text-faint)]';
+    $svcCardBody = 'border-t border-[color:var(--tm-border-subtle)] p-4 sm:p-5';
+    $svcMuted = 'text-xs leading-5 text-[color:var(--tm-text-muted)]';
+    $svcFooterRow = 'mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--tm-border-subtle)] pt-5';
+    $svcSunkenPanel = 'rounded-[var(--tm-r-md)] border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-sunken)] p-4';
+    $svcChoiceTile = 'flex min-h-11 cursor-pointer items-start gap-3 rounded-[var(--tm-r-sm)] border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface)] px-3 py-2.5 transition-[background-color,border-color,color] duration-[var(--tm-dur-fast)] ease-[var(--tm-ease)] hover:border-[color:var(--tm-brand-300)] has-[:checked]:border-[color:var(--tm-brand-400)] has-[:checked]:bg-[color:var(--tm-brand-50)]';
+    $svcRequiredMark = 'text-[color:var(--tm-danger-600)]';
+    $svcAddFieldPanel = 'rounded-[var(--tm-r-md)] border border-[color:var(--tm-brand-200)] bg-[color:var(--tm-brand-50)] p-4';
+    $svcNumTile = 'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--tm-r-xs)] border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-sunken)] text-xs font-extrabold tabular-nums text-[color:var(--tm-text-secondary)]';
+    $svcTagRequired = 'rounded-[var(--tm-r-full)] border border-[color:var(--tm-warning-200)] bg-[color:var(--tm-warning-50)] px-2 py-1 text-[0.65rem] font-bold text-[color:var(--tm-warning-700)]';
+    $svcTagOptional = 'rounded-[var(--tm-r-full)] border border-[color:var(--tm-border)] bg-[color:var(--tm-surface)] px-2 py-1 text-[0.65rem] font-bold text-[color:var(--tm-text-muted)]';
+    $svcFieldsEmptyTitle = 'Belum ada field formulir';
+    $svcFieldsEmptyDescription = 'Tambahkan field pertama di bagian atas. Satu field sebaiknya mewakili satu informasi yang jelas.';
 @endphp
 
 <div id="service-edit-modal-{{ $serviceType->id }}" data-ui-modal data-auto-open="{{ $autoOpen ? 'true' : 'false' }}" class="fixed inset-0 z-50 hidden" aria-hidden="true">
-    <div class="absolute inset-0 bg-slate-950/45" data-ui-modal-close></div>
+    <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-[3px]" data-ui-modal-close></div>
     <div class="relative flex min-h-full items-start justify-center overflow-y-auto p-4 sm:p-8">
-        <section role="dialog" aria-modal="true" aria-labelledby="service-edit-title-{{ $serviceType->id }}" class="relative h-[calc(100dvh-2rem)] max-h-[calc(100dvh-2rem)] w-full max-w-6xl overflow-y-auto overscroll-contain rounded-xl border border-[#dfe8ec] bg-white shadow-[0_20px_55px_rgba(38,58,67,0.2)] sm:h-[calc(100dvh-4rem)] sm:max-h-[calc(100dvh-4rem)]">
-            <div class="sticky top-0 z-10 flex items-start justify-between gap-4 bg-[#6098c6] px-5 py-4 text-white sm:px-7">
-                <div>
-                    <p class="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-blue-100">Edit layanan</p>
-                    <h2 id="service-edit-title-{{ $serviceType->id }}" class="mt-1 text-xl font-extrabold">{{ $serviceType->code }} · {{ $serviceType->name }}</h2>
-                    <p class="mt-1 text-xs leading-5 text-blue-100">Kelola data layanan dan template formulir dari satu tempat.</p>
+        <section role="dialog" aria-modal="true" aria-labelledby="service-edit-title-{{ $serviceType->id }}" class="{{ $svcPanel }}">
+            <div class="{{ $svcHeader }}">
+                <div class="flex min-w-0 items-start gap-3">
+                    <span class="{{ $svcIconTile }}" aria-hidden="true">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5h4l9-9a2.12 2.12 0 0 0-3-3l-9 9v3Z" /><path stroke-linecap="round" d="M14 6.5l3 3" /></svg>
+                    </span>
+                    <div class="min-w-0">
+                        <p class="text-[0.65rem] font-bold uppercase tracking-[0.14em] text-[color:var(--tm-brand-700)]">Edit layanan</p>
+                        <h2 id="service-edit-title-{{ $serviceType->id }}" class="mt-1 text-lg font-extrabold tracking-tight text-[color:var(--tm-text)]">{{ $serviceType->code }} · {{ $serviceType->name }}</h2>
+                        <p class="mt-1 text-xs leading-5 text-[color:var(--tm-text-muted)]">Kelola data layanan dan template formulir dari satu tempat.</p>
+                    </div>
                 </div>
-                <button type="button" data-ui-modal-close class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label="Tutup edit layanan {{ $serviceType->name }}">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="m7 7 10 10M17 7 7 17" /></svg>
+                <button type="button" data-ui-modal-close class="{{ $svcClose }}" aria-label="Tutup edit layanan {{ $serviceType->name }}">
+                    <svg class="h-4.5 w-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="m7 7 10 10M17 7 7 17" /></svg>
                 </button>
             </div>
 
             <div class="space-y-4 p-5 sm:p-7">
-                <details class="rounded-xl border border-[#dce9ed] bg-white" @if ($servicePanel === 'detail') open @endif>
-                    <summary class="ui-disclosure-summary flex items-center gap-4 px-4 py-3.5">
-                        <span class="min-w-0 flex-1"><span class="block text-sm font-extrabold text-[#263a43]">Data layanan</span><span class="mt-0.5 block text-xs text-[#78909a]">Kode, jenis, kategori, dan deskripsi</span></span>
-                        <span class="flex shrink-0 items-center gap-3"><span class="text-xs font-bold text-[#8aa0a8]">{{ $serviceType->is_active ? 'Aktif' : 'Nonaktif' }}</span></span>
+                <details class="{{ $svcCard }}" @if ($servicePanel === 'detail') open @endif>
+                    <summary class="{{ $svcSummary }}">
+                        <span class="min-w-0 flex-1"><span class="{{ $svcSummaryTitle }}">Data layanan</span><span class="{{ $svcSummaryHint }}">Kode, jenis, kategori, dan deskripsi</span></span>
+                        <span class="flex shrink-0 items-center gap-3"><span class="ui-status {{ $serviceType->is_active ? 'ui-status-active' : 'ui-status-inactive' }}">{{ $serviceType->is_active ? 'Aktif' : 'Nonaktif' }}</span></span>
                     </summary>
-                    <div class="border-t border-[#edf2f4] p-4 sm:p-5">
+                    <div class="{{ $svcCardBody }}">
                         <form method="POST" action="{{ route('admin.catalog.services.update', $serviceType) }}" data-submit-feedback data-service-sla-form>
                             @csrf
                             @method('PUT')
@@ -54,38 +82,38 @@
                             <div class="grid gap-4 sm:grid-cols-2">
                                 <div>
                                     <label for="edit-service-code-{{ $serviceType->id }}" class="ui-field-label">Kode layanan</label>
-                                    <input id="edit-service-code-{{ $serviceType->id }}" value="{{ $serviceType->code }}" readonly class="ui-input mt-2 cursor-not-allowed border-dashed bg-[#f8fbfc] text-[#607681]">
+                                    <input id="edit-service-code-{{ $serviceType->id }}" value="{{ $serviceType->code }}" readonly class="ui-input mt-2 cursor-not-allowed border-dashed bg-[color:var(--tm-sunken)] tabular-nums text-[color:var(--tm-text-muted)]">
                                     <p class="ui-field-help">Kode adalah identitas sistem dan tidak diubah setelah layanan digunakan.</p>
                                 </div>
                                 <div>
-                                    <label for="edit-service-name-{{ $serviceType->id }}" class="ui-field-label">Jenis layanan <span class="text-rose-600">*</span></label>
+                                    <label for="edit-service-name-{{ $serviceType->id }}" class="ui-field-label">Jenis layanan <span class="{{ $svcRequiredMark }}">*</span></label>
                                     <input id="edit-service-name-{{ $serviceType->id }}" name="name" value="{{ $serviceName }}" required maxlength="150" class="ui-input mt-2">
-                                    @error('name')<p class="mt-1 text-xs font-semibold text-rose-700">{{ $message }}</p>@enderror
+                                    @error('name')<x-field-error :message="$message" />@enderror
                                 </div>
                                 <div>
-                                    <label for="edit-service-category-{{ $serviceType->id }}" class="ui-field-label">Kategori layanan <span class="text-rose-600">*</span></label>
+                                    <label for="edit-service-category-{{ $serviceType->id }}" class="ui-field-label">Kategori layanan <span class="{{ $svcRequiredMark }}">*</span></label>
                                     <select id="edit-service-category-{{ $serviceType->id }}" name="ticket_class" required class="ui-select mt-2">
                                         @foreach ($ticketClasses as $ticketClass)
                                             <option value="{{ $ticketClass }}" @selected($serviceTicketClass === $ticketClass)>{{ $ticketClass }}</option>
                                         @endforeach
                                     </select>
-                                    @error('ticket_class')<p class="mt-1 text-xs font-semibold text-rose-700">{{ $message }}</p>@enderror
+                                    @error('ticket_class')<x-field-error :message="$message" />@enderror
                                 </div>
-                                <div class="rounded-xl border border-[#cfe4e8] bg-[#f8fbfc] p-4 sm:col-span-2" data-service-sla-panel>
+                                <div class="{{ $svcSunkenPanel }} sm:col-span-2" data-service-sla-panel>
                                     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                         <div class="flex items-start gap-3">
                                             <input type="hidden" name="uses_sla" value="0">
                                             <input id="edit-service-uses-sla-{{ $serviceType->id }}" name="uses_sla" value="1" type="checkbox" class="ui-checkbox mt-0.5" @checked($serviceUsesSla) data-service-sla-toggle>
                                             <div>
                                                 <label for="edit-service-uses-sla-{{ $serviceType->id }}" class="ui-field-label">Gunakan target SLA</label>
-                                                <p class="mt-1 text-xs leading-5 text-[#78909a]" data-service-sla-status>Target penyelesaian dihitung dalam hari kerja dan tersimpan sebagai versi kebijakan.</p>
+                                                <p class="mt-1 {{ $svcMuted }}" data-service-sla-status>Target penyelesaian dihitung dalam hari kerja dan tersimpan sebagai versi kebijakan.</p>
                                             </div>
                                         </div>
                                         <div class="w-full sm:max-w-xs" data-service-sla-target>
                                             <label for="edit-service-target-sla-{{ $serviceType->id }}" class="ui-field-label">Target SLA (hari kerja)</label>
-                                            <input id="edit-service-target-sla-{{ $serviceType->id }}" name="target_working_days" type="number" min="1" max="365" value="{{ $serviceTargetWorkingDays }}" class="ui-input mt-2" data-service-sla-target-input @disabled(! $serviceUsesSla)>
+                                            <input id="edit-service-target-sla-{{ $serviceType->id }}" name="target_working_days" type="number" min="1" max="365" value="{{ $serviceTargetWorkingDays }}" class="ui-input mt-2 tabular-nums" data-service-sla-target-input @disabled(! $serviceUsesSla)>
                                             <p class="ui-field-help">Minimal 1 dan maksimal 365 hari kerja.</p>
-                                            @error('target_working_days')<p class="mt-1 text-xs font-semibold text-rose-700">{{ $message }}</p>@enderror
+                                            @error('target_working_days')<x-field-error :message="$message" />@enderror
                                         </div>
                                     </div>
                                 </div>
@@ -95,61 +123,61 @@
                                     <p class="ui-field-help">Deskripsi ini tampil sebagai penjelasan layanan di katalog pemohon dan membantu Tim TI memahami cakupannya.</p>
                                 </div>
                             </div>
-                            <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#e3ecef] pt-4">
-                                <p class="max-w-xl text-xs leading-5 text-[#78909a]">Perubahan data layanan hanya berlaku untuk katalog dan tiket baru.</p>
+                            <div class="{{ $svcFooterRow }}">
+                                <p class="max-w-xl {{ $svcMuted }}">Perubahan data layanan hanya berlaku untuk katalog dan tiket baru.</p>
                                 <button type="submit" class="ui-btn ui-btn-primary !min-h-10" data-submit-button><span data-submit-label>Simpan data layanan</span><span class="hidden" data-submit-loading>Menyimpan...</span></button>
                             </div>
                         </form>
                     </div>
                 </details>
 
-                <details class="rounded-xl border border-[#dce9ed] bg-white" @if ($servicePanel === 'skills') open @endif>
-                    <summary class="ui-disclosure-summary flex items-center gap-4 px-4 py-3.5">
-                        <span class="min-w-0 flex-1"><span class="block text-sm font-extrabold text-[#263a43]">Syarat keahlian</span><span class="mt-0.5 block text-xs text-[#78909a]">Dipakai sebagai dasar saran teknisi</span></span>
-                        <span class="flex shrink-0 items-center gap-3"><span class="text-xs font-bold text-[#8aa0a8]">{{ $serviceType->skills->count() }} dipilih</span></span>
+                <details class="{{ $svcCard }}" @if ($servicePanel === 'skills') open @endif>
+                    <summary class="{{ $svcSummary }}">
+                        <span class="min-w-0 flex-1"><span class="{{ $svcSummaryTitle }}">Syarat keahlian</span><span class="{{ $svcSummaryHint }}">Dipakai sebagai dasar saran teknisi</span></span>
+                        <span class="flex shrink-0 items-center gap-3"><span class="ui-count tabular-nums">{{ $serviceType->skills->count() }} dipilih</span></span>
                     </summary>
-                    <div class="border-t border-[#edf2f4] p-4 sm:p-5">
+                    <div class="{{ $svcCardBody }}">
                         <form method="POST" action="{{ route('admin.catalog.services.skills.update', $serviceType) }}" data-submit-feedback>
                             @csrf
                             @method('PUT')
                             <input type="hidden" name="_service_edit" value="{{ $serviceType->id }}">
                             <input type="hidden" name="_service_tab" value="skills">
-                            <p class="text-xs leading-5 text-[#78909a]">Pilih satu atau lebih keahlian dari master Keahlian. Pemetaan ini membantu sistem memberi saran, bukan menetapkan teknisi secara otomatis.</p>
-                            <details class="mt-3 rounded-xl border border-[#dfe8ec] bg-white" data-skill-picker>
+                            <p class="{{ $svcMuted }}">Pilih satu atau lebih keahlian dari master Keahlian. Pemetaan ini membantu sistem memberi saran, bukan menetapkan teknisi secara otomatis.</p>
+                            <details class="mt-3 {{ $svcCard }}" data-skill-picker>
                                 <summary class="ui-disclosure-summary flex min-h-12 items-center gap-3 px-4 py-3">
-                                    <span class="min-w-0 flex-1"><span class="block text-xs font-extrabold text-[#35505b]">Pilih keahlian</span><span class="mt-0.5 block truncate text-[0.68rem] text-[#78909a]" data-skill-picker-summary>{{ $selectedSkillIds === [] ? 'Belum ada keahlian dipilih' : count($selectedSkillIds).' keahlian dipilih' }}</span></span>
-                                    <span class="flex shrink-0 items-center text-xs font-bold text-[#78909a]" aria-hidden="true">Buka</span>
+                                    <span class="min-w-0 flex-1"><span class="block text-xs font-extrabold text-[color:var(--tm-text)]">Pilih keahlian</span><span class="mt-0.5 block truncate text-[0.68rem] text-[color:var(--tm-text-muted)]" data-skill-picker-summary>{{ $selectedSkillIds === [] ? 'Belum ada keahlian dipilih' : count($selectedSkillIds).' keahlian dipilih' }}</span></span>
+                                    <span class="flex shrink-0 items-center text-xs font-bold text-[color:var(--tm-brand-700)]" aria-hidden="true">Buka</span>
                                 </summary>
-                                <fieldset class="grid gap-2 border-t border-[#edf2f4] p-3 sm:grid-cols-2">
+                                <fieldset class="grid gap-2 border-t border-[color:var(--tm-border-subtle)] p-3 sm:grid-cols-2">
                                     <legend class="sr-only">Daftar syarat keahlian</legend>
                                     @forelse ($skills as $skill)
-                                        <label class="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border border-[#e1eaed] bg-white px-3 py-2.5 transition hover:border-[#8bd7ee] has-[:checked]:border-[#75d5f3] has-[:checked]:bg-[#f1fbfe]">
+                                        <label class="{{ $svcChoiceTile }}">
                                             <input type="checkbox" name="skill_ids[]" value="{{ $skill->id }}" class="ui-checkbox mt-0.5" @checked(in_array($skill->id, $selectedSkillIds, true))>
-                                            <span class="min-w-0"><span class="block text-xs font-extrabold text-[#35505b]">{{ $skill->name }}</span>@if ($skill->description)<span class="mt-0.5 block text-[0.68rem] leading-4 text-[#78909a]">{{ $skill->description }}</span>@endif</span>
+                                            <span class="min-w-0"><span class="block text-xs font-extrabold text-[color:var(--tm-text)]">{{ $skill->name }}</span>@if ($skill->description)<span class="mt-0.5 block text-[0.68rem] leading-4 text-[color:var(--tm-text-muted)]">{{ $skill->description }}</span>@endif</span>
                                         </label>
                                     @empty
-                                        <p class="text-xs leading-5 text-[#78909a] sm:col-span-2">Belum ada keahlian aktif. Tambahkan master keahlian terlebih dahulu.</p>
+                                        <p class="{{ $svcMuted }} sm:col-span-2">Belum ada keahlian aktif. Tambahkan master keahlian terlebih dahulu.</p>
                                     @endforelse
                                 </fieldset>
                             </details>
-                            @error('skill_ids')<p class="mt-2 text-xs font-semibold text-rose-700">{{ $message }}</p>@enderror
-                            <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#e3ecef] pt-4">
-                                <p class="max-w-xl text-xs leading-5 text-[#78909a]">Perubahan pemetaan tidak mengubah histori tiket.</p>
+                            @error('skill_ids')<x-field-error :message="$message" />@enderror
+                            <div class="{{ $svcFooterRow }}">
+                                <p class="max-w-xl {{ $svcMuted }}">Perubahan pemetaan tidak mengubah histori tiket.</p>
                                 <button type="submit" class="ui-btn ui-btn-primary !min-h-10" data-submit-button><span data-submit-label>Simpan syarat keahlian</span><span class="hidden" data-submit-loading>Menyimpan...</span></button>
                             </div>
                         </form>
                     </div>
                 </details>
 
-                <details class="rounded-xl border border-[#dce9ed] bg-white" @if ($servicePanel === 'formulir') open @endif>
-                    <summary class="ui-disclosure-summary flex items-center gap-4 px-4 py-3.5">
-                        <span class="min-w-0 flex-1"><span class="block text-sm font-extrabold text-[#263a43]">Template formulir</span><span class="mt-0.5 block text-xs text-[#78909a]">Tambah, ubah versi, atau hapus field dari formulir</span></span>
-                        <span class="flex shrink-0 items-center gap-3"><span class="text-xs font-bold text-[#8aa0a8]">{{ $activeFields->count() }} field aktif</span></span>
+                <details class="{{ $svcCard }}" @if ($servicePanel === 'formulir') open @endif>
+                    <summary class="{{ $svcSummary }}">
+                        <span class="min-w-0 flex-1"><span class="{{ $svcSummaryTitle }}">Template formulir</span><span class="{{ $svcSummaryHint }}">Tambah, ubah versi, atau hapus field dari formulir</span></span>
+                        <span class="flex shrink-0 items-center gap-3"><span class="ui-count tabular-nums">{{ $activeFields->count() }} field aktif</span></span>
                     </summary>
-                    <div class="border-t border-[#edf2f4] p-4 sm:p-5">
-                        <div class="rounded-xl border border-[#b9e8e1] bg-[#ecfbf8] p-4">
-                            <p class="text-sm font-extrabold text-[#17313c]">Tambah field baru</p>
-                            <p class="mt-1 text-xs leading-5 text-[#52747b]">Field baru langsung dipakai pada formulir tiket baru setelah disimpan.</p>
+                    <div class="{{ $svcCardBody }}">
+                        <div class="{{ $svcAddFieldPanel }}">
+                            <p class="text-sm font-extrabold text-[color:var(--tm-brand-800)]">Tambah field baru</p>
+                            <p class="mt-1 text-xs leading-5 text-[color:var(--tm-brand-700)]">Field baru langsung dipakai pada formulir tiket baru setelah disimpan.</p>
                             <div class="mt-4">
                                 @include('admin.forms._field-form', ['mode' => 'create', 'field' => null, 'serviceType' => $serviceType, 'fieldTypes' => $fieldTypes, 'visibilities' => $visibilities, 'nextFieldOrder' => $nextFieldOrder, 'keepOpen' => true])
                             </div>
@@ -157,29 +185,29 @@
 
                         <div class="mt-5 flex items-center justify-between gap-3">
                             <div>
-                                <h3 class="text-sm font-extrabold text-[#263a43]">Field formulir aktif</h3>
-                                <p class="mt-1 text-xs leading-5 text-[#78909a]">Buka satu field untuk mengubah detailnya. Hapus field jika sudah tidak diperlukan.</p>
+                                <h3 class="text-sm font-extrabold text-[color:var(--tm-text)]">Field formulir aktif</h3>
+                                <p class="mt-1 {{ $svcMuted }}">Buka satu field untuk mengubah detailnya. Hapus field jika sudah tidak diperlukan.</p>
                             </div>
-                            <span class="rounded-full bg-[#eef3ff] px-2.5 py-1 text-xs font-extrabold text-[#4f63a6]">{{ $activeFields->count() }}</span>
+                            <span class="ui-count tabular-nums">{{ $activeFields->count() }}</span>
                         </div>
 
                         <div class="mt-3 space-y-2">
                             @forelse ($activeFields as $field)
-                                <details class="rounded-xl border border-[#dfe8ec] bg-white" @if ($loop->first && $errors->any()) open @endif>
+                                <details class="{{ $svcCard }}" @if ($loop->first && $errors->any()) open @endif>
                                     <summary class="ui-disclosure-summary flex items-start gap-3 p-4">
                                         <span class="flex min-w-0 flex-1 items-start gap-3">
-                                            <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#f1f7f9] text-xs font-extrabold text-[#526f79]">{{ $loop->iteration }}</span>
-                                            <span class="min-w-0"><span class="block truncate text-sm font-extrabold text-[#35505b]">{{ $field->label }}</span><span class="mt-1 block truncate text-[0.68rem] text-[#78909a]">{{ $field->key }} · {{ $fieldTypes[$field->field_type] ?? $field->field_type }} · versi {{ $field->version }}</span></span>
+                                            <span class="{{ $svcNumTile }}">{{ $loop->iteration }}</span>
+                                            <span class="min-w-0"><span class="block truncate text-sm font-extrabold text-[color:var(--tm-text)]">{{ $field->label }}</span><span class="mt-1 block truncate text-[0.68rem] text-[color:var(--tm-text-muted)]">{{ $field->key }} · {{ $fieldTypes[$field->field_type] ?? $field->field_type }} · versi {{ $field->version }}</span></span>
                                         </span>
                                         <span class="flex shrink-0 flex-wrap justify-end gap-1.5">
-                                            <span class="hidden rounded-full bg-[#f3f7f8] px-2 py-1 text-[0.65rem] font-bold text-[#607681] sm:inline-flex">{{ $visibilities[$field->visibility] ?? $field->visibility }}</span>
-                                            <span class="rounded-full px-2 py-1 text-[0.65rem] font-bold {{ $field->is_required ? 'bg-[#fff6df] text-[#956b16]' : 'bg-[#f3f7f8] text-[#78909a]' }}">{{ $field->is_required ? 'Wajib' : 'Opsional' }}</span>
+                                            <span class="ui-chip hidden sm:inline-flex">{{ $visibilities[$field->visibility] ?? $field->visibility }}</span>
+                                            <span class="{{ $field->is_required ? $svcTagRequired : $svcTagOptional }}">{{ $field->is_required ? 'Wajib' : 'Opsional' }}</span>
                                         </span>
                                     </summary>
-                                    <div class="border-t border-[#edf2f4] bg-[#fcfdfd] p-4 sm:p-5">
-                                        <div class="mb-4 rounded-lg bg-[#f8fbfc] px-3 py-2.5 text-xs leading-5 text-[#607681]">Simpan perubahan untuk membuat versi berikutnya. Versi lama tetap tersedia untuk histori tiket.</div>
+                                    <div class="border-t border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-sunken)] p-4 sm:p-5">
+                                        <div class="mb-4 rounded-[var(--tm-r-sm)] border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface)] px-3 py-2.5 text-xs leading-5 text-[color:var(--tm-text-secondary)]">Simpan perubahan untuk membuat versi berikutnya. Versi lama tetap tersedia untuk histori tiket.</div>
                                         @include('admin.forms._field-form', ['mode' => 'version', 'field' => $field, 'serviceType' => $serviceType, 'fieldTypes' => $fieldTypes, 'visibilities' => $visibilities, 'nextFieldOrder' => $nextFieldOrder, 'keepOpen' => true])
-                                        <div class="mt-4 flex justify-end border-t border-[#e3ecef] pt-4">
+                                        <div class="mt-4 flex justify-end border-t border-[color:var(--tm-border-subtle)] pt-4">
                                             <form method="POST" action="{{ route('admin.catalog.fields.destroy', $field) }}" data-swal-confirm="Hapus {{ $field->label }} dari formulir? Field tidak akan tampil pada tiket baru, tetapi versi lamanya tetap tersimpan untuk histori tiket." data-submit-feedback>
                                                 @csrf
                                                 @method('DELETE')
@@ -191,19 +219,16 @@
                                     </div>
                                 </details>
                             @empty
-                                <div class="ui-empty">
-                                    <p class="font-extrabold text-[#526f79]">Belum ada field formulir</p>
-                                    <p class="mt-1 text-xs leading-5">Tambahkan field pertama di bagian atas. Satu field sebaiknya mewakili satu informasi yang jelas.</p>
-                                </div>
+                                <x-empty-state :title="$svcFieldsEmptyTitle" :description="$svcFieldsEmptyDescription" />
                             @endforelse
                         </div>
                     </div>
                 </details>
 
-                <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dfe8ec] bg-[#f8fbfc] px-4 py-3">
+                <div class="flex flex-wrap items-center justify-between gap-3 rounded-[var(--tm-r-md)] border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-sunken)] px-4 py-3.5">
                     <div>
-                        <p class="text-xs font-extrabold text-[#526f79]">Status layanan</p>
-                        <p class="mt-1 text-[0.68rem] leading-5 text-[#78909a]">Layanan nonaktif tidak muncul di katalog pemohon.</p>
+                        <p class="text-xs font-extrabold text-[color:var(--tm-text)]">Status layanan</p>
+                        <p class="mt-1 text-[0.68rem] leading-5 text-[color:var(--tm-text-muted)]">Layanan nonaktif tidak muncul di katalog pemohon.</p>
                     </div>
                     <form method="POST" action="{{ route('admin.catalog.services.status', [$serviceType, $serviceType->is_active ? 'deactivate' : 'activate']) }}" @if ($serviceType->is_active) data-swal-confirm="Nonaktifkan layanan {{ $serviceType->name }}? Layanan tidak akan muncul bagi pemohon, tetapi histori tiket tetap tersedia." @endif data-submit-feedback>
                         @csrf
