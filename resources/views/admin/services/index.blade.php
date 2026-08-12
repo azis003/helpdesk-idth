@@ -2,6 +2,19 @@
 
 @php
     $autoOpenService = old('_service_edit', request()->query('service'));
+
+    // Presentasional saja - tidak mengubah data, logika, maupun alur halaman.
+    $serviceActionBase = 'inline-flex h-9 w-9 items-center justify-center rounded-[var(--tm-r-sm)] border transition-[background-color,border-color,color] duration-[var(--tm-dur-fast)] ease-[var(--tm-ease)]';
+    $serviceActionNeutral = $serviceActionBase.' border-[color:var(--tm-border)] bg-[color:var(--tm-surface)] text-[color:var(--tm-text-secondary)] hover:border-[color:var(--tm-brand-300)] hover:bg-[color:var(--tm-brand-50)] hover:text-[color:var(--tm-brand-700)]';
+    $serviceCodeChip = 'inline-flex items-center whitespace-nowrap rounded-[var(--tm-r-sm)] border border-[color:var(--tm-brand-100)] bg-[color:var(--tm-brand-50)] px-2.5 py-1 text-xs font-extrabold tracking-[0.08em] text-[color:var(--tm-brand-800)] tabular-nums';
+    $serviceSlaWarning = 'inline-flex items-center whitespace-nowrap rounded-[var(--tm-r-full)] border border-[color:var(--tm-warning-200)] bg-[color:var(--tm-warning-50)] px-2.5 py-1 text-xs font-extrabold text-[color:var(--tm-warning-700)] tabular-nums';
+    $serviceSlaNeutral = 'inline-flex items-center whitespace-nowrap rounded-[var(--tm-r-full)] border border-[color:var(--tm-border)] bg-[color:var(--tm-surface)] px-2.5 py-1 text-xs font-bold text-[color:var(--tm-text-muted)]';
+    $serviceMetaLabel = 'text-[0.7rem] font-bold uppercase tracking-[0.08em] text-[color:var(--tm-text-faint)]';
+    $servicePanelSoft = 'rounded-[var(--tm-r-md)] border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-sunken)] p-4';
+    $serviceEmptyTitle = $search !== '' ? 'Layanan tidak ditemukan' : 'Belum ada layanan';
+    $serviceEmptyDescription = $search !== ''
+        ? 'Tidak ada layanan yang cocok dengan pencarian. Coba kata kunci lain atau kosongkan kolom pencarian.'
+        : 'Buat layanan pertama untuk mulai menyusun katalog.';
 @endphp
 
 @section('title', 'Manajemen Layanan — '.$branding['application_name'])
@@ -9,47 +22,45 @@
 @section('header_title', 'Manajemen Layanan')
 
 @section('content')
-    <div class="ui-page-header">
-        <div>
-            <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Data master · Katalog layanan</p>
-            <h1 class="ui-page-title">Manajemen Layanan</h1>
-            <p class="ui-page-description">Kelola jenis layanan, kategori, target SLA, syarat keahlian, dan formulir yang akan digunakan pemohon.</p>
-        </div>
-    </div>
+    <x-page-header
+        eyebrow="Data master · Katalog layanan"
+        title="Manajemen Layanan"
+        description="Kelola jenis layanan, kategori, target SLA, syarat keahlian, dan formulir yang akan digunakan pemohon."
+    />
 
-    <section class="mt-7 overflow-hidden rounded-lg border border-[#d7dde0] bg-white shadow-[0_2px_8px_rgba(36,57,67,0.06)]" aria-labelledby="services-heading">
-        <div class="flex flex-col gap-4 bg-[#075998] px-5 py-5 text-white sm:flex-row sm:items-center sm:justify-between sm:px-8">
-            <div>
-                <h2 id="services-heading" class="text-xl font-extrabold tracking-tight">Daftar layanan</h2>
-                <p class="mt-1 text-xs leading-5 text-blue-100">Lihat detail untuk mengubah layanan, atau buka preview formulir pemohon.</p>
+    <section class="ui-panel mt-6 overflow-hidden" aria-labelledby="services-heading">
+        <div class="flex flex-col gap-4 border-b border-[color:var(--tm-border-subtle)] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div class="min-w-0">
+                <h2 id="services-heading" class="text-lg font-extrabold tracking-tight text-[color:var(--tm-text)]">Daftar layanan</h2>
+                <p class="mt-1 text-xs leading-5 text-[color:var(--tm-text-muted)]">Lihat detail untuk mengubah layanan, atau buka preview formulir pemohon.</p>
             </div>
-            <button type="button" data-ui-modal-open="service-create-modal" class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-[#7138e8] px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-[#6229d5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#075998]">
+            <button type="button" data-ui-modal-open="service-create-modal" class="ui-btn ui-btn-primary shrink-0">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" d="M12 5v14M5 12h14" /></svg>
                 Buat layanan
             </button>
         </div>
 
-        <div class="px-5 py-5 sm:px-8">
-            <form method="GET" action="{{ route('admin.services.index') }}" class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div class="flex items-center gap-2 text-sm text-[#17212b]">
-                    <label for="service-per-page" class="font-bold">Tampilkan</label>
-                    <select id="service-per-page" name="per_page" class="h-10 rounded-lg border border-[#d7e0e4] bg-white px-3 text-sm text-[#35505b] outline-none focus:border-[#0a87c9] focus:ring-2 focus:ring-[#0a87c9]/15" onchange="this.form.submit()">
-                        @foreach ([10, 25, 50] as $pageSize)
-                            <option value="{{ $pageSize }}" @selected($perPage === $pageSize)>{{ $pageSize }}</option>
-                        @endforeach
-                    </select>
-                    <span>data</span>
-                </div>
+        <form method="GET" action="{{ route('admin.services.index') }}" class="flex flex-col gap-3 border-b border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-sunken)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div class="flex items-center gap-2 text-sm text-[color:var(--tm-text-secondary)]">
+                <label for="service-per-page" class="font-bold">Tampilkan</label>
+                <select id="service-per-page" name="per_page" class="ui-select w-auto tabular-nums" onchange="this.form.submit()">
+                    @foreach ([10, 25, 50] as $pageSize)
+                        <option value="{{ $pageSize }}" @selected($perPage === $pageSize)>{{ $pageSize }}</option>
+                    @endforeach
+                </select>
+                <span>data</span>
+            </div>
 
-                <div class="flex w-full items-center gap-2 sm:w-auto">
-                    <label for="service-search" class="shrink-0 text-sm font-bold text-[#17212b]">Cari:</label>
-                    <input id="service-search" name="q" type="search" value="{{ $search }}" class="h-10 w-full min-w-0 rounded-lg border border-[#d7e0e4] bg-[#f8fafb] px-3 text-sm text-[#17212b] outline-none placeholder:text-[#9baab0] focus:border-[#0a87c9] focus:bg-white focus:ring-2 focus:ring-[#0a87c9]/15 sm:w-64" placeholder="Kode atau jenis layanan" aria-label="Cari layanan">
-                    <button type="submit" class="sr-only">Cari layanan</button>
-                </div>
-            </form>
+            <div class="flex w-full items-center gap-2 sm:w-auto">
+                <label for="service-search" class="shrink-0 text-sm font-bold text-[color:var(--tm-text-secondary)]">Cari:</label>
+                <input id="service-search" name="q" type="search" value="{{ $search }}" class="ui-input w-full min-w-0 sm:w-64" placeholder="Kode atau jenis layanan" aria-label="Cari layanan">
+                <button type="submit" class="ui-btn ui-btn-secondary shrink-0">Cari</button>
+            </div>
+        </form>
 
-            <div class="mt-4 hidden overflow-x-auto rounded-lg border border-[#cfd6da] md:block">
-                <table class="min-w-[1040px] w-full table-fixed border-collapse text-left text-sm">
+        <div class="hidden px-5 py-5 sm:px-6 md:block">
+            <div class="overflow-x-auto rounded-[var(--tm-r-md)] border border-[color:var(--tm-border-subtle)]">
+                <table class="ui-table w-full min-w-[65rem] table-fixed text-left">
                     <caption class="sr-only">Daftar layanan dengan kode, jenis, kategori, target SLA, status, detail, dan preview formulir</caption>
                     <colgroup>
                         <col class="w-[4.25rem]">
@@ -60,15 +71,15 @@
                         <col class="w-[7rem]">
                         <col class="w-[8.5rem]">
                     </colgroup>
-                    <thead class="bg-[#fbfcfd] text-[#34495a]">
+                    <thead>
                         <tr>
-                            <th scope="col" class="border-b border-[#cfd6da] px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide">No</th>
-                            <th scope="col" class="border-b border-[#cfd6da] px-4 py-3 text-xs font-extrabold uppercase tracking-wide">Kode Layanan</th>
-                            <th scope="col" class="border-b border-[#cfd6da] px-4 py-3 text-xs font-extrabold uppercase tracking-wide">Jenis Layanan</th>
-                            <th scope="col" class="border-b border-[#cfd6da] px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide">Kategori</th>
-                            <th scope="col" class="border-b border-[#cfd6da] px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide">Target SLA</th>
-                            <th scope="col" class="border-b border-[#cfd6da] px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide">Status</th>
-                            <th scope="col" class="border-b border-[#cfd6da] px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide">Aksi</th>
+                            <th scope="col">No</th>
+                            <th scope="col">Kode Layanan</th>
+                            <th scope="col">Jenis Layanan</th>
+                            <th scope="col">Kategori</th>
+                            <th scope="col">Target SLA</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -76,60 +87,71 @@
                             @php
                                 $categoryLabel = $serviceType->ticket_class ?: 'Belum diatur';
                             @endphp
-                            <tr class="odd:bg-[#f8fafb] even:bg-white hover:bg-[#eef7fc]">
-                                <td class="align-middle border-b border-[#e5eaed] px-4 py-5 text-center font-semibold text-[#172d45]">{{ ($serviceTypes->firstItem() ?? 1) + $loop->index }}</td>
-                                <td class="align-middle whitespace-nowrap border-b border-[#e5eaed] px-4 py-5"><span class="inline-flex items-center whitespace-nowrap rounded-lg bg-[#eef8fc] px-2.5 py-1 text-xs font-extrabold tracking-[0.08em] text-[#26677b]">{{ $serviceType->code }}</span></td>
-                                <td class="max-w-0 align-middle border-b border-[#e5eaed] px-4 py-5"><p class="truncate font-bold text-[#112b49]" title="{{ $serviceType->name }}">{{ $serviceType->name }}</p>@if ($serviceType->description)<p class="mt-1 max-w-[28rem] truncate text-xs text-[#78909a]" title="{{ $serviceType->description }}">{{ $serviceType->description }}</p>@endif</td>
-                                <td class="align-middle whitespace-nowrap border-b border-[#e5eaed] px-4 py-5 text-center"><span class="inline-flex items-center whitespace-nowrap rounded-full bg-[#eef8fc] px-2.5 py-1 text-xs font-bold text-[#26677b]">{{ $categoryLabel ?: 'Belum diatur' }}</span></td>
-                                <td class="align-middle whitespace-nowrap border-b border-[#e5eaed] px-4 py-5 text-center">
+                            <tr>
+                                <td class="align-middle font-semibold tabular-nums text-[color:var(--tm-text-muted)]">{{ ($serviceTypes->firstItem() ?? 1) + $loop->index }}</td>
+                                <td class="whitespace-nowrap align-middle"><span class="{{ $serviceCodeChip }}">{{ $serviceType->code }}</span></td>
+                                <td class="max-w-0 align-middle"><p class="truncate font-bold text-[color:var(--tm-text)]" title="{{ $serviceType->name }}">{{ $serviceType->name }}</p>@if ($serviceType->description)<p class="mt-1 max-w-[28rem] truncate text-xs text-[color:var(--tm-text-muted)]" title="{{ $serviceType->description }}">{{ $serviceType->description }}</p>@endif</td>
+                                <td class="whitespace-nowrap align-middle"><span class="ui-chip">{{ $categoryLabel ?: 'Belum diatur' }}</span></td>
+                                <td class="whitespace-nowrap align-middle">
                                     @if ($serviceType->activeSlaPolicy?->uses_sla && $serviceType->activeSlaPolicy->target_working_days)
-                                        <span class="inline-flex items-center whitespace-nowrap rounded-full bg-[#fff6df] px-2.5 py-1 text-xs font-extrabold text-[#956b16]">{{ $serviceType->activeSlaPolicy->target_working_days }} hari kerja</span>
+                                        <span class="{{ $serviceSlaWarning }}">{{ $serviceType->activeSlaPolicy->target_working_days }} hari kerja</span>
                                     @elseif ($serviceType->activeSlaPolicy)
-                                        <span class="inline-flex items-center whitespace-nowrap rounded-full bg-[#eef2f4] px-2.5 py-1 text-xs font-bold text-[#657984]">Tidak digunakan</span>
+                                        <span class="{{ $serviceSlaNeutral }}">Tidak digunakan</span>
                                     @else
-                                        <span class="whitespace-nowrap text-xs font-semibold text-[#9baab0]">Belum diatur</span>
+                                        <span class="whitespace-nowrap text-xs font-semibold text-[color:var(--tm-text-faint)]">Belum diatur</span>
                                     @endif
                                 </td>
-                                <td class="align-middle whitespace-nowrap border-b border-[#e5eaed] px-4 py-5 text-center"><span class="inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold {{ $serviceType->is_active ? 'bg-[#e8faf4] text-[#087f5b]' : 'bg-[#eef2f4] text-[#657984]' }}">{{ $serviceType->is_active ? 'Aktif' : 'Nonaktif' }}</span></td>
-                                <td class="align-middle border-b border-[#e5eaed] px-4 py-5">
+                                <td class="whitespace-nowrap align-middle"><span class="ui-status {{ $serviceType->is_active ? 'ui-status-active' : 'ui-status-inactive' }}">{{ $serviceType->is_active ? 'Aktif' : 'Nonaktif' }}</span></td>
+                                <td class="align-middle">
                                     <div class="flex justify-center gap-2">
-                                        <button type="button" data-ui-modal-open="service-view-modal-{{ $serviceType->id }}" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#0b98e5] text-white transition hover:bg-[#087fc1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0b98e5] focus-visible:ring-offset-2" aria-label="Lihat layanan {{ $serviceType->name }}" title="Lihat layanan"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.2-5 9.5-5 9.5 5 9.5 5-3.2 5-9.5 5-9.5-5-9.5-5Z" /><circle cx="12" cy="12" r="2.5" /></svg></button>
-                                        <button type="button" data-ui-modal-open="service-preview-modal-{{ $serviceType->id }}" class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#147a79] text-white transition hover:bg-[#0f6862] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#147a79] focus-visible:ring-offset-2" aria-label="Preview formulir {{ $serviceType->name }}" title="Preview formulir"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 9h8M8 12h5M8 15h7" /></svg></button>
+                                        <button type="button" data-ui-modal-open="service-view-modal-{{ $serviceType->id }}" class="{{ $serviceActionNeutral }}" aria-label="Lihat layanan {{ $serviceType->name }}" title="Lihat layanan"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.2-5 9.5-5 9.5 5 9.5 5-3.2 5-9.5 5-9.5-5-9.5-5Z" /><circle cx="12" cy="12" r="2.5" /></svg></button>
+                                        <button type="button" data-ui-modal-open="service-preview-modal-{{ $serviceType->id }}" class="{{ $serviceActionNeutral }}" aria-label="Preview formulir {{ $serviceType->name }}" title="Preview formulir"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 9h8M8 12h5M8 15h7" /></svg></button>
                                     </div>
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="7" class="px-4 py-12 text-center text-[#718088]">{{ $search !== '' ? 'Tidak ada layanan yang cocok dengan pencarian.' : 'Belum ada layanan. Buat layanan pertama untuk mulai menyusun katalog.' }}</td></tr>
+                            <tr><td colspan="7" class="p-0"><x-empty-state :title="$serviceEmptyTitle" :description="$serviceEmptyDescription" /></td></tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-
-            <div class="mt-4 flex flex-col gap-3 text-sm text-[#718088] sm:flex-row sm:items-center sm:justify-between">
-                <p>
-                    @if ($serviceTypes->total() > 0)
-                        Menampilkan {{ $serviceTypes->firstItem() }}–{{ $serviceTypes->lastItem() }} dari {{ $serviceTypes->total() }} layanan
-                    @else
-                        Tidak ada data layanan
-                    @endif
-                </p>
-                @if ($serviceTypes->hasPages())<div>{{ $serviceTypes->links() }}</div>@endif
-            </div>
         </div>
 
-        <div class="divide-y divide-[#e5eaed] md:hidden">
+        <div class="divide-y divide-[color:var(--tm-border-subtle)] md:hidden">
             @forelse ($serviceTypes as $serviceType)
                 @php
                     $categoryLabel = $serviceType->ticket_class ?: 'Belum diatur';
                 @endphp
                 <article class="p-5">
-                    <div class="flex items-start justify-between gap-3"><div class="min-w-0"><p class="text-xs font-bold uppercase tracking-wide text-[#78909a]">No. {{ ($serviceTypes->firstItem() ?? 1) + $loop->index }}</p><p class="mt-1 text-xs font-extrabold tracking-[0.08em] text-[#26677b]">{{ $serviceType->code }}</p><h3 class="mt-1 font-bold text-[#112b49]">{{ $serviceType->name }}</h3></div><span class="shrink-0 rounded-full px-2 py-1 text-[0.65rem] font-bold {{ $serviceType->is_active ? 'bg-[#e8faf4] text-[#087f5b]' : 'bg-[#eef2f4] text-[#657984]' }}">{{ $serviceType->is_active ? 'Aktif' : 'Nonaktif' }}</span></div>
-                    <dl class="mt-4 grid gap-3 rounded-lg bg-[#f8fafb] p-4 text-sm"><div><dt class="text-xs font-bold uppercase tracking-wide text-[#78909a]">Jenis layanan</dt><dd class="mt-1 text-[#172d45]">{{ $serviceType->name }}</dd></div><div><dt class="text-xs font-bold uppercase tracking-wide text-[#78909a]">Kategori</dt><dd class="mt-1 text-[#172d45]">{{ $categoryLabel ?: 'Belum diatur' }}</dd></div><div><dt class="text-xs font-bold uppercase tracking-wide text-[#78909a]">Target SLA</dt><dd class="mt-1 text-[#172d45]">@if ($serviceType->activeSlaPolicy?->uses_sla && $serviceType->activeSlaPolicy->target_working_days){{ $serviceType->activeSlaPolicy->target_working_days }} hari kerja @elseif ($serviceType->activeSlaPolicy)Tidak digunakan @else Belum diatur @endif</dd></div></dl>
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="{{ $serviceMetaLabel }} tabular-nums">No. {{ ($serviceTypes->firstItem() ?? 1) + $loop->index }}</p>
+                            <p class="mt-1.5"><span class="{{ $serviceCodeChip }}">{{ $serviceType->code }}</span></p>
+                            <h3 class="mt-2 font-bold text-[color:var(--tm-text)]">{{ $serviceType->name }}</h3>
+                        </div>
+                        <span class="ui-status shrink-0 {{ $serviceType->is_active ? 'ui-status-active' : 'ui-status-inactive' }}">{{ $serviceType->is_active ? 'Aktif' : 'Nonaktif' }}</span>
+                    </div>
+                    <dl class="mt-4 grid gap-3 text-sm {{ $servicePanelSoft }}">
+                        <div><dt class="{{ $serviceMetaLabel }}">Jenis layanan</dt><dd class="mt-1 font-semibold text-[color:var(--tm-text)]">{{ $serviceType->name }}</dd></div>
+                        <div><dt class="{{ $serviceMetaLabel }}">Kategori</dt><dd class="mt-1 font-semibold text-[color:var(--tm-text)]">{{ $categoryLabel ?: 'Belum diatur' }}</dd></div>
+                        <div><dt class="{{ $serviceMetaLabel }}">Target SLA</dt><dd class="mt-1 font-semibold tabular-nums text-[color:var(--tm-text)]">@if ($serviceType->activeSlaPolicy?->uses_sla && $serviceType->activeSlaPolicy->target_working_days){{ $serviceType->activeSlaPolicy->target_working_days }} hari kerja @elseif ($serviceType->activeSlaPolicy)Tidak digunakan @else Belum diatur @endif</dd></div>
+                    </dl>
                     <div class="mt-4 flex flex-wrap justify-end gap-2"><button type="button" data-ui-modal-open="service-view-modal-{{ $serviceType->id }}" class="ui-btn ui-btn-secondary !min-h-9 !px-3 !text-xs">Lihat detail</button><button type="button" data-ui-modal-open="service-preview-modal-{{ $serviceType->id }}" class="ui-btn ui-btn-primary !min-h-9 !px-3 !text-xs">Preview formulir</button></div>
                 </article>
             @empty
-                <p class="p-8 text-center text-sm text-[#718088]">{{ $search !== '' ? 'Tidak ada layanan yang cocok dengan pencarian.' : 'Belum ada layanan. Buat layanan pertama untuk mulai menyusun katalog.' }}</p>
+                <div class="p-5"><x-empty-state :title="$serviceEmptyTitle" :description="$serviceEmptyDescription" /></div>
             @endforelse
+        </div>
+
+        <div class="flex flex-col gap-3 border-t border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-sunken)] px-5 py-4 text-sm text-[color:var(--tm-text-muted)] sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <p class="tabular-nums">
+                @if ($serviceTypes->total() > 0)
+                    Menampilkan {{ $serviceTypes->firstItem() }}–{{ $serviceTypes->lastItem() }} dari {{ $serviceTypes->total() }} layanan
+                @else
+                    Tidak ada data layanan
+                @endif
+            </p>
+            @if ($serviceTypes->hasPages())<div>{{ $serviceTypes->links() }}</div>@endif
         </div>
     </section>
 
