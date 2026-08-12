@@ -11,11 +11,11 @@
     ])->filter()->implode(' ');
 @endphp
 
-<div data-ticket-field class="rounded-xl border border-[#e5edef] bg-[#fbfdfd] p-4 sm:p-5">
+<div data-ticket-field class="rounded-[var(--tm-r-lg)] border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface-sunken)] p-4 sm:p-5">
     <label for="{{ $fieldId }}" class="ui-field-label">
         {{ $field->label }}
         @if ($field->is_required)
-            <span class="text-rose-600" aria-hidden="true">*</span>
+            <span class="text-[color:var(--tm-danger-600)]" aria-hidden="true">*</span>
             <span class="sr-only">wajib</span>
         @endif
     </label>
@@ -41,10 +41,10 @@
         </select>
         <p class="ui-field-help">Gunakan Ctrl atau Command untuk memilih lebih dari satu pilihan.</p>
     @elseif ($field->field_type === 'boolean')
-        <div class="mt-2 flex min-h-10 items-center rounded-lg border border-[#dfe8ec] bg-white px-3">
+        <div class="mt-2 flex min-h-10 items-center rounded-[var(--tm-r-md)] border border-[color:var(--tm-border)] bg-[color:var(--tm-surface)] px-3">
             <input type="hidden" name="{{ $fieldName }}" value="0" data-ticket-field-input>
-            <label class="inline-flex items-center gap-2 text-sm font-semibold text-[#526f79]">
-                <input id="{{ $fieldId }}" name="{{ $fieldName }}" type="checkbox" value="1" data-ticket-field-input class="h-4 w-4 rounded border-[#a9bbc2] text-[#147a79] focus:ring-[#2bb8aa]" @checked((bool) $oldValue) @if ($field->is_required) required @endif @if ($hasError) aria-invalid="true" @endif aria-describedby="{{ $describedBy }}">
+            <label class="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--tm-text-secondary)]">
+                <input id="{{ $fieldId }}" name="{{ $fieldName }}" type="checkbox" value="1" data-ticket-field-input class="ui-checkbox" @checked((bool) $oldValue) @if ($field->is_required) required @endif @if ($hasError) aria-invalid="true" @endif aria-describedby="{{ $describedBy }}">
                 Ya
             </label>
         </div>
@@ -53,6 +53,9 @@
     @endif
 
     @if ($hasError)
-        <p id="{{ $fieldId }}-error" class="mt-2 text-sm text-rose-700">{{ $errors->first('fields.'.$field->key) }}</p>
+        <p id="{{ $fieldId }}-error" class="mt-2 flex items-center gap-1.5 text-sm font-medium text-[color:var(--tm-danger-600)]">
+            <svg class="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="7.25" /><path d="M10 6.5v4" /><path d="M10 13.25h.01" /></svg>
+            {{ $errors->first('fields.'.$field->key) }}
+        </p>
     @endif
 </div>
