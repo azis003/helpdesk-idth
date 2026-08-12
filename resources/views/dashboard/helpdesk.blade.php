@@ -3,6 +3,8 @@
     $isTechnician = ! $isTierOne;
     $assignedTickets = $agentDashboard['assigned_tickets'] ?? collect();
     $queueTickets = $agentDashboard['queue_tickets'] ?? collect();
+    $slaOverdueCount = $agentDashboard['overdue_sla_count'] ?? 0;
+    $slaNearCount = $agentDashboard['near_sla_count'] ?? 0;
     $todayLabel = now($periodTimezone)->locale('id')->translatedFormat('l, d M Y');
     $ticketNumber = static fn ($ticket): string => $ticket->ticket_number ?? 'Tiket #'.$ticket->id;
     $serviceName = static fn ($ticket): string => $ticket->service_type_name_snapshot
@@ -137,6 +139,31 @@
         </dl>
     </section>
 
+    @if ($slaOverdueCount > 0 || $slaNearCount > 0)
+        <section class="hd-panel" aria-labelledby="helpdesk-sla-heading">
+            <div class="hd-panel-header">
+                <div class="hd-section-heading">
+                    <span class="hd-section-icon hd-section-icon--danger" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8" /><path stroke-linecap="round" d="M12 7.6v4.7l3 1.9" /></svg>
+                    </span>
+                    <div>
+                        <h2 id="helpdesk-sla-heading" class="hd-section-title">Risiko SLA</h2>
+                        <p class="hd-section-description">Tiket yang Anda pantau dan sudah melewati atau mendekati batas waktu penanganan.</p>
+                    </div>
+                </div>
+                <a href="{{ route('tickets.queue', ['tab' => 'mine']) }}" class="hd-link">Tinjau tiket saya</a>
+            </div>
+            <div class="flex flex-wrap items-center gap-2.5 px-5 pb-5 sm:px-6">
+                @if ($slaOverdueCount > 0)
+                    <span class="hd-sla-badge hd-sla-badge--danger">{{ $slaOverdueCount }} tiket lewat batas SLA</span>
+                @endif
+                @if ($slaNearCount > 0)
+                    <span class="hd-sla-badge hd-sla-badge--warning">{{ $slaNearCount }} tiket mendekati batas</span>
+                @endif
+            </div>
+        </section>
+    @endif
+
     <div @class(['hd-dashboard-grid' => $isTierOne, 'hd-technician-dashboard-section' => $isTechnician])>
         @if ($isTierOne)
         <div class="hd-dashboard-primary">
@@ -146,12 +173,13 @@
                         <span class="hd-section-icon hd-section-icon--danger" aria-hidden="true">!</span>
                         <div>
                             <h2 id="helpdesk-queue-heading" class="hd-section-title">Antrian Tiket</h2>
+                            <p class="hd-section-description">Tiket baru dari Pemohon yang belum diambil siapa pun.</p>
                         </div>
                     </div>
-                    <a href="{{ $isTierOne ? route('tickets.queue') : route('tickets.queue', ['tab' => 'mine']) }}" class="hd-link">Lihat semua</a>
+                    <a href="{{ route('tickets.queue') }}" class="hd-link">Lihat semua</a>
                 </div>
 
-                @if ($isTierOne && $queueTickets->isNotEmpty())
+                @if ($queueTickets->isNotEmpty())
                     <div class="hd-table-wrap">
                         <table class="hd-table">
                             <caption class="sr-only">Lima tiket pada antrian untuk Agen Tier 1</caption>
@@ -194,9 +222,9 @@
                 @else
                     <div class="hd-empty-state hd-empty-state--panel">
                         <span class="hd-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M5 6.5h14v11H5zM8 9.5h8M8 13h5" /></svg></span>
-                        <h3>{{ $isTierOne ? 'Belum ada tiket terbaru pada antrean ini.' : 'Belum ada tiket yang ditugaskan.' }}</h3>
-                        <p>{{ $isTierOne ? 'Tiket dari Pemohon yang belum diambil akan muncul di sini setelah tercatat.' : 'Tiket Tier 2 yang ditugaskan kepada Anda akan muncul di sini.' }}</p>
-                        <a href="{{ $isTierOne ? route('tickets.queue') : route('tickets.queue', ['tab' => 'mine']) }}" class="hd-secondary-button">Buka Monitoring Tiket</a>
+                        <h3>Belum ada tiket terbaru pada antrean ini.</h3>
+                        <p>Tiket dari Pemohon yang belum diambil akan muncul di sini setelah tercatat.</p>
+                        <a href="{{ route('tickets.queue') }}" class="hd-secondary-button">Buka Monitoring Tiket</a>
                     </div>
                 @endif
             </section>
@@ -204,8 +232,7 @@
         </div>
         @endif
 
-        <aside @class(['hd-dashboard-sidebar' => $isTierOne]) aria-label="{{ $isTierOne ? 'Ringkasan tugas dan informasi Helpdesk' : 'Pengumuman internal' }}">
-            @if ($isTierOne)
+        <aside @class(['hd-dashboard-sidebar' => $isTierOne]) aria-label="{{ $isTierOne ? 'Ringkasan tugas dan informasi Helpdesk' : 'Tiket saya dan pengumuman internal' }}">
             <section class="hd-panel" aria-labelledby="helpdesk-assigned-heading">
                 <div class="hd-panel-header">
                     <div class="hd-section-heading">
@@ -227,7 +254,6 @@
                 </div>
                 <a href="{{ route('tickets.queue', ['tab' => 'mine']) }}" class="hd-outline-button">Buka Tiket Saya</a>
             </section>
-            @endif
 
             <section class="hd-panel" aria-labelledby="helpdesk-announcements-heading">
                 <div class="hd-panel-header">
