@@ -39,6 +39,9 @@
             : route('admin.locations.index');
         $unreadNotificationCount = $currentUser->unreadNotifications()->count();
         $latestNotifications = $currentUser->notifications()->latest()->limit(5)->get();
+        $currentUserRoleText = $currentUser->roles
+            ->map(fn (\App\Models\Role $role): string => \App\Enums\Role::tryFrom($role->slug)?->label() ?? $role->name)
+            ->implode(', ');
     @endphp
 
     <div class="ui-shell lg:flex">
@@ -191,7 +194,7 @@
         </aside>
 
         <div class="ui-content-shell min-w-0 flex-1">
-            <header class="ui-topbar fixed inset-x-0 top-0 z-30 flex min-h-[4.5rem] items-center justify-between gap-4 px-4 sm:px-7 lg:px-9">
+            <header class="ui-topbar fixed inset-x-0 top-0 z-30 flex min-h-[4.5rem] items-center justify-between gap-2 px-4 sm:gap-5 sm:px-7 lg:px-9">
                 <div class="flex min-w-0 items-center gap-3">
                     <a href="{{ route('dashboard') }}" class="ui-topbar-brand flex min-w-0 items-center gap-2.5" aria-label="Dasbor {{ $branding['application_name'] }}">
                         @if ($branding['logo_url'])
@@ -199,7 +202,7 @@
                         @else
                             <span class="ui-brand-mark !h-11 !w-11 !rounded-xl text-sm">{{ $branding['monogram'] }}</span>
                         @endif
-                        <span class="max-w-[12rem] truncate text-lg font-extrabold tracking-[-0.05em] text-[#18252b]">{{ $branding['application_name'] }}</span>
+                        <span class="hidden max-w-[12rem] truncate text-lg font-extrabold tracking-[-0.05em] text-[#18252b] min-[520px]:inline">{{ $branding['application_name'] }}</span>
                         <span class="hidden max-w-[14rem] truncate text-sm text-[#718088] sm:inline">{{ $branding['organization_name'] }}</span>
                     </a>
                     <span class="hidden h-5 w-px bg-[#dfe7eb] lg:block" aria-hidden="true"></span>
@@ -208,12 +211,26 @@
                     <span class="hidden truncate text-sm text-[#6c7c83] lg:inline">@yield('header_title', 'Ruang kerja')</span>
                 </div>
 
-                <div class="flex items-center gap-3">
+                <div class="flex shrink-0 items-center gap-3 sm:gap-4">
+                    <details class="relative" data-help-menu>
+                        <summary class="flex h-7 w-7 cursor-pointer list-none items-center justify-center rounded-full text-[#8a8f93] transition hover:bg-[#f1f3f4] hover:text-[#5f6a70] focus:outline-none focus:ring-2 focus:ring-[#75d5f3] focus:ring-offset-2 [&::-webkit-details-marker]:hidden" aria-label="Bantuan" title="Bantuan">
+                            <svg class="h-[1.05rem] w-[1.05rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path stroke-linecap="round" stroke-linejoin="round" d="M9.8 9a2.3 2.3 0 1 1 3.7 1.8c-.95.7-1.5 1.08-1.5 2.2M12 16.2h.01" /></svg>
+                        </summary>
+                        <div class="absolute right-0 top-9 z-40 w-64 overflow-hidden rounded-xl border border-[#dce7eb] bg-white shadow-[0_14px_32px_rgba(38,58,67,0.14)]">
+                            <div class="px-4 py-3">
+                                <p class="text-sm font-extrabold text-[#263a43]">Butuh bantuan?</p>
+                                <p class="mt-1 text-xs leading-5 text-[#78909a]">Buat tiket untuk menghubungi Tim TI.</p>
+                                @if (Route::has('tickets.create'))
+                                    <a href="{{ route('tickets.create') }}" class="mt-3 inline-flex text-xs font-extrabold text-[#147a79] hover:text-[#0f5f5e]">Buat tiket <span class="ml-1" aria-hidden="true">→</span></a>
+                                @endif
+                            </div>
+                        </div>
+                    </details>
                     <details class="relative" data-notification-menu>
-                        <summary class="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-xl border border-[#dfe8ec] bg-white text-[#52747b] shadow-sm transition hover:border-[#8bd7ee] hover:text-[#147a79] focus:outline-none focus:ring-2 focus:ring-[#75d5f3] focus:ring-offset-2" aria-label="Notifikasi">
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.8 9.5a5.2 5.2 0 0 1 10.4 0c0 5 2 5.8 2 7H4.8c0-1.2 2-2 2-7ZM9.7 19a2.5 2.5 0 0 0 4.6 0" /></svg>
+                        <summary class="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-full text-[#6d7883] transition hover:bg-[#f1f5f7] hover:text-[#35505b] focus:outline-none focus:ring-2 focus:ring-[#75d5f3] focus:ring-offset-2 [&::-webkit-details-marker]:hidden" aria-label="Notifikasi">
+                            <svg class="h-[1.1rem] w-[1.1rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.8 9.5a5.2 5.2 0 0 1 10.4 0c0 5 2 5.8 2 7H4.8c0-1.2 2-2 2-7ZM9.7 19a2.5 2.5 0 0 0 4.6 0" /></svg>
                             @if ($unreadNotificationCount > 0)
-                                <span class="absolute right-1 top-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-[#e4a72c] px-1 text-[0.58rem] font-extrabold text-white ring-2 ring-[#f6fafb]" aria-label="{{ $unreadNotificationCount }} notifikasi belum dibaca">{{ $unreadNotificationCount > 9 ? '9+' : $unreadNotificationCount }}</span>
+                                <span class="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-[#ef4444] ring-2 ring-white" aria-label="{{ $unreadNotificationCount }} notifikasi belum dibaca" title="{{ $unreadNotificationCount }} notifikasi belum dibaca"></span>
                             @endif
                         </summary>
                         <div class="absolute right-0 top-12 z-40 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[#dce7eb] bg-white shadow-[0_18px_45px_rgba(38,58,67,0.16)]">
@@ -243,20 +260,40 @@
                             @endforelse
                         </div>
                     </details>
-                    <div class="hidden text-right sm:block">
-                        <p class="text-xs font-bold text-[#344850]">{{ $currentUser->name }}</p>
-                        <p class="mt-0.5 text-[0.68rem] text-[#89989e]">{{ $currentUser->username }}</p>
+                    <div class="flex min-w-0 items-center gap-2">
+                        <details class="relative" data-account-menu>
+                        <summary class="ui-avatar !h-8 !w-8 !cursor-pointer !rounded-full !bg-[#e5f3ff] !text-xs !text-[#087fc1] transition hover:!bg-[#d7edff] focus:outline-none focus:ring-2 focus:ring-[#75d5f3] focus:ring-offset-2 [&::-webkit-details-marker]:hidden" aria-label="Buka menu akun untuk {{ $currentUser->name }}" title="Menu akun">
+                            {{ strtoupper(substr($currentUser->name, 0, 1)) }}
+                        </summary>
+                        <div class="absolute right-0 top-12 z-40 w-64 overflow-hidden rounded-2xl border border-[#dce7eb] bg-white shadow-[0_18px_45px_rgba(38,58,67,0.16)]">
+                            <div class="border-b border-[#edf2f4] px-4 py-3">
+                                <p class="truncate text-sm font-extrabold text-[#263a43]">{{ $currentUser->name }}</p>
+                                <p class="mt-0.5 truncate text-xs text-[#78909a]">{{ $currentUserRoleText ?: 'Tanpa role' }}</p>
+                            </div>
+                            <nav class="p-2" aria-label="Menu akun">
+                                <a href="{{ route('profile.edit') }}" class="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold text-[#35505b] transition hover:bg-[#f1fbfe] hover:text-[#147a79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#75d5f3]">
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.5 5.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0ZM4.5 20a7.5 7.5 0 0 1 15 0" /></svg>
+                                    Edit Profil
+                                </a>
+                                <a href="{{ route('password.change') }}" class="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold text-[#35505b] transition hover:bg-[#f1fbfe] hover:text-[#147a79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#75d5f3]">
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" /><path stroke-linecap="round" d="M8 10V7a4 4 0 0 1 8 0v3M12 14v2" /></svg>
+                                    Ganti Password
+                                </a>
+                                <form method="POST" action="{{ route('logout') }}" class="mt-1 border-t border-[#edf2f4] pt-1">
+                                    @csrf
+                                    <button type="submit" class="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-bold text-[#b4233c] transition hover:bg-[#fff4f5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f7b3be]">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10 5H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h4M14 8l4 4-4 4m4-4H9" /></svg>
+                                        Keluar
+                                    </button>
+                                </form>
+                            </nav>
+                        </div>
+                        </details>
+                        <div class="min-w-0 w-24 max-[340px]:hidden sm:w-auto">
+                            <p class="truncate text-[0.78rem] font-extrabold leading-4 text-[#263a43] sm:max-w-[13rem]">{{ $currentUser->name }}</p>
+                            <p class="mt-0.5 truncate text-[0.68rem] leading-4 text-[#7b8790] sm:max-w-[13rem]" title="{{ $currentUserRoleText }}">{{ $currentUserRoleText ?: 'Tanpa role' }}</p>
+                        </div>
                     </div>
-                    <a href="{{ route('password.change') }}" class="hidden text-xs font-extrabold text-[#147a79] transition hover:text-[#0f5f5e] sm:block">Ganti password</a>
-                    <span class="ui-avatar !h-9 !w-9 !rounded-full">{{ strtoupper(substr($currentUser->name, 0, 1)) }}</span>
-                    <span class="ui-header-divider hidden sm:block" aria-hidden="true"></span>
-                    <form method="POST" action="{{ route('logout') }}" class="hidden sm:block">
-                        @csrf
-                        <button type="submit" class="ui-header-logout" aria-label="Keluar dari {{ $branding['application_name'] }}" title="Keluar dari {{ $branding['application_name'] }}">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10 5H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h4M14 8l4 4-4 4m4-4H9" /></svg>
-                            <span class="sr-only">Keluar dari {{ $branding['application_name'] }}</span>
-                        </button>
-                    </form>
                     <details class="relative lg:hidden">
                         <summary class="ui-mobile-menu-button" aria-label="Buka menu">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" /></svg>
@@ -326,11 +363,6 @@
                                 <a href="{{ route('admin.announcements.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.announcements.*') ? 'is-active' : '' }}">Pengumuman</a>
                             @endif
                             @endif
-                            <a href="{{ route('password.change') }}" class="ui-mobile-nav-link">Ganti password</a>
-                            <form method="POST" action="{{ route('logout') }}" class="mt-1 border-t border-[#edf2f4] pt-1">
-                                @csrf
-                                <button type="submit" class="ui-mobile-nav-link w-full text-left">Keluar</button>
-                            </form>
                         </nav>
                     </details>
                 </div>

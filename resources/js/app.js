@@ -705,9 +705,9 @@ uiModals.forEach((modal) => {
     }
 });
 
-const ticketActionMenus = [...document.querySelectorAll('[data-ticket-action-menu]')];
+const dismissibleMenus = [...document.querySelectorAll('[data-ticket-action-menu], [data-help-menu], [data-notification-menu], [data-account-menu]')];
 
-ticketActionMenus.forEach((menu) => {
+dismissibleMenus.forEach((menu) => {
     const summary = menu.querySelector('summary');
 
     menu.querySelectorAll('[data-ui-modal-open], button[type="submit"], a[href]').forEach((action) => {
@@ -728,7 +728,7 @@ ticketActionMenus.forEach((menu) => {
 });
 
 document.addEventListener('click', (event) => {
-    ticketActionMenus.forEach((menu) => {
+    dismissibleMenus.forEach((menu) => {
         if (menu.open && ! menu.contains(event.target)) {
             menu.open = false;
         }

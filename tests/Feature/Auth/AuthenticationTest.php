@@ -18,9 +18,9 @@ class AuthenticationTest extends TestCase
             ->assertSee('Password');
     }
 
-    public function test_guest_must_login_before_accessing_password_change_page(): void
+    public function test_guest_must_login_before_accessing_profile_page(): void
     {
-        $response = $this->get(route('password.change'));
+        $response = $this->get(route('profile.edit'));
 
         $response->assertRedirect(route('login'));
         $this->assertGuest();
@@ -83,7 +83,7 @@ class AuthenticationTest extends TestCase
         $this->get(route('tickets.index'))->assertOk();
     }
 
-    public function test_authenticated_user_can_change_password_voluntarily(): void
+    public function test_authenticated_user_can_change_password_from_dedicated_page(): void
     {
         $user = $this->createUser([Role::Pemohon], array_merge(
             ['username' => 'pemohon.ganti-password'],
@@ -93,7 +93,8 @@ class AuthenticationTest extends TestCase
         $this->actingAs($user)
             ->get(route('password.change'))
             ->assertOk()
-            ->assertSee('Ganti kata sandi');
+            ->assertSee('Ganti Password')
+            ->assertSee('Password baru');
 
         $change = $this->actingAs($user)->put(route('password.update'), [
             'current_password' => 'Initial-Password-123!',
@@ -101,7 +102,7 @@ class AuthenticationTest extends TestCase
             'password_confirmation' => 'New-Password-456!',
         ]);
 
-        $change->assertRedirect(route('dashboard'));
+        $change->assertRedirect(route('password.change'));
         $this->assertDatabaseHas('users', [
             'id' => $user->id,
             'must_change_password' => false,

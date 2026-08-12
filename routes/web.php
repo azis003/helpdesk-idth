@@ -19,6 +19,7 @@ use App\Http\Controllers\HealthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PasswordController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TicketCommunicationController;
 use App\Http\Controllers\TicketController;
@@ -40,6 +41,9 @@ Route::post('/logout', [AuthController::class, 'destroy'])
 
 Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     Route::get('/password/change', [PasswordController::class, 'edit'])->name('password.change');
     Route::put('/password/change', [PasswordController::class, 'update'])->name('password.update');

@@ -5,16 +5,15 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Auth\ChangePasswordRequest;
 use App\Services\AuditLogger;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class PasswordController extends Controller
 {
     public function __construct(private readonly AuditLogger $auditLogger) {}
 
-    public function edit(Request $request): mixed
+    public function edit(): mixed
     {
-        return view('auth.change-password');
+        return view('profile.change-password');
     }
 
     public function update(ChangePasswordRequest $request): RedirectResponse
@@ -31,7 +30,7 @@ class PasswordController extends Controller
         $this->auditLogger->succeeded($user, 'auth.password_changed');
 
         return redirect()
-            ->route('dashboard')
+            ->route('password.change')
             ->with('success', 'Password berhasil diperbarui.');
     }
 }

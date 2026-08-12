@@ -177,7 +177,7 @@
             </div>
         </div>
     @else
-        <p class="mt-4 rounded-xl bg-[#f8fbfc] px-4 py-3 text-xs leading-5 text-[#6f858e]">Untuk mengganti password, gunakan aksi <span class="font-bold">Ganti password</span> pada daftar pengguna.</p>
+        <p class="mt-4 rounded-xl bg-[#f8fbfc] px-4 py-3 text-xs leading-5 text-[#6f858e]">Pengguna dapat mengganti password sendiri melalui menu <span class="font-bold">Ganti Password</span> pada akun mereka.</p>
     @endif
 
     <div class="mt-5 flex flex-col-reverse gap-2 border-t border-[#edf2f4] pt-4 sm:flex-row sm:justify-end">
