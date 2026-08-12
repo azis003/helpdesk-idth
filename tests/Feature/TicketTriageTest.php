@@ -126,6 +126,12 @@ class TicketTriageTest extends TestCase
             'assigned_to_id' => $technician->id,
             'assigned_tier' => Role::AgenTier2->value,
         ]);
+        $closedByHelpdeskTicket = Ticket::factory()->create([
+            'subject' => 'Alur tiket ditutup helpdesk',
+            'status' => TicketStatus::Ditutup,
+            'assigned_to_id' => $otherAgent->id,
+            'assigned_tier' => Role::AgenTier1->value,
+        ]);
         $cancelledTicket = Ticket::factory()->create([
             'subject' => 'Alur tiket dibatalkan',
             'status' => TicketStatus::Dibatalkan,
@@ -153,7 +159,7 @@ class TicketTriageTest extends TestCase
             ->assertViewHas('queueCount', 1)
             ->assertViewHas('mineCount', 1)
             ->assertViewHas('assignedCount', 1)
-            ->assertViewHas('completedCount', 2)
+            ->assertViewHas('completedCount', 3)
             ->assertSee($queueTicket->subject)
             ->assertDontSee($mineTicket->subject)
             ->assertDontSee($assignedTicket->subject);
@@ -179,6 +185,7 @@ class TicketTriageTest extends TestCase
             ->get(route('tickets.queue', ['tab' => 'completed']))
             ->assertOk()
             ->assertSee($closedTicket->subject)
+            ->assertSee($closedByHelpdeskTicket->subject)
             ->assertSee($cancelledTicket->subject)
             ->assertDontSee($rejectedTicket->subject)
             ->assertDontSee($notApprovedTicket->subject)
@@ -401,6 +408,8 @@ class TicketTriageTest extends TestCase
     public function test_tier_two_sees_only_personal_tickets_in_the_work_area(): void
     {
         $technician = $this->createUser([Role::AgenTier2]);
+        $otherTechnician = $this->createUser([Role::AgenTier2]);
+        $helpdesk = $this->createUser([Role::AgenTier1]);
         $assignedTicket = Ticket::factory()->create([
             'subject' => 'Tiket teknisi saya',
             'status' => TicketStatus::Dikerjakan,
@@ -412,11 +421,29 @@ class TicketTriageTest extends TestCase
             'status' => TicketStatus::Baru,
             'assigned_to_id' => null,
         ]);
+        $completedTicket = Ticket::factory()->create([
+            'subject' => 'Tiket selesai teknisi saya',
+            'status' => TicketStatus::Ditutup,
+            'assigned_to_id' => $technician->id,
+            'assigned_tier' => Role::AgenTier2->value,
+        ]);
+        $otherTechnicianCompletedTicket = Ticket::factory()->create([
+            'subject' => 'Tiket selesai teknisi lain',
+            'status' => TicketStatus::Ditutup,
+            'assigned_to_id' => $otherTechnician->id,
+            'assigned_tier' => Role::AgenTier2->value,
+        ]);
+        $helpdeskCompletedTicket = Ticket::factory()->create([
+            'subject' => 'Tiket selesai Helpdesk',
+            'status' => TicketStatus::Ditutup,
+            'assigned_to_id' => $helpdesk->id,
+            'assigned_tier' => Role::AgenTier1->value,
+        ]);
 
         $this->actingAs($technician)
             ->get(route('tickets.queue'))
             ->assertOk()
-            ->assertSee('Tiket Saya')
+            ->assertSeeInOrder(['Tiket Saya', 'Tiket Selesai'])
             ->assertSee($assignedTicket->subject)
             ->assertDontSee($queueTicket->subject);
 
@@ -424,11 +451,18 @@ class TicketTriageTest extends TestCase
             ->get(route('tickets.queue', ['tab' => 'queue']))
             ->assertForbidden();
 
-        foreach (['assigned', 'completed'] as $tab) {
-            $this->actingAs($technician)
-                ->get(route('tickets.queue', ['tab' => $tab]))
-                ->assertForbidden();
-        }
+        $this->actingAs($technician)
+            ->get(route('tickets.queue', ['tab' => 'assigned']))
+            ->assertForbidden();
+
+        $this->actingAs($technician)
+            ->get(route('tickets.queue', ['tab' => 'completed']))
+            ->assertOk()
+            ->assertViewHas('completedCount', 1)
+            ->assertSee($completedTicket->subject)
+            ->assertDontSee($otherTechnicianCompletedTicket->subject)
+            ->assertDontSee($helpdeskCompletedTicket->subject)
+            ->assertDontSee($assignedTicket->subject);
 
         $this->actingAs($technician)
             ->get(route('tickets.all'))
@@ -458,6 +492,8 @@ class TicketTriageTest extends TestCase
             ->assertOk()
             ->assertSee('Semua Tiket')
             ->assertSee('Daftar seluruh tiket')
+            ->assertSeeInOrder(['No Tiket', 'Layanan', 'Judul', 'Status', 'Prioritas'])
+            ->assertDontSee('Penanggung jawab')
             ->assertSee($first->subject)
             ->assertSee($second->subject);
     }

@@ -108,6 +108,13 @@ class TicketPolicy
             && $actor->hasAnyRole([Role::AgenTier1, Role::AgenTier2]);
     }
 
+    public function viewCompleted(User $actor): bool
+    {
+        return $actor->isActive()
+            && ! $this->isReadOnlyTeamChair($actor)
+            && $actor->hasAnyRole([Role::AgenTier1, Role::AgenTier2]);
+    }
+
     public function viewAll(User $actor): bool
     {
         return $actor->isActive()

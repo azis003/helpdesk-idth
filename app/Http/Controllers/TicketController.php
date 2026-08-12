@@ -220,11 +220,13 @@ class TicketController extends Controller
             : (in_array((string) $requestedTab, ['mine', 'assigned', 'completed'], true)
                 ? (string) $requestedTab
                 : 'queue');
-        $isPersonalTab = $activeTab === 'mine';
-
         $this->authorization->authorize(
             $actor,
-            $isPersonalTab ? 'viewAssigned' : 'viewQueue',
+            match ($activeTab) {
+                'mine' => 'viewAssigned',
+                'completed' => 'viewCompleted',
+                default => 'viewQueue',
+            },
             Ticket::class,
             match ($activeTab) {
                 'mine' => 'ticket.assigned.view',
@@ -236,6 +238,9 @@ class TicketController extends Controller
 
         $canViewQueue = $actor->can('viewQueue', Ticket::class);
         $canViewAssigned = $actor->can('viewAssigned', Ticket::class);
+        $canViewCompleted = $actor->can('viewCompleted', Ticket::class);
+        $isTechnicianOnly = $actor->hasRole(Role::AgenTier2)
+            && ! $actor->hasRole(Role::AgenTier1);
         $completedStatuses = [TicketStatus::Ditutup->value, TicketStatus::Dibatalkan->value];
 
         $queueQuery = Ticket::query()->newQueue();
@@ -250,12 +255,17 @@ class TicketController extends Controller
             ->where('assigned_tier', Role::AgenTier2->value)
             ->whereNotIn('status', TicketStatus::valuesOf(TicketStatus::closedCases()));
         $completedQuery = Ticket::query()
-            ->whereIn('status', $completedStatuses);
+            ->whereIn('status', $completedStatuses)
+            ->when($isTechnicianOnly, function (Builder $query) use ($actor): void {
+                $query
+                    ->where('assigned_to_id', $actor->getKey())
+                    ->where('assigned_tier', Role::AgenTier2->value);
+            });
 
         $queueCount = $canViewQueue ? (clone $queueQuery)->count() : 0;
         $mineCount = $canViewAssigned ? (clone $mineQuery)->count() : 0;
         $assignedCount = $canViewQueue ? (clone $technicianAssignmentQuery)->count() : 0;
-        $completedCount = $canViewQueue ? (clone $completedQuery)->count() : 0;
+        $completedCount = $canViewCompleted ? (clone $completedQuery)->count() : 0;
 
         $ticketsQuery = match ($activeTab) {
             'mine' => (clone $mineQuery)
@@ -288,6 +298,8 @@ class TicketController extends Controller
             'completedCount' => $completedCount,
             'canViewQueue' => $canViewQueue,
             'canViewAssigned' => $canViewAssigned,
+            'canViewCompleted' => $canViewCompleted,
+            'isTechnicianOnly' => $isTechnicianOnly,
         ]);
     }
 
@@ -304,29 +316,19 @@ class TicketController extends Controller
         }
 
         $query = Ticket::query()
-            ->with(['serviceType', 'requester', 'creator', 'assignee'])
+            ->with('serviceType')
             ->orderByDesc('submitted_at')
             ->orderByDesc('id');
 
         $this->applyTicketSearch($query, $search);
 
-        $tickets = $query->paginate($perPage)->withQueryString();
-        $requesterActions = $tickets->getCollection()
-            ->mapWithKeys(fn (Ticket $ticket): array => [
-                $ticket->getKey() => $this->requesterActionFor($actor, $ticket),
-            ])
-            ->all();
-
-        return view('tickets.index', [
-            'tickets' => $tickets,
+        return view('tickets.all', [
+            'tickets' => $query->paginate($perPage)->withQueryString(),
             'canViewQueue' => $actor->can('viewQueue', Ticket::class),
-            'isTeamChair' => false,
-            'canAccessTickets' => true,
-            'showFilters' => true,
             'search' => $search,
             'perPage' => $perPage,
-            'requesterActions' => $requesterActions,
-            'isAllTickets' => true,
+            'perPageOptions' => RequesterTicketList::PER_PAGE_OPTIONS,
+            'ticketClassLabels' => RequesterTicketList::CLASS_LABELS,
         ]);
     }
 

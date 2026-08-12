@@ -13,6 +13,8 @@
     $completedCount = $completedCount ?? ($activeTab === 'completed' ? $ticketCount : 0);
     $canViewQueue = $canViewQueue ?? false;
     $canViewAssigned = $canViewAssigned ?? false;
+    $canViewCompleted = $canViewCompleted ?? false;
+    $isTechnicianOnly = $isTechnicianOnly ?? false;
     $tabs = [
         'queue' => [
             'label' => 'Antrian Tiket',
@@ -35,8 +37,10 @@
         'completed' => [
             'label' => 'Tiket Selesai',
             'count' => $completedCount,
-            'visible' => $canViewQueue,
-            'empty' => 'Belum ada tiket yang ditutup atau dibatalkan.',
+            'visible' => $canViewCompleted,
+            'empty' => $isTechnicianOnly
+                ? 'Belum ada tiket yang Anda selesaikan.'
+                : 'Belum ada tiket yang ditutup atau dibatalkan.',
         ],
     ];
     $activeTabMeta = $tabs[$activeTab] ?? $tabs['queue'];
