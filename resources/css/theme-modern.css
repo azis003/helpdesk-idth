@@ -1,0 +1,1483 @@
+/*
+|==============================================================================
+| THEME MODERN — Lapisan Desain UI (styling-only)
+|==============================================================================
+|
+| File ini dimuat SETELAH `resources/css/app.css`. Karena Tailwind v4
+| mengeluarkan seluruh utility-nya di dalam native CSS cascade layer
+| (@layer theme, base, components, utilities), sedangkan file ini sengaja
+| ditulis TANPA layer, maka seluruh aturan di sini otomatis menang di
+| cascade tanpa perlu menaikkan spesifisitas.
+|
+| Konsekuensinya: seluruh tampilan aplikasi bisa dimodernkan end-to-end
+| TANPA menyentuh satu baris pun Blade, controller, route, Livewire state,
+| maupun integrasi backend.
+|
+| Struktur:
+|   01. Design tokens
+|   02. Base & tipografi
+|   03. Fokus, seleksi, scrollbar
+|   04. App shell (sidebar, topbar, main)
+|   05. Navigasi
+|   06. Surface (panel, card, page header, stat, empty state)
+|   07. Tabel
+|   08. Form
+|   09. Tombol
+|   10. Badge, status, chip
+|   11. Modal, dropdown, micro-interaction
+|   12. Dashboard (hd-*)
+|   13. Ticket reference / operational
+|   14. Halaman login (guest)
+|   15. Compat layer — remap warna hardcode lama
+|   16. Responsif
+|   17. Reduced motion & print
+|
+*/
+
+/* ==========================================================================
+   01. DESIGN TOKENS
+   ========================================================================== */
+
+:root {
+	/* Brand — teal profesional, turunan dari aksen lama #147a79 / #0a87c9 */
+	--tm-brand-50: #eff9fb;
+	--tm-brand-100: #d7f0f5;
+	--tm-brand-200: #b0e1eb;
+	--tm-brand-300: #7cccdc;
+	--tm-brand-400: #43adc4;
+	--tm-brand-500: #1e8fa8;
+	--tm-brand-600: #14738b;
+	--tm-brand-700: #135d72;
+	--tm-brand-800: #154d5e;
+	--tm-brand-900: #16404f;
+
+	/* Netral — slate sejuk */
+	--tm-n-0: #ffffff;
+	--tm-n-25: #fbfcfd;
+	--tm-n-50: #f6f8fa;
+	--tm-n-100: #eef1f4;
+	--tm-n-200: #e2e7ec;
+	--tm-n-300: #cbd3db;
+	--tm-n-400: #9aa6b2;
+	--tm-n-500: #6b7885;
+	--tm-n-600: #4e5a66;
+	--tm-n-700: #3a444e;
+	--tm-n-800: #262e36;
+	--tm-n-900: #161c22;
+
+	/* Semantik */
+	--tm-success-50: #e9f8f2;
+	--tm-success-100: #d2f0e5;
+	--tm-success-200: #a9e2cd;
+	--tm-success-600: #0f7a5a;
+	--tm-success-700: #0c6249;
+
+	--tm-warning-50: #fff7e8;
+	--tm-warning-100: #ffefcf;
+	--tm-warning-200: #f7dda6;
+	--tm-warning-600: #a86b00;
+	--tm-warning-700: #8a5700;
+
+	--tm-danger-50: #fdeef1;
+	--tm-danger-100: #fadde3;
+	--tm-danger-200: #f4c3ce;
+	--tm-danger-600: #c22a45;
+	--tm-danger-700: #a21f37;
+
+	--tm-info-50: #eaf4fb;
+	--tm-info-100: #d6e9f6;
+	--tm-info-200: #b3d5ee;
+	--tm-info-600: #1d6fa5;
+	--tm-info-700: #175a86;
+
+	/* Surface & garis */
+	--tm-surface: var(--tm-n-0);
+	--tm-surface-sunken: var(--tm-n-50);
+	--tm-surface-raised: var(--tm-n-0);
+	--tm-border: var(--tm-n-200);
+	--tm-border-strong: var(--tm-n-300);
+	--tm-border-subtle: var(--tm-n-100);
+
+	/* Teks */
+	--tm-text: var(--tm-n-900);
+	--tm-text-secondary: var(--tm-n-600);
+	--tm-text-muted: var(--tm-n-500);
+	--tm-text-faint: var(--tm-n-400);
+	--tm-text-invert: #ffffff;
+
+	/* Radius */
+	--tm-r-xs: 6px;
+	--tm-r-sm: 8px;
+	--tm-r-md: 12px;
+	--tm-r-lg: 16px;
+	--tm-r-xl: 20px;
+	--tm-r-full: 9999px;
+
+	/* Elevasi — halus & berlapis, khas aplikasi modern */
+	--tm-sh-xs: 0 1px 2px rgba(16, 28, 34, 0.05);
+	--tm-sh-sm: 0 1px 2px rgba(16, 28, 34, 0.05), 0 1px 3px rgba(16, 28, 34, 0.06);
+	--tm-sh-md: 0 2px 4px rgba(16, 28, 34, 0.04), 0 6px 16px rgba(16, 28, 34, 0.07);
+	--tm-sh-lg: 0 4px 8px rgba(16, 28, 34, 0.04), 0 16px 32px rgba(16, 28, 34, 0.09);
+	--tm-sh-xl: 0 8px 16px rgba(16, 28, 34, 0.06), 0 28px 56px rgba(16, 28, 34, 0.14);
+
+	/* Fokus — SATU ring untuk seluruh aplikasi */
+	--tm-ring-color: color-mix(in srgb, var(--tm-brand-500) 45%, transparent);
+	--tm-ring: 0 0 0 3px var(--tm-ring-color);
+
+	/* Motion */
+	--tm-ease: cubic-bezier(0.2, 0.8, 0.25, 1);
+	--tm-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+	--tm-dur-fast: 130ms;
+	--tm-dur: 190ms;
+	--tm-dur-slow: 280ms;
+
+	/* Spacing ritme 4pt */
+	--tm-sp-1: 0.25rem;
+	--tm-sp-2: 0.5rem;
+	--tm-sp-3: 0.75rem;
+	--tm-sp-4: 1rem;
+	--tm-sp-5: 1.25rem;
+	--tm-sp-6: 1.5rem;
+	--tm-sp-8: 2rem;
+}
+
+/* ==========================================================================
+   02. BASE & TIPOGRAFI
+   ========================================================================== */
+
+html {
+	-webkit-text-size-adjust: 100%;
+	scroll-behavior: smooth;
+}
+
+body {
+	background-color: var(--tm-surface-sunken);
+	color: var(--tm-text);
+	font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	font-feature-settings: "cv11", "ss01";
+	font-variant-ligatures: contextual;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	letter-spacing: -0.006em;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	color: var(--tm-text);
+	letter-spacing: -0.021em;
+	text-wrap: balance;
+}
+
+p,
+li {
+	text-wrap: pretty;
+}
+
+/* Angka rata kolom pada tabel, statistik, dan badge */
+table,
+.ui-table,
+.ui-stat-value,
+.hd-stat-value,
+.ui-count,
+.tabular {
+	font-variant-numeric: tabular-nums;
+	font-feature-settings: "tnum";
+}
+
+hr {
+	border-color: var(--tm-border-subtle);
+}
+
+small {
+	color: var(--tm-text-muted);
+}
+
+code,
+kbd,
+pre,
+samp {
+	font-family: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+	font-feature-settings: "calt" 0;
+}
+
+/* ==========================================================================
+   03. FOKUS, SELEKSI, SCROLLBAR
+   ========================================================================== */
+
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+	outline: 2px solid transparent;
+	outline-offset: 2px;
+	box-shadow: var(--tm-ring);
+	border-radius: var(--tm-r-sm);
+}
+
+summary {
+	-webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+	background-color: color-mix(in srgb, var(--tm-brand-400) 32%, transparent);
+	color: var(--tm-n-900);
+}
+
+* {
+	scrollbar-width: thin;
+	scrollbar-color: var(--tm-n-300) transparent;
+}
+
+*::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+	background-color: var(--tm-n-300);
+	border: 3px solid transparent;
+	border-radius: var(--tm-r-full);
+	background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+	background-color: var(--tm-n-400);
+}
+
+/* ==========================================================================
+   04. APP SHELL
+   ========================================================================== */
+
+.ui-shell {
+	background-color: var(--tm-surface-sunken);
+	background-image:
+		radial-gradient(58rem 30rem at 12% -8%, color-mix(in srgb, var(--tm-brand-100) 55%, transparent), transparent 70%),
+		radial-gradient(46rem 26rem at 100% 0%, color-mix(in srgb, var(--tm-info-50) 85%, transparent), transparent 65%);
+	background-attachment: fixed;
+}
+
+.ui-sidebar {
+	background-color: color-mix(in srgb, var(--tm-n-0) 82%, transparent);
+	-webkit-backdrop-filter: saturate(150%) blur(12px);
+	backdrop-filter: saturate(150%) blur(12px);
+	border-right: 1px solid var(--tm-border-subtle);
+	box-shadow: none;
+}
+
+.ui-sidebar-label {
+	color: var(--tm-text-faint);
+	font-size: 0.6875rem;
+	font-weight: 700;
+	letter-spacing: 0.09em;
+	text-transform: uppercase;
+}
+
+.ui-content-shell {
+	background-color: transparent;
+}
+
+.ui-topbar {
+	background-color: color-mix(in srgb, var(--tm-n-0) 78%, transparent);
+	-webkit-backdrop-filter: saturate(170%) blur(14px);
+	backdrop-filter: saturate(170%) blur(14px);
+	border-bottom: 1px solid var(--tm-border-subtle);
+	box-shadow: 0 1px 0 rgba(16, 28, 34, 0.02);
+	transition: box-shadow var(--tm-dur) var(--tm-ease), background-color var(--tm-dur) var(--tm-ease);
+}
+
+.ui-topbar-brand {
+	border-radius: var(--tm-r-md);
+	transition: opacity var(--tm-dur-fast) var(--tm-ease);
+}
+
+.ui-topbar-brand:hover {
+	opacity: 0.82;
+}
+
+.ui-topbar-brand-logo {
+	border-radius: var(--tm-r-sm);
+}
+
+.ui-brand-mark {
+	background-image: linear-gradient(135deg, var(--tm-brand-500), var(--tm-brand-700));
+	background-color: var(--tm-brand-600);
+	color: var(--tm-text-invert);
+	font-weight: 800;
+	letter-spacing: -0.02em;
+	box-shadow: var(--tm-sh-sm), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.ui-avatar {
+	background-image: linear-gradient(135deg, var(--tm-brand-400), var(--tm-brand-600));
+	color: var(--tm-text-invert);
+	font-weight: 700;
+	box-shadow: var(--tm-sh-xs), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+	ring-offset-color: var(--tm-n-0);
+}
+
+.ui-header-divider {
+	background-color: var(--tm-border);
+}
+
+.ui-header-logout,
+.ui-menu-button,
+.ui-mobile-menu-button {
+	border-radius: var(--tm-r-md);
+	border: 1px solid var(--tm-border);
+	background-color: var(--tm-n-0);
+	color: var(--tm-text-secondary);
+	box-shadow: var(--tm-sh-xs);
+	transition: background-color var(--tm-dur-fast) var(--tm-ease), color var(--tm-dur-fast) var(--tm-ease),
+		border-color var(--tm-dur-fast) var(--tm-ease), transform var(--tm-dur-fast) var(--tm-ease);
+}
+
+.ui-header-logout:hover,
+.ui-menu-button:hover,
+.ui-mobile-menu-button:hover {
+	background-color: var(--tm-brand-50);
+	border-color: var(--tm-brand-200);
+	color: var(--tm-brand-700);
+}
+
+.ui-header-logout:active,
+.ui-menu-button:active,
+.ui-mobile-menu-button:active {
+	transform: translateY(1px);
+}
+
+.ui-header-logout:hover {
+	background-color: var(--tm-danger-50);
+	border-color: var(--tm-danger-200);
+	color: var(--tm-danger-600);
+}
+
+.ui-main {
+	animation: tm-page-in var(--tm-dur-slow) var(--tm-ease-out) both;
+}
+
+@keyframes tm-page-in {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+/* ==========================================================================
+   05. NAVIGASI
+   ========================================================================== */
+
+.ui-nav-link {
+	position: relative;
+	border-radius: var(--tm-r-md);
+	color: var(--tm-text-secondary);
+	font-weight: 550;
+	letter-spacing: -0.01em;
+	border: 1px solid transparent;
+	background-color: transparent;
+	transition: background-color var(--tm-dur-fast) var(--tm-ease), color var(--tm-dur-fast) var(--tm-ease),
+		transform var(--tm-dur-fast) var(--tm-ease), border-color var(--tm-dur-fast) var(--tm-ease);
+}
+
+.ui-nav-link::before {
+	content: "";
+	position: absolute;
+	left: 0;
+	top: 50%;
+	height: 0;
+	width: 3px;
+	border-radius: var(--tm-r-full);
+	background-color: var(--tm-brand-500);
+	transform: translateY(-50%);
+	transition: height var(--tm-dur) var(--tm-ease-out);
+}
+
+.ui-nav-link:hover {
+	background-color: var(--tm-n-100);
+	color: var(--tm-n-900);
+	transform: translateX(2px);
+}
+
+.ui-nav-link.is-active {
+	background-color: var(--tm-brand-50);
+	border-color: color-mix(in srgb, var(--tm-brand-200) 70%, transparent);
+	color: var(--tm-brand-800);
+	font-weight: 700;
+	box-shadow: var(--tm-sh-xs);
+}
+
+.ui-nav-link.is-active::before {
+	height: 1.15rem;
+}
+
+.ui-nav-icon {
+	color: currentColor;
+	opacity: 0.72;
+	transition: opacity var(--tm-dur-fast) var(--tm-ease), transform var(--tm-dur-fast) var(--tm-ease);
+}
+
+.ui-nav-link:hover .ui-nav-icon,
+.ui-nav-link.is-active .ui-nav-icon {
+	opacity: 1;
+	transform: scale(1.04);
+}
+
+.ui-nav-count,
+.ui-nav-badge {
+	background-color: var(--tm-brand-600);
+	color: var(--tm-text-invert);
+	border-radius: var(--tm-r-full);
+	font-variant-numeric: tabular-nums;
+}
+
+.ui-mobile-nav-group-label {
+	color: var(--tm-text-faint);
+	font-size: 0.6875rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	padding: 0.5rem 0.625rem 0.25rem;
+}
+
+.ui-mobile-nav-link {
+	border-radius: var(--tm-r-sm);
+	color: var(--tm-text-secondary);
+	font-weight: 550;
+	transition: background-color var(--tm-dur-fast) var(--tm-ease), color var(--tm-dur-fast) var(--tm-ease);
+}
+
+.ui-mobile-nav-link:hover {
+	background-color: var(--tm-n-100);
+	color: var(--tm-n-900);
+}
+
+.ui-mobile-nav-link.is-active {
+	background-color: var(--tm-brand-50);
+	color: var(--tm-brand-800);
+	font-weight: 700;
+}
+
+/* ==========================================================================
+   06. SURFACE
+   ========================================================================== */
+
+.ui-panel,
+.ui-card,
+.ui-stat-card,
+.hd-card,
+.hd-distribution-card {
+	background-color: var(--tm-surface-raised);
+	border: 1px solid var(--tm-border);
+	border-radius: var(--tm-r-lg);
+	box-shadow: var(--tm-sh-sm);
+	transition: box-shadow var(--tm-dur) var(--tm-ease), border-color var(--tm-dur) var(--tm-ease),
+		transform var(--tm-dur) var(--tm-ease);
+}
+
+.ui-panel:hover,
+.ui-card:hover,
+.hd-distribution-card:hover {
+	box-shadow: var(--tm-sh-md);
+	border-color: var(--tm-border-strong);
+}
+
+.ui-stat-card {
+	position: relative;
+	overflow: hidden;
+}
+
+.ui-stat-card::after {
+	content: "";
+	position: absolute;
+	inset: 0 0 auto 0;
+	height: 3px;
+	background-image: linear-gradient(90deg, var(--tm-brand-400), var(--tm-brand-600));
+	opacity: 0;
+	transition: opacity var(--tm-dur) var(--tm-ease);
+}
+
+.ui-stat-card:hover {
+	transform: translateY(-2px);
+	box-shadow: var(--tm-sh-md);
+}
+
+.ui-stat-card:hover::after {
+	opacity: 1;
+}
+
+.ui-stat-icon {
+	background-color: var(--tm-brand-50);
+	color: var(--tm-brand-700);
+	border-radius: var(--tm-r-md);
+}
+
+.ui-stat-label {
+	color: var(--tm-text-muted);
+	font-size: 0.75rem;
+	font-weight: 650;
+	letter-spacing: 0.045em;
+	text-transform: uppercase;
+}
+
+.ui-stat-value {
+	color: var(--tm-text);
+	font-weight: 800;
+	letter-spacing: -0.03em;
+}
+
+.ui-stat-meta {
+	color: var(--tm-text-muted);
+}
+
+.ui-panel-header {
+	border-bottom: 1px solid var(--tm-border-subtle);
+	background-color: transparent;
+	border-top-left-radius: var(--tm-r-lg);
+	border-top-right-radius: var(--tm-r-lg);
+}
+
+.ui-section-title {
+	color: var(--tm-text);
+	font-weight: 700;
+	letter-spacing: -0.019em;
+}
+
+.ui-section-description,
+.ui-field-help,
+.ui-page-description {
+	color: var(--tm-text-muted);
+	line-height: 1.55;
+}
+
+.ui-page-header {
+	border-bottom: 1px solid var(--tm-border-subtle);
+}
+
+.ui-page-title {
+	color: var(--tm-text);
+	font-size: clamp(1.375rem, 1.1rem + 1.1vw, 1.875rem);
+	line-height: 1.2;
+	font-weight: 800;
+	letter-spacing: -0.032em;
+}
+
+.ui-eyebrow {
+	color: var(--tm-brand-700);
+	background-color: var(--tm-brand-50);
+	border: 1px solid color-mix(in srgb, var(--tm-brand-200) 65%, transparent);
+	border-radius: var(--tm-r-full);
+	font-size: 0.6875rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.ui-eyebrow-dot {
+	background-color: var(--tm-brand-500);
+	border-radius: var(--tm-r-full);
+}
+
+.ui-empty {
+	background-color: var(--tm-n-25);
+	border: 1px dashed var(--tm-border-strong);
+	border-radius: var(--tm-r-lg);
+	color: var(--tm-text-muted);
+}
+
+.ui-disclosure-summary {
+	border-radius: var(--tm-r-md);
+	color: var(--tm-text-secondary);
+	font-weight: 650;
+	transition: background-color var(--tm-dur-fast) var(--tm-ease), color var(--tm-dur-fast) var(--tm-ease);
+}
+
+.ui-disclosure-summary:hover {
+	background-color: var(--tm-n-100);
+	color: var(--tm-n-900);
+}
+
+/* ==========================================================================
+   07. TABEL
+   ========================================================================== */
+
+.ui-table {
+	border-collapse: separate;
+	border-spacing: 0;
+	width: 100%;
+}
+
+.ui-table thead th {
+	background-color: var(--tm-n-50);
+	color: var(--tm-text-muted);
+	font-size: 0.6875rem;
+	font-weight: 700;
+	letter-spacing: 0.075em;
+	text-transform: uppercase;
+	border-bottom: 1px solid var(--tm-border);
+	padding-top: 0.75rem;
+	padding-bottom: 0.75rem;
+	white-space: nowrap;
+	position: sticky;
+	top: 0;
+	z-index: 1;
+}
+
+.ui-table tbody td {
+	border-bottom: 1px solid var(--tm-border-subtle);
+	color: var(--tm-text-secondary);
+	vertical-align: middle;
+	padding-top: 0.8125rem;
+	padding-bottom: 0.8125rem;
+}
+
+.ui-table tbody tr {
+	background-color: var(--tm-n-0);
+	transition: background-color var(--tm-dur-fast) var(--tm-ease), box-shadow var(--tm-dur-fast) var(--tm-ease);
+}
+
+.ui-table tbody tr:hover {
+	background-color: var(--tm-brand-50);
+}
+
+.ui-table tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+/* Hilangkan zebra — garis tipis + hover jauh lebih bersih */
+.ui-table tbody tr:nth-child(odd),
+.ui-table tbody tr:nth-child(even) {
+	background-color: var(--tm-n-0);
+}
+
+.ui-table tbody tr:nth-child(odd):hover,
+.ui-table tbody tr:nth-child(even):hover {
+	background-color: var(--tm-brand-50);
+}
+
+/* ==========================================================================
+   08. FORM
+   ========================================================================== */
+
+.ui-input,
+.ui-select,
+.ui-textarea,
+.ui-file-input,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="number"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="tel"],
+input[type="url"],
+select,
+textarea {
+	border-radius: var(--tm-r-md);
+	border: 1px solid var(--tm-border-strong);
+	background-color: var(--tm-n-0);
+	color: var(--tm-text);
+	box-shadow: var(--tm-sh-xs);
+	transition: border-color var(--tm-dur-fast) var(--tm-ease), box-shadow var(--tm-dur-fast) var(--tm-ease),
+		background-color var(--tm-dur-fast) var(--tm-ease);
+}
+
+.ui-input:hover,
+.ui-select:hover,
+.ui-textarea:hover,
+input:hover:not([type="checkbox"]):not([type="radio"]):not([disabled]),
+select:hover:not([disabled]),
+textarea:hover:not([disabled]) {
+	border-color: var(--tm-n-400);
+}
+
+.ui-input:focus,
+.ui-select:focus,
+.ui-textarea:focus,
+input:focus:not([type="checkbox"]):not([type="radio"]),
+select:focus,
+textarea:focus {
+	outline: none;
+	border-color: var(--tm-brand-500);
+	box-shadow: var(--tm-ring);
+}
+
+.ui-input::placeholder,
+.ui-textarea::placeholder,
+input::placeholder,
+textarea::placeholder {
+	color: var(--tm-text-faint);
+}
+
+.ui-input:disabled,
+.ui-select:disabled,
+.ui-textarea:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+	background-color: var(--tm-n-50);
+	color: var(--tm-text-faint);
+	cursor: not-allowed;
+	box-shadow: none;
+}
+
+.ui-textarea,
+textarea {
+	line-height: 1.6;
+	resize: vertical;
+}
+
+.ui-field-label {
+	color: var(--tm-text-secondary);
+	font-size: 0.8125rem;
+	font-weight: 650;
+	letter-spacing: -0.005em;
+}
+
+.ui-checkbox,
+input[type="checkbox"],
+input[type="radio"] {
+	accent-color: var(--tm-brand-600);
+	border-radius: var(--tm-r-xs);
+	border-color: var(--tm-border-strong);
+	transition: box-shadow var(--tm-dur-fast) var(--tm-ease);
+	cursor: pointer;
+}
+
+input[type="radio"] {
+	border-radius: var(--tm-r-full);
+}
+
+.ui-file-input::file-selector-button {
+	border: 0;
+	border-radius: var(--tm-r-sm);
+	background-color: var(--tm-brand-50);
+	color: var(--tm-brand-700);
+	font-weight: 650;
+	padding: 0.4rem 0.75rem;
+	margin-right: 0.75rem;
+	cursor: pointer;
+	transition: background-color var(--tm-dur-fast) var(--tm-ease);
+}
+
+.ui-file-input::file-selector-button:hover {
+	background-color: var(--tm-brand-100);
+}
+
+/* ==========================================================================
+   09. TOMBOL
+   ========================================================================== */
+
+.ui-btn,
+.ui-btn-primary,
+.ui-btn-secondary,
+.ui-btn-ghost,
+.ui-btn-warning,
+.ui-btn-danger {
+	border-radius: var(--tm-r-md);
+	font-weight: 650;
+	letter-spacing: -0.008em;
+	border: 1px solid transparent;
+	transition: background-color var(--tm-dur-fast) var(--tm-ease), color var(--tm-dur-fast) var(--tm-ease),
+		border-color var(--tm-dur-fast) var(--tm-ease), box-shadow var(--tm-dur-fast) var(--tm-ease),
+		transform var(--tm-dur-fast) var(--tm-ease);
+	will-change: transform;
+}
+
+.ui-btn:active,
+.ui-btn-primary:active,
+.ui-btn-secondary:active,
+.ui-btn-ghost:active,
+.ui-btn-warning:active,
+.ui-btn-danger:active {
+	transform: translateY(1px) scale(0.995);
+}
+
+/* Primary — sebelumnya #75d5f3 dengan teks gelap sehingga terbaca seperti
+   tombol nonaktif. Sekarang solid brand + teks putih. */
+.ui-btn-primary {
+	background-image: linear-gradient(180deg, var(--tm-brand-500), var(--tm-brand-600));
+	background-color: var(--tm-brand-600);
+	color: var(--tm-text-invert);
+	border-color: color-mix(in srgb, var(--tm-brand-800) 22%, transparent);
+	box-shadow: var(--tm-sh-xs), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.ui-btn-primary:hover {
+	background-image: linear-gradient(180deg, var(--tm-brand-600), var(--tm-brand-700));
+	background-color: var(--tm-brand-700);
+	color: var(--tm-text-invert);
+	box-shadow: var(--tm-sh-sm), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+/* Secondary — sebelumnya kuning #ffd44f. Sekarang netral outline. */
+.ui-btn-secondary {
+	background-color: var(--tm-n-0);
+	background-image: none;
+	color: var(--tm-text-secondary);
+	border-color: var(--tm-border-strong);
+	box-shadow: var(--tm-sh-xs);
+}
+
+.ui-btn-secondary:hover {
+	background-color: var(--tm-n-50);
+	border-color: var(--tm-n-400);
+	color: var(--tm-n-900);
+}
+
+.ui-btn-ghost {
+	background-color: transparent;
+	color: var(--tm-text-secondary);
+	border-color: transparent;
+	box-shadow: none;
+}
+
+.ui-btn-ghost:hover {
+	background-color: var(--tm-n-100);
+	color: var(--tm-n-900);
+}
+
+.ui-btn-warning {
+	background-color: var(--tm-warning-50);
+	background-image: none;
+	color: var(--tm-warning-700);
+	border-color: var(--tm-warning-200);
+	box-shadow: var(--tm-sh-xs);
+}
+
+.ui-btn-warning:hover {
+	background-color: var(--tm-warning-100);
+	color: var(--tm-warning-700);
+}
+
+.ui-btn-danger {
+	background-image: linear-gradient(180deg, var(--tm-danger-600), var(--tm-danger-700));
+	background-color: var(--tm-danger-600);
+	color: var(--tm-text-invert);
+	border-color: color-mix(in srgb, var(--tm-danger-700) 30%, transparent);
+	box-shadow: var(--tm-sh-xs), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.ui-btn-danger:hover {
+	background-color: var(--tm-danger-700);
+}
+
+.ui-btn:disabled,
+.ui-btn-primary:disabled,
+.ui-btn-secondary:disabled,
+.ui-btn-ghost:disabled,
+.ui-btn-warning:disabled,
+.ui-btn-danger:disabled,
+[disabled] {
+	cursor: not-allowed;
+}
+
+.ui-btn-primary:disabled,
+.ui-btn-danger:disabled {
+	background-image: none;
+	background-color: var(--tm-n-200);
+	color: var(--tm-text-faint);
+	border-color: var(--tm-border);
+	box-shadow: none;
+	opacity: 1;
+}
+
+/* Status memproses (dipakai app.js) */
+.is-processing {
+	position: relative;
+	pointer-events: none;
+	opacity: 0.85;
+}
+
+/* ==========================================================================
+   10. BADGE, STATUS, CHIP
+   ========================================================================== */
+
+.ui-status,
+.ui-chip {
+	border-radius: var(--tm-r-full);
+	font-size: 0.6875rem;
+	font-weight: 700;
+	letter-spacing: 0.012em;
+	border: 1px solid transparent;
+	line-height: 1.35;
+	white-space: nowrap;
+}
+
+.ui-status {
+	background-color: var(--tm-n-100);
+	color: var(--tm-text-secondary);
+	border-color: var(--tm-border);
+}
+
+.ui-status-active {
+	background-color: var(--tm-success-50);
+	color: var(--tm-success-700);
+	border-color: var(--tm-success-200);
+}
+
+.ui-status-inactive {
+	background-color: var(--tm-n-100);
+	color: var(--tm-n-600);
+	border-color: var(--tm-border);
+}
+
+.ui-status-warning {
+	background-color: var(--tm-warning-50);
+	color: var(--tm-warning-700);
+	border-color: var(--tm-warning-200);
+}
+
+.ui-status-danger {
+	background-color: var(--tm-danger-50);
+	color: var(--tm-danger-700);
+	border-color: var(--tm-danger-200);
+}
+
+.ui-chip {
+	background-color: var(--tm-brand-50);
+	color: var(--tm-brand-700);
+	border-color: color-mix(in srgb, var(--tm-brand-200) 70%, transparent);
+}
+
+.ui-count {
+	font-variant-numeric: tabular-nums;
+	font-weight: 700;
+}
+
+/* ==========================================================================
+   11. MODAL, DROPDOWN, MICRO-INTERACTION
+   ========================================================================== */
+
+[data-ui-modal] {
+	animation: tm-fade var(--tm-dur) var(--tm-ease-out) both;
+}
+
+[data-ui-modal] [data-ui-modal-close] + *,
+[data-ui-modal] > div > div {
+	border-radius: var(--tm-r-xl);
+}
+
+@keyframes tm-fade {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes tm-pop-in {
+	from {
+		opacity: 0;
+		transform: translateY(10px) scale(0.985);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+details[open] > summary + * {
+	animation: tm-pop-in var(--tm-dur) var(--tm-ease-out) both;
+}
+
+details > summary {
+	border-radius: var(--tm-r-md);
+	transition: background-color var(--tm-dur-fast) var(--tm-ease), color var(--tm-dur-fast) var(--tm-ease),
+		border-color var(--tm-dur-fast) var(--tm-ease);
+}
+
+/* Kartu notifikasi & panel melayang */
+.ui-helpdesk-notification-panel,
+.ui-notification-panel {
+	border-radius: var(--tm-r-lg);
+	border: 1px solid var(--tm-border);
+	box-shadow: var(--tm-sh-xl);
+	background-color: var(--tm-n-0);
+}
+
+/* Tautan teks */
+a:not([class]) {
+	color: var(--tm-brand-700);
+	text-underline-offset: 0.18em;
+	text-decoration-thickness: 1px;
+	transition: color var(--tm-dur-fast) var(--tm-ease);
+}
+
+a:not([class]):hover {
+	color: var(--tm-brand-800);
+}
+
+/* SweetAlert2 — samakan dengan design system */
+.sihati-swal-popup,
+.swal2-popup {
+	border-radius: var(--tm-r-xl) !important;
+	box-shadow: var(--tm-sh-xl) !important;
+	font-family: inherit !important;
+}
+
+.swal2-title {
+	color: var(--tm-text) !important;
+	letter-spacing: -0.02em !important;
+}
+
+.swal2-html-container {
+	color: var(--tm-text-secondary) !important;
+}
+
+.swal2-styled.swal2-confirm,
+.swal2-styled.swal2-cancel {
+	border-radius: var(--tm-r-md) !important;
+	font-weight: 650 !important;
+	box-shadow: none !important;
+	transition: filter var(--tm-dur-fast) var(--tm-ease) !important;
+}
+
+.swal2-styled.swal2-confirm:hover,
+.swal2-styled.swal2-cancel:hover {
+	filter: brightness(0.94);
+}
+
+.swal2-toast {
+	border-radius: var(--tm-r-md) !important;
+	border: 1px solid var(--tm-border) !important;
+	box-shadow: var(--tm-sh-lg) !important;
+}
+
+/* ==========================================================================
+   12. DASHBOARD (hd-*)
+   ========================================================================== */
+
+.hd-overall-stat-grid,
+.hd-sla-summary {
+	gap: var(--tm-sp-4);
+}
+
+.hd-risk-item {
+	border-radius: var(--tm-r-md);
+	border: 1px solid var(--tm-border-subtle);
+	background-color: var(--tm-n-25);
+	transition: background-color var(--tm-dur-fast) var(--tm-ease), border-color var(--tm-dur-fast) var(--tm-ease),
+		transform var(--tm-dur-fast) var(--tm-ease);
+}
+
+.hd-risk-item:hover {
+	background-color: var(--tm-n-0);
+	border-color: var(--tm-border-strong);
+	transform: translateX(2px);
+}
+
+.hd-sla-badge {
+	border-radius: var(--tm-r-full);
+	font-size: 0.6875rem;
+	font-weight: 700;
+	border: 1px solid transparent;
+}
+
+.hd-sla-badge--danger {
+	background-color: var(--tm-danger-50);
+	color: var(--tm-danger-700);
+	border-color: var(--tm-danger-200);
+}
+
+.hd-sla-badge--warning {
+	background-color: var(--tm-warning-50);
+	color: var(--tm-warning-700);
+	border-color: var(--tm-warning-200);
+}
+
+.hd-sla-badge--paused {
+	background-color: var(--tm-n-100);
+	color: var(--tm-n-600);
+	border-color: var(--tm-border);
+}
+
+/* ==========================================================================
+   13. TICKET REFERENCE / OPERATIONAL
+   ========================================================================== */
+
+.ticket-reference-action-button,
+.ticket-reference-action-button--primary {
+	border-radius: var(--tm-r-md);
+	font-weight: 650;
+	transition: background-color var(--tm-dur-fast) var(--tm-ease), color var(--tm-dur-fast) var(--tm-ease),
+		box-shadow var(--tm-dur-fast) var(--tm-ease), transform var(--tm-dur-fast) var(--tm-ease);
+}
+
+.ticket-reference-action-button--primary {
+	background-image: linear-gradient(180deg, var(--tm-brand-500), var(--tm-brand-600));
+	background-color: var(--tm-brand-600);
+	color: var(--tm-text-invert);
+	box-shadow: var(--tm-sh-xs);
+}
+
+.ticket-reference-action-button--primary:hover {
+	background-color: var(--tm-brand-700);
+}
+
+.ticket-reference-action-button:active,
+.ticket-reference-action-button--primary:active {
+	transform: translateY(1px);
+}
+
+.ui-ticket-action-summary {
+	border-radius: var(--tm-r-md);
+	border: 1px solid var(--tm-border);
+	background-color: var(--tm-n-0);
+	color: var(--tm-text-secondary);
+	font-weight: 650;
+	box-shadow: var(--tm-sh-xs);
+}
+
+.ui-ticket-action-summary:hover {
+	background-color: var(--tm-n-50);
+	border-color: var(--tm-n-400);
+	color: var(--tm-n-900);
+}
+
+/* Timeline & percakapan */
+.ui-timeline-dot,
+.ui-journey-dot {
+	box-shadow: 0 0 0 3px var(--tm-n-0), 0 0 0 4px var(--tm-border);
+}
+
+/* ==========================================================================
+   14. HALAMAN LOGIN (GUEST)
+   ========================================================================== */
+
+.ui-login-shell {
+	background-color: var(--tm-n-50);
+	background-image:
+		radial-gradient(48rem 30rem at 8% 0%, color-mix(in srgb, var(--tm-brand-100) 70%, transparent), transparent 62%),
+		radial-gradient(42rem 28rem at 100% 100%, color-mix(in srgb, var(--tm-info-50) 90%, transparent), transparent 60%);
+}
+
+.ui-login-accent {
+	background-image: linear-gradient(160deg, var(--tm-brand-600), var(--tm-brand-800) 60%, var(--tm-n-900));
+}
+
+.ui-login-content {
+	border-radius: var(--tm-r-xl);
+}
+
+.ui-login-wordmark {
+	color: var(--tm-text);
+	letter-spacing: -0.045em;
+	font-weight: 800;
+}
+
+.ui-login-wordmark-accent {
+	background-image: linear-gradient(135deg, var(--tm-brand-500), var(--tm-brand-700));
+	border-radius: var(--tm-r-xs);
+}
+
+.ui-login-logo-caption {
+	color: var(--tm-text-muted);
+}
+
+.ui-login-description,
+.ui-login-note,
+.ui-login-footer {
+	color: var(--tm-text-muted);
+	line-height: 1.6;
+}
+
+/* ==========================================================================
+   15. COMPAT LAYER — remap warna hardcode lama
+   --------------------------------------------------------------------------
+   Aplikasi lama memakai puluhan hex arbitrary Tailwind langsung di Blade
+   (bg-[#7138e8], text-[#f1b900], dst.). Blok ini memetakan ulang hex-hex
+   tersebut ke palet baru dari CSS saja, sehingga TIDAK ADA file Blade yang
+   perlu disentuh — nol risiko terhadap logika, flow, maupun backend.
+
+   Catatan teknis (untuk refactor berikutnya): idealnya hex-hex ini dihapus
+   dari Blade dan diganti token. Blok ini adalah jembatan, bukan tujuan akhir.
+   ========================================================================== */
+
+/* --- Aksi utama / tambah (ungu #7138e8) -> brand --- */
+.bg-\[\#7138e8\] { background-color: var(--tm-brand-600) !important; }
+.hover\:bg-\[\#6229d5\]:hover { background-color: var(--tm-brand-700) !important; }
+.text-\[\#7138e8\] { color: var(--tm-brand-700) !important; }
+.focus-visible\:ring-\[\#7138e8\]:focus-visible { --tw-ring-color: var(--tm-ring-color) !important; }
+
+/* --- Banner admin (#075998) & header modal (#6098c6) -> brand gelap --- */
+.bg-\[\#075998\] { background-color: var(--tm-brand-800) !important; }
+.bg-\[\#6098c6\] { background-color: var(--tm-brand-600) !important; }
+.ring-offset-\[\#075998\] { --tw-ring-offset-color: var(--tm-brand-800) !important; }
+
+/* --- Aksi "lihat" / "aktifkan" (#0b98e5) -> netral --- */
+.bg-\[\#0b98e5\] { background-color: var(--tm-n-600) !important; }
+.hover\:bg-\[\#087fc1\]:hover { background-color: var(--tm-n-800) !important; }
+.text-\[\#0b98e5\] { color: var(--tm-brand-700) !important; }
+
+/* --- Aksi "edit" (kuning #f1b900) -> netral --- */
+.bg-\[\#f1b900\] { background-color: var(--tm-n-600) !important; }
+.hover\:bg-\[\#d49f00\]:hover { background-color: var(--tm-n-800) !important; }
+
+/* --- Aksi "ganti password" / "nonaktifkan" (#6d46db) -> netral --- */
+.bg-\[\#6d46db\] { background-color: var(--tm-n-600) !important; }
+.hover\:bg-\[\#5b35c6\]:hover { background-color: var(--tm-n-800) !important; }
+
+/* --- Aksi destruktif (#e94f70) -> danger --- */
+.bg-\[\#e94f70\] { background-color: var(--tm-danger-600) !important; }
+.hover\:bg-\[\#d63d5e\]:hover { background-color: var(--tm-danger-700) !important; }
+.text-\[\#e94f70\] { color: var(--tm-danger-600) !important; }
+
+/* --- Aksi "preview formulir" (#147a79) -> brand --- */
+.bg-\[\#147a79\] { background-color: var(--tm-brand-600) !important; }
+.hover\:bg-\[\#0f6862\]:hover { background-color: var(--tm-brand-700) !important; }
+.text-\[\#147a79\] { color: var(--tm-brand-700) !important; }
+.hover\:text-\[\#0f5f5e\]:hover { color: var(--tm-brand-800) !important; }
+
+/* --- Aksen biru lama (#0037b0 / #1d4ed8 / #2563eb) -> brand --- */
+.bg-\[\#0037b0\] { background-color: var(--tm-brand-600) !important; }
+.text-\[\#0037b0\] { color: var(--tm-brand-700) !important; }
+.bg-\[\#1d4ed8\] { background-color: var(--tm-brand-600) !important; }
+.text-\[\#1d4ed8\] { color: var(--tm-brand-700) !important; }
+
+/* --- Pil status inline (Aktif / Nonaktif) --- */
+.bg-\[\#e8faf4\] { background-color: var(--tm-success-50) !important; }
+.text-\[\#087f5b\] { color: var(--tm-success-700) !important; }
+.bg-\[\#eef2f4\] { background-color: var(--tm-n-100) !important; }
+.text-\[\#657984\] { color: var(--tm-n-600) !important; }
+.bg-\[\#fff7df\] { background-color: var(--tm-warning-50) !important; }
+.text-\[\#9a6700\] { color: var(--tm-warning-700) !important; }
+.bg-\[\#fff1f2\] { background-color: var(--tm-danger-50) !important; }
+.text-\[\#be123c\] { color: var(--tm-danger-700) !important; }
+.border-\[\#fecdd3\] { border-color: var(--tm-danger-200) !important; }
+.bg-\[\#fff7ed\] { background-color: var(--tm-warning-50) !important; }
+.text-\[\#c2410c\] { color: var(--tm-warning-700) !important; }
+.border-\[\#fed7aa\] { border-color: var(--tm-warning-200) !important; }
+.border-\[\#f2d996\] { border-color: var(--tm-warning-200) !important; }
+.border-\[\#d4e0e5\] { border-color: var(--tm-border) !important; }
+
+/* --- Titik prioritas — samakan dengan badge prioritas --- */
+.bg-\[\#e11d48\] { background-color: var(--tm-warning-600) !important; }
+.bg-\[\#e4a72c\] { background-color: var(--tm-warning-600) !important; }
+.bg-\[\#2bb8aa\] { background-color: var(--tm-brand-500) !important; }
+
+/* --- Permukaan & garis lama -> netral baru --- */
+.bg-\[\#f3f6f8\],
+.bg-\[\#f8fafb\],
+.bg-\[\#fbfcfd\],
+.bg-\[\#f6fafb\],
+.bg-\[\#f7fafb\],
+.bg-\[\#fcfdfd\],
+.bg-\[\#f8fbfc\],
+.bg-\[\#f3f7f8\],
+.bg-\[\#f5f9fa\] { background-color: var(--tm-n-50) !important; }
+
+.bg-\[\#eef7fc\],
+.bg-\[\#f1fbfe\],
+.bg-\[\#f4fbfe\],
+.bg-\[\#e8f7fb\],
+.bg-\[\#effaff\],
+.bg-\[\#eef8fc\],
+.hover\:bg-\[\#eef7fc\]:hover,
+.hover\:bg-\[\#f6fbfc\]:hover { background-color: var(--tm-brand-50) !important; }
+
+.border-\[\#d7dde0\],
+.border-\[\#cfd6da\],
+.border-\[\#dfe8ec\],
+.border-\[\#dce7eb\],
+.border-\[\#e3ecef\],
+.border-\[\#d7e0e4\],
+.border-\[\#dcebef\],
+.border-\[\#d9e8ec\],
+.border-\[\#dbe7eb\],
+.border-\[\#e0e8eb\],
+.border-\[\#e4edef\],
+.border-\[\#e6edef\],
+.border-\[\#d8e2e6\] { border-color: var(--tm-border) !important; }
+
+.border-\[\#edf2f4\],
+.border-\[\#f1f4f5\],
+.border-\[\#e5eaed\],
+.border-\[\#f1f7f9\] { border-color: var(--tm-border-subtle) !important; }
+
+/* --- Teks lama -> skala teks baru --- */
+.text-\[\#112b49\],
+.text-\[\#172d45\],
+.text-\[\#17212b\],
+.text-\[\#18252b\],
+.text-\[\#14212b\],
+.text-\[\#16232a\],
+.text-\[\#0b1c30\],
+.text-\[\#17313c\] { color: var(--tm-text) !important; }
+
+.text-\[\#263a43\],
+.text-\[\#34495a\],
+.text-\[\#35505b\],
+.text-\[\#25344c\],
+.text-\[\#344850\],
+.text-\[\#346478\],
+.text-\[\#45606a\],
+.text-\[\#526b75\],
+.text-\[\#52747b\],
+.text-\[\#526f79\] { color: var(--tm-text-secondary) !important; }
+
+.text-\[\#718088\],
+.text-\[\#78909a\],
+.text-\[\#6c7c83\],
+.text-\[\#607681\],
+.text-\[\#6a8089\],
+.text-\[\#647b84\],
+.text-\[\#6f858e\],
+.text-\[\#7a929a\],
+.text-\[\#55747f\],
+.text-\[\#89989e\] { color: var(--tm-text-muted) !important; }
+
+.text-\[\#9aabb0\],
+.text-\[\#9baab0\],
+.text-\[\#84969d\],
+.text-\[\#8a999e\],
+.text-\[\#8b9a9f\],
+.text-\[\#829198\],
+.text-\[\#a0b0b5\],
+.text-\[\#8aa0a8\] { color: var(--tm-text-faint) !important; }
+
+/* --- Ring lama -> satu ring --- */
+.focus\:ring-\[\#75d5f3\]:focus,
+.focus\:ring-\[\#0a87c9\]\/15:focus,
+.ring-\[\#2bb8aa\] { --tw-ring-color: var(--tm-ring-color) !important; }
+
+/* --- Merah error lama -> satu danger --- */
+.text-rose-600,
+.text-rose-700,
+.text-amber-700 { color: var(--tm-danger-600) !important; }
+
+/* --- Tombol Tailwind default di halaman non-design-system
+       (errors/403, admin/users/reset-password, admin/users/edit) --- */
+.bg-slate-950 { background-color: var(--tm-brand-700) !important; }
+.hover\:bg-slate-800:hover { background-color: var(--tm-brand-800) !important; }
+.text-cyan-600 { color: var(--tm-brand-700) !important; }
+.focus\:ring-cyan-400:focus,
+.focus\:ring-cyan-500:focus { --tw-ring-color: var(--tm-ring-color) !important; }
+.bg-rose-500\/90 { background-color: var(--tm-danger-600) !important; }
+.hover\:bg-rose-600:hover { background-color: var(--tm-danger-700) !important; }
+.bg-emerald-500\/90 { background-color: var(--tm-success-600) !important; }
+.hover\:bg-emerald-600:hover { background-color: var(--tm-success-700) !important; }
+
+/* --- Radius lama yang terlalu kotak --- */
+.rounded-\[6px\],
+.rounded { border-radius: var(--tm-r-sm) !important; }
+
+/* ==========================================================================
+   16. RESPONSIF
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+	.ui-shell {
+		background-attachment: scroll;
+	}
+}
+
+@media (max-width: 640px) {
+	.ui-panel,
+	.ui-card,
+	.ui-stat-card {
+		border-radius: var(--tm-r-md);
+	}
+
+	.ui-panel:hover,
+	.ui-card:hover,
+	.ui-stat-card:hover {
+		transform: none;
+		box-shadow: var(--tm-sh-sm);
+	}
+
+	.ui-nav-link:hover {
+		transform: none;
+	}
+
+	.ui-page-title {
+		letter-spacing: -0.026em;
+	}
+
+	/* Target sentuh minimal 40px */
+	.ui-btn,
+	.ui-btn-primary,
+	.ui-btn-secondary,
+	.ui-btn-ghost,
+	.ui-btn-warning,
+	.ui-btn-danger {
+		min-height: 2.5rem;
+	}
+
+	/* Scroll horizontal tabel terasa natural di mobile */
+	.ui-table {
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.ui-table thead th {
+		position: static;
+	}
+}
+
+@media (hover: none) {
+	.ui-panel:hover,
+	.ui-card:hover,
+	.ui-stat-card:hover,
+	.hd-risk-item:hover {
+		transform: none;
+	}
+}
+
+/* ==========================================================================
+   17. REDUCED MOTION & PRINT
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+
+	.ui-nav-link:hover,
+	.ui-panel:hover,
+	.ui-card:hover,
+	.ui-stat-card:hover,
+	.hd-risk-item:hover {
+		transform: none;
+	}
+}
+
+@media print {
+	.ui-sidebar,
+	.ui-topbar,
+	.ui-menu-button,
+	.ui-mobile-menu-button,
+	.ui-header-logout {
+		display: none !important;
+	}
+
+	.ui-shell,
+	.ui-login-shell {
+		background: #ffffff !important;
+	}
+
+	.ui-panel,
+	.ui-card,
+	.ui-stat-card {
+		box-shadow: none !important;
+		border-color: #d0d5da !important;
+		break-inside: avoid;
+	}
+}
