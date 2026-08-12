@@ -1,12 +1,18 @@
-<div class="ui-page-header">
-    <div>
-        <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Tiket baru</p>
-        <h1 class="ui-page-title">Pilih layanan</h1>
-    </div>
-    <a href="{{ route('tickets.index') }}" class="ui-btn ui-btn-ghost">Lihat tiket saya</a>
-</div>
+@php
+    // Presentasional saja - tidak mengubah data maupun logika katalog layanan.
+    $catalogMeta = 'mt-4 text-[0.68rem] font-extrabold uppercase tracking-[0.1em] text-[color:var(--tm-text-faint)]';
+    $catalogTitle = 'mt-2 text-sm font-extrabold leading-5 text-[color:var(--tm-text)]';
+    $catalogDescription = 'mt-2 line-clamp-2 text-xs leading-5 text-[color:var(--tm-text-muted)]';
+    $catalogCta = 'mt-auto pt-4 text-xs font-extrabold text-[color:var(--tm-brand-700)]';
+    $catalogEmptyTitle = 'Belum ada layanan';
+    $catalogEmptyDescription = 'Belum ada layanan yang dapat dipilih. Hubungi Tim TI bila layanan yang Anda butuhkan belum tersedia.';
+@endphp
 
-<section class="mt-7" aria-labelledby="service-catalog-heading">
+<x-page-header eyebrow="Tiket baru" title="Pilih layanan">
+    <a href="{{ route('tickets.index') }}" class="ui-btn ui-btn-ghost">Lihat tiket saya</a>
+</x-page-header>
+
+<section class="mt-6" aria-labelledby="service-catalog-heading">
     <h2 id="service-catalog-heading" class="sr-only">Katalog layanan</h2>
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -38,13 +44,15 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 4.5h12v15H6zM9 8h6M9 11.5h6M9 15h4" /></svg>
                     @endswitch
                 </span>
-                <span class="mt-4 text-[0.68rem] font-extrabold uppercase tracking-[0.1em] text-[#78909a]">{{ $serviceType->code }} · {{ $serviceType->ticket_class ?? 'Layanan' }}</span>
-                <span class="mt-2 text-sm font-extrabold leading-5 text-[#35505b]">{{ $serviceType->name }}</span>
-                <span class="mt-2 line-clamp-2 text-xs leading-5 text-[#78909a]">{{ $serviceType->description ?: 'Pilih layanan ini untuk melanjutkan.' }}</span>
-                <span class="mt-auto pt-4 text-xs font-extrabold text-[#147a79]">Pilih layanan <span aria-hidden="true">→</span></span>
+                <span class="{{ $catalogMeta }}">{{ $serviceType->code }} · {{ $serviceType->ticket_class ?? 'Layanan' }}</span>
+                <span class="{{ $catalogTitle }}">{{ $serviceType->name }}</span>
+                <span class="{{ $catalogDescription }}">{{ $serviceType->description ?: 'Pilih layanan ini untuk melanjutkan.' }}</span>
+                <span class="{{ $catalogCta }}">Pilih layanan <span aria-hidden="true">→</span></span>
             </a>
         @empty
-            <p class="ui-empty sm:col-span-2 xl:col-span-4">Belum ada layanan yang dapat dipilih.</p>
+            <div class="sm:col-span-2 xl:col-span-4">
+                <x-empty-state :title="$catalogEmptyTitle" :description="$catalogEmptyDescription" />
+            </div>
         @endforelse
     </div>
 </section>
