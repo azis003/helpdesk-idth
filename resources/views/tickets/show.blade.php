@@ -319,7 +319,6 @@
                 <summary class="ticket-reference-card-header ticket-reference-collapsible-summary flex items-center justify-between gap-4">
                     <span class="min-w-0">
                         <span id="ticket-conversation-heading" class="ticket-reference-section-title block">Percakapan</span>
-                        <span class="ticket-reference-section-description block">Pesan antara Pemohon dan Tim TI.</span>
                     </span>
                 </summary>
 
