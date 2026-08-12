@@ -18,11 +18,11 @@
     <a href="{{ route('tickets.create') }}" class="ui-btn ui-btn-ghost">Ganti layanan</a>
 </div>
 
-<form method="POST" action="{{ route('tickets.store') }}" enctype="multipart/form-data" data-ticket-form data-loading-message="Mengirim tiket..." class="ui-panel mt-6 overflow-hidden" aria-labelledby="reporter-heading request-form-heading">
+<form method="POST" action="{{ route('tickets.store') }}" enctype="multipart/form-data" data-ticket-form data-loading-message="Mengirim tiket..." class="ui-panel ui-ticket-form mt-6 overflow-hidden" aria-labelledby="reporter-heading request-form-heading">
     @csrf
     <input type="hidden" name="service_type_id" value="{{ $selectedServiceType->getKey() }}">
 
-    <section aria-labelledby="reporter-heading">
+    <section class="ui-form-section" aria-labelledby="reporter-heading">
         <div class="ui-panel-header flex items-start gap-3">
             <!-- <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#e8f7fb] text-[#147a79]" aria-hidden="true">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.2" /><path stroke-linecap="round" stroke-linejoin="round" d="M5.5 19.2a6.5 6.5 0 0 1 13 0M17.5 5.8a3.1 3.1 0 0 1 0 4.4M18.7 14.2a5 5 0 0 1 2.3 4.2" /></svg>
@@ -43,9 +43,9 @@
                 </select>
                 @error('requester_id')<p id="requester_id-error" class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
             @else
-                <dl class="grid gap-4 sm:grid-cols-2">
-                    <div class="flex items-start gap-3">
-                        <span class="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f1fbfe] text-[#147a79]" aria-hidden="true">
+                <dl class="ui-requester-facts grid gap-4 sm:grid-cols-2">
+                    <div class="ui-requester-fact flex items-start gap-3">
+                        <span class="ui-requester-icon mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f1fbfe] text-[#147a79]" aria-hidden="true">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.2" /><path stroke-linecap="round" d="M5.5 19.2a6.5 6.5 0 0 1 13 0" /></svg>
                         </span>
                         <div>
@@ -53,8 +53,8 @@
                             <dd class="mt-1 text-sm font-bold text-[#35505b]">{{ $displayValue($actor->name) }}</dd>
                         </div>
                     </div>
-                    <div class="flex items-start gap-3">
-                        <span class="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f1fbfe] text-[#147a79]" aria-hidden="true">
+                    <div class="ui-requester-fact flex items-start gap-3">
+                        <span class="ui-requester-icon mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f1fbfe] text-[#147a79]" aria-hidden="true">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5h15M6 19.5V7.2a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v12.3M9 10h6M9 13.5h6M9 17h3" /></svg>
                         </span>
                         <div>
@@ -62,8 +62,8 @@
                             <dd class="mt-1 text-sm font-bold text-[#35505b]">{{ $displayValue($teamName) }}</dd>
                         </div>
                     </div>
-                    <div class="flex items-start gap-3">
-                        <span class="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f1fbfe] text-[#147a79]" aria-hidden="true">
+                    <div class="ui-requester-fact flex items-start gap-3">
+                        <span class="ui-requester-icon mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f1fbfe] text-[#147a79]" aria-hidden="true">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4.5" y="5.5" width="15" height="13" rx="1.5" /><path stroke-linecap="round" d="M8 9h8M8 12.5h4M8 16h6" /></svg>
                         </span>
                         <div>
@@ -71,8 +71,8 @@
                             <dd class="mt-1 text-sm font-bold text-[#35505b]">{{ $displayValue($actor->nip) }}</dd>
                         </div>
                     </div>
-                    <div class="flex items-start gap-3">
-                        <span class="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f1fbfe] text-[#147a79]" aria-hidden="true">
+                    <div class="ui-requester-fact flex items-start gap-3">
+                        <span class="ui-requester-icon mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f1fbfe] text-[#147a79]" aria-hidden="true">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4.5" y="6.5" width="15" height="11" rx="1.5" /><path stroke-linecap="round" stroke-linejoin="round" d="m5.5 8 6.5 5 6.5-5" /></svg>
                         </span>
                         <div class="min-w-0">
@@ -86,7 +86,7 @@
         </div>
     </section>
 
-    <section class="border-t border-[#e7eef1]" aria-labelledby="request-form-heading">
+    <section class="ui-form-section border-t border-[#e7eef1]" aria-labelledby="request-form-heading">
         <div class="ui-panel-header flex items-start gap-3">
             <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#fff4d7] text-[#9a6700]" aria-hidden="true">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 4.5h9l3 3v12H6zM14 4.5v3h4M9 12h6M9 15.5h4" /><path stroke-linecap="round" d="m15.5 15.5 1.2 1.2 2.8-2.8" /></svg>
@@ -101,14 +101,14 @@
                 <div class="mb-5 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700" role="alert">{{ $message }}</div>
             @enderror
 
-            <div class="space-y-5">
-                <div>
+            <div class="ui-ticket-field-grid grid gap-5 lg:grid-cols-2">
+                <div class="lg:col-span-2">
                     <label for="subject" class="ui-field-label">Judul <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only">wajib</span></label>
                     <input id="subject" name="subject" value="{{ old('subject') }}" required maxlength="150" class="ui-input mt-2" placeholder="Contoh: Wi-Fi lantai 2 tidak tersambung" @error('subject') aria-invalid="true" aria-describedby="subject-error" @enderror>
                     @error('subject')<p id="subject-error" class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror
                 </div>
 
-                <div>
+                <div class="lg:col-span-2">
                     <label for="description" class="ui-field-label">Deskripsi <span class="text-rose-600" aria-hidden="true">*</span><span class="sr-only">wajib</span></label>
                     <textarea id="description" name="description" rows="5" required maxlength="10000" class="ui-textarea mt-2" placeholder="Apa yang terjadi, kapan mulai, dan apa dampaknya?" @error('description') aria-invalid="true" aria-describedby="description-error" @enderror>{{ old('description') }}</textarea>
                     @error('description')<p id="description-error" class="mt-2 text-sm text-rose-700">{{ $message }}</p>@enderror

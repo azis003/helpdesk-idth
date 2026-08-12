@@ -4,12 +4,6 @@
     $canCreateTicket = auth()->user()->can('create', \App\Models\Ticket::class);
     $hasFilters = $search !== '';
 
-    $priorityDots = [
-        'kritis' => 'bg-[#be123c]',
-        'tinggi' => 'bg-[#e11d48]',
-        'sedang' => 'bg-[#e4a72c]',
-        'rendah' => 'bg-[#2bb8aa]',
-    ];
 @endphp
 
 @section('title', 'Semua Tiket — '.$branding['application_name'])
@@ -33,24 +27,24 @@
         </div>
     </div>
 
-    <div class="mt-5 flex justify-end">
+    <div class="ui-list-search mt-6 flex justify-end">
         <form method="GET" action="{{ route('tickets.all') }}" class="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3" role="search" aria-label="Cari semua tiket">
             <input type="hidden" name="per_page" value="{{ $perPage }}">
             <label for="ticket-search" class="shrink-0 text-xs font-bold text-[#17212b]">Cari:</label>
             <div class="relative w-full sm:w-48">
-                <button type="submit" class="absolute left-2.5 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded text-[#9aaeb6] transition hover:text-[#1d5d72] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0a87c9]" aria-label="Cari tiket">
+                <button type="submit" class="ui-search-submit absolute left-2.5 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded" aria-label="Cari tiket">
                     <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13ZM20 20l-4.3-4.3" /></svg>
                 </button>
-                <input id="ticket-search" name="q" type="search" value="{{ $search }}" autocomplete="off" placeholder="Nomor tiket/kata kunci" class="h-9 w-full rounded-md border border-[#d7e0e4] bg-white pl-9 pr-2 text-xs text-[#35505b] outline-none placeholder:text-[#9aaeb6] focus:border-[#0a87c9] focus:ring-2 focus:ring-[#0a87c9]/15">
+                <input id="ticket-search" name="q" type="search" value="{{ $search }}" autocomplete="off" placeholder="Nomor tiket/kata kunci" class="ui-input ui-list-search-input w-full pl-9 pr-2 text-xs">
             </div>
         </form>
     </div>
 
-    <section class="mt-4 overflow-hidden rounded-xl border border-[#dfe8ec] bg-white shadow-[0_1px_3px_rgba(33,57,67,0.08)]" aria-labelledby="all-tickets-heading">
+    <section class="ui-panel ui-list-panel mt-4 overflow-hidden" aria-labelledby="all-tickets-heading">
         <h2 id="all-tickets-heading" class="sr-only">Daftar seluruh tiket</h2>
 
         <div class="hidden overflow-x-auto md:block">
-            <table class="w-full min-w-[54rem] border-collapse text-left">
+            <table class="ui-data-table w-full min-w-[54rem] border-collapse text-left">
                 <caption class="sr-only">Daftar seluruh tiket dengan nomor tiket, jenis layanan, judul, status, dan prioritas</caption>
                 <thead>
                     <tr class="border-b border-[#dfe8ec] bg-[#f1f5f9] text-xs font-semibold uppercase leading-4 tracking-[0.04em] text-[#5b7683]">
@@ -72,7 +66,7 @@
                             $serviceTooltip = $serviceTooltip !== '' ? $serviceTooltip : 'Layanan belum tersedia';
                             $ticketDetailUrl = route('tickets.show', ['ticket' => $ticket, 'from' => 'all']);
                         @endphp
-                        <tr class="border-b border-[#eaf0f2] transition-colors hover:bg-[#fbfdfd]" title="{{ $serviceTooltip }}">
+                        <tr class="ui-data-table-row border-b border-[#eaf0f2] transition-colors hover:bg-[#fbfdfd]" title="{{ $serviceTooltip }}">
                             <td class="px-4 py-2.5 font-semibold text-[#5b7683]">{{ ($tickets->firstItem() ?? 1) + $loop->index }}</td>
                             <td class="whitespace-nowrap px-4 py-2.5">
                                 <a href="{{ $ticketDetailUrl }}" class="text-[0.8125rem] font-semibold leading-[1.125rem] text-[#1d5d72] hover:text-[#0a87c9] hover:underline" aria-label="Lihat detail {{ $ticketNumber }}">{{ $ticketNumber }}</a>
@@ -82,12 +76,7 @@
                                 <div class="max-w-[26rem] truncate">{{ $ticket->subject }}</div>
                             </td>
                             <td class="whitespace-nowrap px-4 py-2.5"><x-status-badge :status="$ticket->status" /></td>
-                            <td class="whitespace-nowrap px-4 py-2.5">
-                                <span class="ui-badge inline-flex items-center gap-1.5 text-[#35505b]">
-                                    <span class="h-1.5 w-1.5 rounded-full {{ $priorityDots[$ticket->priority?->value] ?? 'bg-[#c3ced3]' }}" aria-hidden="true"></span>
-                                    {{ $ticket->priority?->label() ?? 'Belum ditentukan' }}
-                                </span>
-                            </td>
+                            <td class="whitespace-nowrap px-4 py-2.5"><x-priority-badge :priority="$ticket->priority" /></td>
                         </tr>
                     @empty
                         <tr>
@@ -106,13 +95,13 @@
             </table>
         </div>
 
-        <div class="divide-y divide-[#eaf0f2] md:hidden">
+        <div class="ui-mobile-ticket-list divide-y divide-[#eaf0f2] md:hidden">
             @forelse ($tickets as $ticket)
                 @php
                     $ticketNumber = $ticket->ticket_number ?: 'Tiket #'.$ticket->getKey();
                     $ticketDetailUrl = route('tickets.show', ['ticket' => $ticket, 'from' => 'all']);
                 @endphp
-                <article class="p-5">
+                <article class="ui-mobile-ticket-card p-5">
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
                             <p class="text-xs font-bold uppercase tracking-wide text-[#78909a]">No. {{ ($tickets->firstItem() ?? 1) + $loop->index }} · {{ $ticketClassLabels[$ticket->ticket_class ?? ''] ?? '—' }}</p>
@@ -122,10 +111,7 @@
                         <x-status-badge :status="$ticket->status" />
                     </div>
 
-                    <div class="ui-badge mt-3 flex items-center gap-1.5 text-[#35505b]">
-                        <span class="h-1.5 w-1.5 rounded-full {{ $priorityDots[$ticket->priority?->value] ?? 'bg-[#c3ced3]' }}" aria-hidden="true"></span>
-                        Prioritas {{ $ticket->priority?->label() ?? 'belum ditentukan' }}
-                    </div>
+                    <x-priority-badge :priority="$ticket->priority" class="mt-3" />
                 </article>
             @empty
                 <div class="px-5 py-12 text-center text-[#718088]">
@@ -140,7 +126,7 @@
             @endforelse
         </div>
 
-        <div class="flex flex-col gap-3 border-t border-[#e5eaed] px-4 py-3 text-[0.78rem] text-[#6b818a] sm:flex-row sm:items-center sm:justify-between">
+        <div class="ui-list-footer flex flex-col gap-3 border-t border-[#e5eaed] px-4 py-3 text-[0.78rem] text-[#6b818a] sm:flex-row sm:items-center sm:justify-between">
             <p>
                 @if ($tickets->total() > 0)
                     Menampilkan <span class="font-extrabold text-[#35505b]">{{ $tickets->firstItem() }}–{{ $tickets->lastItem() }}</span> dari <span class="font-extrabold text-[#35505b]">{{ $tickets->total() }}</span> tiket
@@ -153,7 +139,7 @@
                 <form method="GET" action="{{ route('tickets.all') }}" class="flex items-center gap-2">
                     <input type="hidden" name="q" value="{{ $search }}">
                     <label for="ticket-per-page" class="whitespace-nowrap">Baris per halaman:</label>
-                    <select id="ticket-per-page" name="per_page" onchange="this.form.submit()" class="h-8 rounded-lg border border-[#d7e0e4] bg-white px-2 text-[0.78rem] text-[#35505b] outline-none focus:border-[#0a87c9] focus:ring-2 focus:ring-[#0a87c9]/15">
+                    <select id="ticket-per-page" name="per_page" onchange="this.form.submit()" class="ui-select ui-list-per-page">
                         @foreach ($perPageOptions as $pageSize)
                             <option value="{{ $pageSize }}" @selected($perPage === $pageSize)>{{ $pageSize }}</option>
                         @endforeach

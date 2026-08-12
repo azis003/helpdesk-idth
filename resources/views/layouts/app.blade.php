@@ -44,8 +44,14 @@
             ->implode(', ');
     @endphp
 
-    <div class="ui-shell lg:flex">
+    <a href="#app-main" class="ui-skip-link">Lewati navigasi dan langsung ke konten</a>
+
+    <div class="ui-shell ui-shell--refresh lg:flex">
         <aside id="app-sidebar" data-sidebar class="ui-sidebar hidden shrink-0 flex-col lg:flex" aria-label="Navigasi utama">
+            <div class="ui-sidebar-identity" aria-hidden="true">
+                <span class="ui-sidebar-identity-kicker">Ruang kerja</span>
+                <span class="ui-sidebar-identity-name">{{ $branding['application_name'] }}</span>
+            </div>
             @if ($isSuperAdmin)
                 <nav class="mt-9 flex flex-col gap-2" aria-label="Menu Utama">
                     <p class="ui-sidebar-label">Menu Utama</p>
@@ -202,21 +208,24 @@
                         @else
                             <span class="ui-brand-mark !h-11 !w-11 !rounded-xl text-sm">{{ $branding['monogram'] }}</span>
                         @endif
-                        <span class="hidden max-w-[12rem] truncate text-lg font-extrabold tracking-[-0.05em] text-[#18252b] min-[520px]:inline">{{ $branding['application_name'] }}</span>
-                        <span class="hidden max-w-[14rem] truncate text-sm text-[#718088] sm:inline">{{ $branding['organization_name'] }}</span>
+                        <span class="ui-topbar-app-name hidden max-w-[12rem] truncate min-[520px]:inline">{{ $branding['application_name'] }}</span>
+                        <span class="ui-topbar-organization hidden max-w-[14rem] truncate sm:inline">{{ $branding['organization_name'] }}</span>
                     </a>
-                    <span class="hidden h-5 w-px bg-[#dfe7eb] lg:block" aria-hidden="true"></span>
+                    <span class="ui-topbar-divider hidden lg:block" aria-hidden="true"></span>
                     <button type="button" class="ui-menu-button hidden lg:inline-flex" data-sidebar-toggle aria-controls="app-sidebar" aria-expanded="true" aria-label="Sembunyikan menu" title="Sembunyikan menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" /></svg><span class="sr-only" data-sidebar-toggle-label>Sembunyikan menu</span></button>
-                    <span class="hidden h-5 w-px bg-[#dfe7eb] lg:block" aria-hidden="true"></span>
-                    <span class="hidden truncate text-sm text-[#6c7c83] lg:inline">@yield('header_title', 'Ruang kerja')</span>
+                    <span class="ui-topbar-divider hidden lg:block" aria-hidden="true"></span>
+                    <span class="ui-topbar-context hidden min-w-0 lg:inline-flex">
+                        <span class="ui-topbar-context-kicker">@yield('header_kicker', 'Ruang kerja')</span>
+                        <span class="ui-topbar-context-title">@yield('header_title', 'Ruang kerja')</span>
+                    </span>
                 </div>
 
                 <div class="flex shrink-0 items-center gap-3 sm:gap-4">
-                    <details class="relative" data-help-menu>
-                        <summary class="flex h-7 w-7 cursor-pointer list-none items-center justify-center rounded-full text-[#8a8f93] transition hover:bg-[#f1f3f4] hover:text-[#5f6a70] focus:outline-none focus:ring-2 focus:ring-[#75d5f3] focus:ring-offset-2 [&::-webkit-details-marker]:hidden" aria-label="Bantuan" title="Bantuan">
+                    <details class="ui-topbar-menu relative" data-help-menu>
+                        <summary class="ui-topbar-icon-button" aria-label="Bantuan" title="Bantuan">
                             <svg class="h-[1.05rem] w-[1.05rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path stroke-linecap="round" stroke-linejoin="round" d="M9.8 9a2.3 2.3 0 1 1 3.7 1.8c-.95.7-1.5 1.08-1.5 2.2M12 16.2h.01" /></svg>
                         </summary>
-                        <div class="absolute right-0 top-9 z-40 w-64 overflow-hidden rounded-xl border border-[#dce7eb] bg-white shadow-[0_14px_32px_rgba(38,58,67,0.14)]">
+                        <div class="ui-topbar-popover absolute right-0 top-9 z-40 w-64 overflow-hidden rounded-xl border border-[#dce7eb] bg-white shadow-[0_14px_32px_rgba(38,58,67,0.14)]">
                             <div class="px-4 py-3">
                                 <p class="text-sm font-extrabold text-[#263a43]">Butuh bantuan?</p>
                                 <p class="mt-1 text-xs leading-5 text-[#78909a]">Buat tiket untuk menghubungi Tim TI.</p>
@@ -226,14 +235,14 @@
                             </div>
                         </div>
                     </details>
-                    <details class="relative" data-notification-menu>
-                        <summary class="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-full text-[#6d7883] transition hover:bg-[#f1f5f7] hover:text-[#35505b] focus:outline-none focus:ring-2 focus:ring-[#75d5f3] focus:ring-offset-2 [&::-webkit-details-marker]:hidden" aria-label="Notifikasi">
+                    <details class="ui-topbar-menu relative" data-notification-menu>
+                        <summary class="ui-topbar-icon-button ui-topbar-notification-button" aria-label="Notifikasi">
                             <svg class="h-[1.1rem] w-[1.1rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.8 9.5a5.2 5.2 0 0 1 10.4 0c0 5 2 5.8 2 7H4.8c0-1.2 2-2 2-7ZM9.7 19a2.5 2.5 0 0 0 4.6 0" /></svg>
                             @if ($unreadNotificationCount > 0)
-                                <span class="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-[#ef4444] ring-2 ring-white" aria-label="{{ $unreadNotificationCount }} notifikasi belum dibaca" title="{{ $unreadNotificationCount }} notifikasi belum dibaca"></span>
+                                <span class="ui-notification-count absolute right-1.5 top-1.5" aria-label="{{ $unreadNotificationCount }} notifikasi belum dibaca" title="{{ $unreadNotificationCount }} notifikasi belum dibaca"></span>
                             @endif
                         </summary>
-                        <div class="absolute right-0 top-12 z-40 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[#dce7eb] bg-white shadow-[0_18px_45px_rgba(38,58,67,0.16)]">
+                        <div class="ui-topbar-popover absolute right-0 top-12 z-40 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[#dce7eb] bg-white shadow-[0_18px_45px_rgba(38,58,67,0.16)]">
                             <div class="flex items-center justify-between gap-3 border-b border-[#edf2f4] px-4 py-3">
                                 <div>
                                     <p class="text-sm font-extrabold text-[#263a43]">Notifikasi</p>
@@ -260,28 +269,28 @@
                             @endforelse
                         </div>
                     </details>
-                    <div class="flex min-w-0 items-center gap-2">
-                        <details class="relative" data-account-menu>
-                        <summary class="ui-avatar !h-8 !w-8 !cursor-pointer !rounded-full !bg-[#e5f3ff] !text-xs !text-[#087fc1] transition hover:!bg-[#d7edff] focus:outline-none focus:ring-2 focus:ring-[#75d5f3] focus:ring-offset-2 [&::-webkit-details-marker]:hidden" aria-label="Buka menu akun untuk {{ $currentUser->name }}" title="Menu akun">
+                    <div class="ui-topbar-account flex min-w-0 items-center gap-2">
+                        <details class="ui-topbar-menu relative" data-account-menu>
+                        <summary class="ui-avatar ui-topbar-avatar" aria-label="Buka menu akun untuk {{ $currentUser->name }}" title="Menu akun">
                             {{ strtoupper(substr($currentUser->name, 0, 1)) }}
                         </summary>
-                        <div class="absolute right-0 top-12 z-40 w-64 overflow-hidden rounded-2xl border border-[#dce7eb] bg-white shadow-[0_18px_45px_rgba(38,58,67,0.16)]">
+                        <div class="ui-topbar-popover ui-account-popover absolute right-0 top-12 z-40 w-64 overflow-hidden rounded-2xl border border-[#dce7eb] bg-white shadow-[0_18px_45px_rgba(38,58,67,0.16)]">
                             <div class="border-b border-[#edf2f4] px-4 py-3">
                                 <p class="truncate text-sm font-extrabold text-[#263a43]">{{ $currentUser->name }}</p>
                                 <p class="mt-0.5 truncate text-xs text-[#78909a]">{{ $currentUserRoleText ?: 'Tanpa role' }}</p>
                             </div>
                             <nav class="p-2" aria-label="Menu akun">
-                                <a href="{{ route('profile.edit') }}" class="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold text-[#35505b] transition hover:bg-[#f1fbfe] hover:text-[#147a79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#75d5f3]">
+                                <a href="{{ route('profile.edit') }}" class="ui-account-menu-link flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold text-[#35505b] transition hover:bg-[#f1fbfe] hover:text-[#147a79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#75d5f3]">
                                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.5 5.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0ZM4.5 20a7.5 7.5 0 0 1 15 0" /></svg>
                                     Edit Profil
                                 </a>
-                                <a href="{{ route('password.change') }}" class="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold text-[#35505b] transition hover:bg-[#f1fbfe] hover:text-[#147a79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#75d5f3]">
+                                <a href="{{ route('password.change') }}" class="ui-account-menu-link flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold text-[#35505b] transition hover:bg-[#f1fbfe] hover:text-[#147a79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#75d5f3]">
                                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" /><path stroke-linecap="round" d="M8 10V7a4 4 0 0 1 8 0v3M12 14v2" /></svg>
                                     Ganti Password
                                 </a>
                                 <form method="POST" action="{{ route('logout') }}" class="mt-1 border-t border-[#edf2f4] pt-1">
                                     @csrf
-                                    <button type="submit" class="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-bold text-[#b4233c] transition hover:bg-[#fff4f5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f7b3be]">
+                                    <button type="submit" class="ui-account-menu-logout flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-bold text-[#b4233c] transition hover:bg-[#fff4f5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f7b3be]">
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10 5H6a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h4M14 8l4 4-4 4m4-4H9" /></svg>
                                         Keluar
                                     </button>
@@ -289,9 +298,9 @@
                             </nav>
                         </div>
                         </details>
-                        <div class="min-w-0 w-24 max-[340px]:hidden sm:w-auto">
-                            <p class="truncate text-[0.78rem] font-extrabold leading-4 text-[#263a43] sm:max-w-[13rem]">{{ $currentUser->name }}</p>
-                            <p class="mt-0.5 truncate text-[0.68rem] leading-4 text-[#7b8790] sm:max-w-[13rem]" title="{{ $currentUserRoleText }}">{{ $currentUserRoleText ?: 'Tanpa role' }}</p>
+                        <div class="ui-topbar-user-copy min-w-0 w-24 max-[340px]:hidden sm:w-auto">
+                            <p class="truncate sm:max-w-[13rem]">{{ $currentUser->name }}</p>
+                            <p class="mt-0.5 truncate sm:max-w-[13rem]" title="{{ $currentUserRoleText }}">{{ $currentUserRoleText ?: 'Tanpa role' }}</p>
                         </div>
                     </div>
                     <details class="relative lg:hidden">
@@ -299,7 +308,7 @@
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" /></svg>
                             <span class="sr-only">Menu</span>
                         </summary>
-                        <nav class="absolute right-0 top-11 z-40 w-56 rounded-xl border border-[#dce7eb] bg-white p-2 shadow-xl" aria-label="Navigasi mobile">
+                        <nav class="ui-mobile-navigation-popover absolute right-0 top-11 z-40 w-56 rounded-xl border border-[#dce7eb] bg-white p-2 shadow-xl" aria-label="Navigasi mobile">
                             @if ($isSuperAdmin)
                                 <div class="ui-mobile-nav-group-label">Menu Utama</div>
                                 <a href="{{ route('dashboard') }}" class="ui-mobile-nav-link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dashboard</a>
@@ -368,7 +377,7 @@
                 </div>
             </header>
 
-            <main class="ui-main">
+            <main id="app-main" class="ui-main" tabindex="-1">
                 @include('components.flash')
                 @yield('content')
             </main>

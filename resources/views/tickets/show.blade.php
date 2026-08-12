@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', ($ticket->ticket_number ?? 'Detail tiket').' — '.$branding['application_name'])
+@section('header_kicker', 'Tiket')
 @section('header_title', 'Detail tiket')
 
 @php
@@ -165,7 +166,7 @@
 @endphp
 
 @section('content')
-    <div class="ticket-reference-content ticket-reference-content--operational">
+    <div class="ticket-reference-content ticket-reference-content--operational ui-ticket-detail-page">
         <x-tickets.detail-header
             :back-url="$workAreaUrl"
             :back-label="$workAreaLabel"
@@ -282,7 +283,7 @@
             </div>
         @endif
 
-    <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.75fr)_minmax(18rem,0.85fr)] lg:items-start">
+    <div class="ui-ticket-detail-grid mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.75fr)_minmax(18rem,0.85fr)] lg:items-start">
         <div class="min-w-0 space-y-6">
             <section class="ticket-reference-card" aria-labelledby="ticket-description-heading">
                 <div class="ticket-reference-card-body">

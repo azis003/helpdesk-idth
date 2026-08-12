@@ -5,17 +5,17 @@
         ? $status
         : \App\Enums\TicketStatus::tryFrom((string) $status);
     $tone = match ($status) {
-        \App\Enums\TicketStatus::Baru => 'bg-[#e9f5ff] text-[#1d5d8f] border-[#b9def7]',
-        \App\Enums\TicketStatus::Diproses, \App\Enums\TicketStatus::Dikerjakan => 'bg-[#e8faf4] text-[#087f5b] border-[#b9e9d7]',
-        \App\Enums\TicketStatus::MenungguPersetujuan, \App\Enums\TicketStatus::MenungguPemohon, \App\Enums\TicketStatus::MenungguPihakKetiga, \App\Enums\TicketStatus::MenungguKonfirmasi => 'bg-[#fff7df] text-[#9a6700] border-[#f2d996]',
-        \App\Enums\TicketStatus::Ditutup => 'bg-[#e8faf4] text-[#087f5b] border-[#b9e9d7]',
-        \App\Enums\TicketStatus::Ditolak, \App\Enums\TicketStatus::TidakDisetujui => 'bg-[#fff1f2] text-[#be123c] border-[#fecdd3]',
-        \App\Enums\TicketStatus::Dibatalkan => 'bg-[#eef2f4] text-[#657984] border-[#d4e0e5]',
-        default => 'bg-[#eef2f4] text-[#657984] border-[#d4e0e5]',
+        \App\Enums\TicketStatus::Baru => 'ui-status-badge--info',
+        \App\Enums\TicketStatus::Diproses, \App\Enums\TicketStatus::Dikerjakan => 'ui-status-badge--active',
+        \App\Enums\TicketStatus::MenungguPersetujuan, \App\Enums\TicketStatus::MenungguPemohon, \App\Enums\TicketStatus::MenungguPihakKetiga, \App\Enums\TicketStatus::MenungguKonfirmasi => 'ui-status-badge--waiting',
+        \App\Enums\TicketStatus::Ditutup => 'ui-status-badge--closed',
+        \App\Enums\TicketStatus::Ditolak, \App\Enums\TicketStatus::TidakDisetujui => 'ui-status-badge--danger',
+        \App\Enums\TicketStatus::Dibatalkan => 'ui-status-badge--muted',
+        default => 'ui-status-badge--muted',
     };
 @endphp
 
-<span {{ $attributes->merge(['class' => "ui-badge inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 {$tone}"]) }}>
-    <span class="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true"></span>
+<span {{ $attributes->merge(['class' => "ui-badge ui-status-badge inline-flex items-center gap-1.5 {$tone}"]) }}>
+    <span class="ui-badge-indicator" aria-hidden="true"></span>
     {{ $status?->label() ?? 'Status tidak diketahui' }}
 </span>

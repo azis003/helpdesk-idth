@@ -15,7 +15,7 @@
         description="Kelola data tim kerja. Penetapan ketua dan anggota dilakukan dari Manajemen Pengguna."
     />
 
-    <section class="mt-7 overflow-hidden rounded-lg border border-[#d7dde0] bg-white shadow-[0_2px_8px_rgba(36,57,67,0.06)]" aria-labelledby="teams-heading">
+    <section class="ui-admin-panel mt-7 overflow-hidden rounded-lg border border-[#d7dde0] bg-white shadow-[0_2px_8px_rgba(36,57,67,0.06)]" aria-labelledby="teams-heading">
         <div class="flex flex-col gap-4 bg-[#075998] px-5 py-5 text-white sm:flex-row sm:items-center sm:justify-between sm:px-8">
             <div>
                 <h2 id="teams-heading" class="text-xl font-extrabold tracking-tight">Daftar Tim Kerja</h2>

@@ -21,8 +21,8 @@
     <div class="min-w-0 w-full">
         <div class="flex flex-wrap items-center gap-2.5">
             <h1 class="ticket-reference-number">{{ $ticketLabel }}</h1>
-            <x-status-badge :status="$status" class="!border-[#b9c7ff] !bg-[#e7ebff] !text-[#0037b0]" />
-            <x-priority-badge :priority="$priority" class="!border-[#d6dce8] !bg-[#f1f4f8] !text-[#25344c]" />
+            <x-status-badge :status="$status" />
+            <x-priority-badge :priority="$priority" />
         </div>
 
         <div class="ticket-reference-header-meta">
