@@ -176,7 +176,7 @@
                         <span class="hd-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M5 6.5h14v11H5zM8 9.5h8M8 13h5" /></svg></span>
                         <h3>{{ $isTierOne ? 'Belum ada tiket terbaru pada antrean ini.' : 'Belum ada tiket yang ditugaskan.' }}</h3>
                         <p>{{ $isTierOne ? 'Tiket dari Pemohon yang belum diambil akan muncul di sini setelah tercatat.' : 'Tiket Tier 2 yang ditugaskan kepada Anda akan muncul di sini.' }}</p>
-                        <a href="{{ $isTierOne ? route('tickets.queue') : route('tickets.queue', ['tab' => 'mine']) }}" class="hd-secondary-button">Buka Antrian Tiket</a>
+                        <a href="{{ $isTierOne ? route('tickets.queue') : route('tickets.queue', ['tab' => 'mine']) }}" class="hd-secondary-button">Buka Monitoring Tiket</a>
                     </div>
                 @endif
             </section>

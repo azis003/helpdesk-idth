@@ -8,13 +8,20 @@
     $isRequester = (int) $ticket->requester_id === (int) $actor->getKey();
     $isOperationalAgent = $actor->hasAnyRole([\App\Enums\Role::AgenTier1, \App\Enums\Role::AgenTier2]);
     $fromAllTickets = request()->query('from') === 'all' && $actor->can('viewAll', \App\Models\Ticket::class);
-    $workAreaTab = $ticket->status === \App\Enums\TicketStatus::Baru && $ticket->assigned_to_id === null ? 'queue' : 'mine';
+    $requestedWorkAreaTab = request()->query('from');
+    $canReturnToRequestedTab = $requestedWorkAreaTab === 'mine'
+        ? $actor->can('viewAssigned', \App\Models\Ticket::class)
+        : (in_array($requestedWorkAreaTab, ['queue', 'assigned', 'completed'], true)
+            && $actor->can('viewQueue', \App\Models\Ticket::class));
+    $workAreaTab = $canReturnToRequestedTab
+        ? $requestedWorkAreaTab
+        : ($ticket->status === \App\Enums\TicketStatus::Baru && $ticket->assigned_to_id === null ? 'queue' : 'mine');
     $workAreaUrl = $fromAllTickets
         ? route('tickets.all')
         : ($isOperationalAgent ? route('tickets.queue', ['tab' => $workAreaTab]) : route('tickets.index'));
     $workAreaLabel = $fromAllTickets
         ? 'Kembali ke Semua Tiket'
-        : ($isOperationalAgent ? 'Kembali ke Antrian Tiket' : 'Kembali ke Tiket Saya');
+        : ($isOperationalAgent ? 'Kembali ke Monitoring Tiket' : 'Kembali ke Tiket Saya');
     $ticketLabel = $ticket->ticket_number ?? 'Tiket #'.$ticket->id;
     $submittedAt = ($ticket->submitted_at ?? $ticket->created_at)?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') ?? 'Belum tersedia';
     $serviceLabel = $ticket->service_type_name_snapshot ?? $ticket->serviceType?->name ?? 'Layanan belum tersedia';

@@ -11,8 +11,8 @@ use App\Http\Requests\ChangeTicketPriorityRequest;
 use App\Http\Requests\CompleteTicketRequest;
 use App\Http\Requests\InternalTicketFieldRequest;
 use App\Http\Requests\NotSatisfiedTicketRequest;
-use App\Http\Requests\ReopenTicketRequest;
 use App\Http\Requests\RejectTicketRequest;
+use App\Http\Requests\ReopenTicketRequest;
 use App\Http\Requests\RequestApprovalRequest;
 use App\Http\Requests\ReturnTicketRequest;
 use App\Http\Requests\StartDatabaseChangeExecutionRequest;
@@ -217,31 +217,63 @@ class TicketController extends Controller
         $requestedTab = $request->query('tab');
         $activeTab = $requestedTab === null && $actor->hasRole(Role::AgenTier2)
             ? 'mine'
-            : ((string) $requestedTab === 'mine' ? 'mine' : 'queue');
-        $isMine = $activeTab === 'mine';
+            : (in_array((string) $requestedTab, ['mine', 'assigned', 'completed'], true)
+                ? (string) $requestedTab
+                : 'queue');
+        $isPersonalTab = $activeTab === 'mine';
 
         $this->authorization->authorize(
             $actor,
-            $isMine ? 'viewAssigned' : 'viewQueue',
+            $isPersonalTab ? 'viewAssigned' : 'viewQueue',
             Ticket::class,
-            $isMine ? 'ticket.assigned.view' : 'ticket.queue.view',
+            match ($activeTab) {
+                'mine' => 'ticket.assigned.view',
+                'assigned' => 'ticket.technician_assignment.view',
+                'completed' => 'ticket.completed.view',
+                default => 'ticket.queue.view',
+            },
         );
 
-        $queueCount = Ticket::query()->newQueue()->count();
+        $canViewQueue = $actor->can('viewQueue', Ticket::class);
+        $canViewAssigned = $actor->can('viewAssigned', Ticket::class);
+        $completedStatuses = [TicketStatus::Ditutup->value, TicketStatus::Dibatalkan->value];
+
+        $queueQuery = Ticket::query()->newQueue();
         $mineQuery = Ticket::query()
             ->where('assigned_to_id', $actor->getKey())
+            ->where('assigned_tier', $actor->hasRole(Role::AgenTier1)
+                ? Role::AgenTier1->value
+                : Role::AgenTier2->value)
             ->whereNotIn('status', TicketStatus::valuesOf(TicketStatus::closedCases()));
-        $mineCount = (clone $mineQuery)->count();
+        $technicianAssignmentQuery = Ticket::query()
+            ->whereNotNull('assigned_to_id')
+            ->where('assigned_tier', Role::AgenTier2->value)
+            ->whereNotIn('status', TicketStatus::valuesOf(TicketStatus::closedCases()));
+        $completedQuery = Ticket::query()
+            ->whereIn('status', $completedStatuses);
 
-        $ticketsQuery = $isMine
-            ? (clone $mineQuery)
+        $queueCount = $canViewQueue ? (clone $queueQuery)->count() : 0;
+        $mineCount = $canViewAssigned ? (clone $mineQuery)->count() : 0;
+        $assignedCount = $canViewQueue ? (clone $technicianAssignmentQuery)->count() : 0;
+        $completedCount = $canViewQueue ? (clone $completedQuery)->count() : 0;
+
+        $ticketsQuery = match ($activeTab) {
+            'mine' => (clone $mineQuery)
                 ->with(['serviceType', 'requester', 'problemCategory', 'assignee'])
                 ->orderByDesc('updated_at')
-                ->orderByDesc('id')
-            : Ticket::query()
-                ->newQueue()
+                ->orderByDesc('id'),
+            'assigned' => (clone $technicianAssignmentQuery)
+                ->with(['serviceType', 'requester', 'problemCategory', 'assignee'])
+                ->orderByDesc('updated_at')
+                ->orderByDesc('id'),
+            'completed' => (clone $completedQuery)
+                ->with(['serviceType', 'requester', 'problemCategory', 'assignee'])
+                ->orderByDesc('updated_at')
+                ->orderByDesc('id'),
+            default => (clone $queueQuery)
                 ->with(['serviceType', 'requester', 'problemCategory'])
-                ->orderForTierOneQueue();
+                ->orderForTierOneQueue(),
+        };
 
         $tickets = $ticketsQuery
             ->paginate(20)
@@ -252,8 +284,10 @@ class TicketController extends Controller
             'activeTab' => $activeTab,
             'queueCount' => $queueCount,
             'mineCount' => $mineCount,
-            'canViewQueue' => $actor->can('viewQueue', Ticket::class),
-            'canViewAssigned' => $actor->can('viewAssigned', Ticket::class),
+            'assignedCount' => $assignedCount,
+            'completedCount' => $completedCount,
+            'canViewQueue' => $canViewQueue,
+            'canViewAssigned' => $canViewAssigned,
         ]);
     }
 

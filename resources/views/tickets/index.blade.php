@@ -41,7 +41,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
             @if ($canViewQueue)
-                <a href="{{ route('tickets.queue') }}" class="ui-btn ui-btn-secondary">Antrian Tiket</a>
+                <a href="{{ route('tickets.queue') }}" class="ui-btn ui-btn-secondary">Monitoring Tiket</a>
             @endif
             @if ($canCreateTicket)
                 <a href="{{ route('tickets.create') }}" class="ui-btn ui-btn-primary">Buat tiket <span aria-hidden="true">→</span></a>

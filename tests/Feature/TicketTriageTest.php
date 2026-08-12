@@ -87,16 +87,121 @@ class TicketTriageTest extends TestCase
             ->assertDontSee($queueTicket->subject);
     }
 
+    public function test_tier_one_monitoring_tabs_follow_the_ticket_flow(): void
+    {
+        $agent = $this->createUser([Role::AgenTier1]);
+        $otherAgent = $this->createUser([Role::AgenTier1]);
+        $technician = $this->createUser([Role::AgenTier2]);
+        $requester = $this->createUser([Role::Pemohon]);
+
+        $queueTicket = Ticket::factory()->create([
+            'subject' => 'Alur tiket baru',
+            'requester_id' => $requester->id,
+            'created_by_id' => $requester->id,
+            'status' => TicketStatus::Baru,
+            'assigned_to_id' => null,
+            'assigned_tier' => null,
+        ]);
+        $mineTicket = Ticket::factory()->create([
+            'subject' => 'Alur dikerjakan helpdesk',
+            'status' => TicketStatus::Dikerjakan,
+            'assigned_to_id' => $agent->id,
+            'assigned_tier' => Role::AgenTier1->value,
+        ]);
+        $otherAgentTicket = Ticket::factory()->create([
+            'subject' => 'Alur dikerjakan helpdesk lain',
+            'status' => TicketStatus::Dikerjakan,
+            'assigned_to_id' => $otherAgent->id,
+            'assigned_tier' => Role::AgenTier1->value,
+        ]);
+        $assignedTicket = Ticket::factory()->create([
+            'subject' => 'Alur assign teknisi',
+            'status' => TicketStatus::Dikerjakan,
+            'assigned_to_id' => $technician->id,
+            'assigned_tier' => Role::AgenTier2->value,
+        ]);
+        $closedTicket = Ticket::factory()->create([
+            'subject' => 'Alur tiket ditutup',
+            'status' => TicketStatus::Ditutup,
+            'assigned_to_id' => $technician->id,
+            'assigned_tier' => Role::AgenTier2->value,
+        ]);
+        $cancelledTicket = Ticket::factory()->create([
+            'subject' => 'Alur tiket dibatalkan',
+            'status' => TicketStatus::Dibatalkan,
+            'assigned_to_id' => null,
+            'assigned_tier' => null,
+        ]);
+        $rejectedTicket = Ticket::factory()->create([
+            'subject' => 'Alur tiket ditolak',
+            'status' => TicketStatus::Ditolak,
+            'assigned_to_id' => $agent->id,
+            'assigned_tier' => Role::AgenTier1->value,
+        ]);
+        $notApprovedTicket = Ticket::factory()->create([
+            'subject' => 'Alur tiket tidak disetujui',
+            'status' => TicketStatus::TidakDisetujui,
+            'assigned_to_id' => $technician->id,
+            'assigned_tier' => Role::AgenTier2->value,
+        ]);
+
+        $this->actingAs($agent)
+            ->get(route('tickets.queue', ['tab' => 'queue']))
+            ->assertOk()
+            ->assertSee('Monitoring Tiket')
+            ->assertSeeInOrder(['Antrian Tiket', 'Tiket Saya', 'Tiket Assign', 'Tiket Selesai'])
+            ->assertViewHas('queueCount', 1)
+            ->assertViewHas('mineCount', 1)
+            ->assertViewHas('assignedCount', 1)
+            ->assertViewHas('completedCount', 2)
+            ->assertSee($queueTicket->subject)
+            ->assertDontSee($mineTicket->subject)
+            ->assertDontSee($assignedTicket->subject);
+
+        $this->actingAs($agent)
+            ->get(route('tickets.queue', ['tab' => 'mine']))
+            ->assertOk()
+            ->assertSee($mineTicket->subject)
+            ->assertDontSee($otherAgentTicket->subject)
+            ->assertDontSee($assignedTicket->subject)
+            ->assertDontSee($closedTicket->subject);
+
+        $this->actingAs($agent)
+            ->get(route('tickets.queue', ['tab' => 'assigned']))
+            ->assertOk()
+            ->assertSee($assignedTicket->subject)
+            ->assertSee(route('tickets.show', ['ticket' => $assignedTicket, 'from' => 'assigned']), false)
+            ->assertDontSee($mineTicket->subject)
+            ->assertDontSee($closedTicket->subject)
+            ->assertDontSee($notApprovedTicket->subject);
+
+        $this->actingAs($agent)
+            ->get(route('tickets.queue', ['tab' => 'completed']))
+            ->assertOk()
+            ->assertSee($closedTicket->subject)
+            ->assertSee($cancelledTicket->subject)
+            ->assertDontSee($rejectedTicket->subject)
+            ->assertDontSee($notApprovedTicket->subject)
+            ->assertDontSee($assignedTicket->subject);
+    }
+
     public function test_work_area_tabs_keep_the_requester_table_shape_and_compact_empty_state(): void
     {
         $agent = $this->createUser([Role::AgenTier1]);
 
-        foreach (['queue', 'mine'] as $tab) {
+        $emptyStates = [
+            'queue' => 'Belum ada tiket baru dalam antrian.',
+            'mine' => 'Belum ada tiket yang sedang Anda kerjakan.',
+            'assigned' => 'Belum ada tiket yang di-assign kepada teknisi.',
+            'completed' => 'Belum ada tiket yang ditutup atau dibatalkan.',
+        ];
+
+        foreach ($emptyStates as $tab => $emptyState) {
             $this->actingAs($agent)
                 ->get(route('tickets.queue', ['tab' => $tab]))
                 ->assertOk()
                 ->assertSeeInOrder(['No', 'No Tiket', 'Layanan', 'Judul', 'Status', 'Prioritas'])
-                ->assertSee('Tidak ada data')
+                ->assertSee($emptyState)
                 ->assertDontSee('Tiket yang belum diambil')
                 ->assertDontSee('Ambil tiket');
         }
@@ -318,6 +423,12 @@ class TicketTriageTest extends TestCase
         $this->actingAs($technician)
             ->get(route('tickets.queue', ['tab' => 'queue']))
             ->assertForbidden();
+
+        foreach (['assigned', 'completed'] as $tab) {
+            $this->actingAs($technician)
+                ->get(route('tickets.queue', ['tab' => $tab]))
+                ->assertForbidden();
+        }
 
         $this->actingAs($technician)
             ->get(route('tickets.all'))

@@ -109,9 +109,9 @@
                     <span class="ui-nav-label">Dasbor</span>
                 </a>
                 @if ($canAccessWorkQueue)
-                    <a href="{{ route('tickets.queue', $isTier1 ? [] : ['tab' => 'mine']) }}" class="ui-nav-link {{ request()->routeIs('tickets.queue') || (request()->routeIs('tickets.show') && ! $isAllTicketPage) ? 'is-active' : '' }}" aria-label="Antrian Tiket" title="Antrian Tiket" @if (request()->routeIs('tickets.queue')) aria-current="page" @endif>
+                    <a href="{{ route('tickets.queue', $isTier1 ? [] : ['tab' => 'mine']) }}" class="ui-nav-link {{ request()->routeIs('tickets.queue') || (request()->routeIs('tickets.show') && ! $isAllTicketPage) ? 'is-active' : '' }}" aria-label="Monitoring Tiket" title="Monitoring Tiket" @if (request()->routeIs('tickets.queue')) aria-current="page" @endif>
                         <span class="ui-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M5 6.5h14M5 12h14M5 17.5h9" /><path stroke-linecap="round" d="M18 17.5h.01" /></svg></span>
-                        <span class="ui-nav-label">Antrian Tiket</span>
+                        <span class="ui-nav-label">Monitoring Tiket</span>
                     </a>
                 @elseif ($canAccessTickets || $isTeamChair)
                     <a href="{{ route('tickets.index') }}" class="ui-nav-link {{ request()->routeIs('tickets.index', 'tickets.show', 'tickets.cancel') ? 'is-active' : '' }}" aria-label="{{ $ticketListLabel }}" title="{{ $ticketListLabel }}">
@@ -297,7 +297,7 @@
                                 @endif
                             </a>
                             @if ($canAccessWorkQueue)
-                                <a href="{{ route('tickets.queue', $isTier1 ? [] : ['tab' => 'mine']) }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.queue') || (request()->routeIs('tickets.show') && ! $isAllTicketPage) ? 'is-active' : '' }}">Antrian Tiket</a>
+                                <a href="{{ route('tickets.queue', $isTier1 ? [] : ['tab' => 'mine']) }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.queue') || (request()->routeIs('tickets.show') && ! $isAllTicketPage) ? 'is-active' : '' }}">Monitoring Tiket</a>
                             @elseif ($canAccessTickets || $isTeamChair)
                                 <a href="{{ route('tickets.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.index', 'tickets.show', 'tickets.cancel') ? 'is-active' : '' }}">{{ $ticketListLabel }}</a>
                             @endif

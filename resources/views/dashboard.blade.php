@@ -271,7 +271,7 @@
                     <h2 id="agent-dashboard-heading" class="mt-2 text-xl font-extrabold tracking-tight text-[#263a43]">Antrian dan tanggung jawab operasional</h2>
                     <p class="mt-2 max-w-2xl text-sm leading-6 text-[#6a8089]">Prioritaskan antrean, SLA, waktu tunggu, dan tiket yang membutuhkan tindakan Anda.</p>
                 </div>
-                <div class="flex flex-wrap gap-2">@if ($agentDashboard['is_tier_one'])<a href="{{ route('tickets.queue') }}" class="ui-btn ui-btn-secondary">Buka Antrian Tiket</a>@endif<a href="{{ route('tickets.queue', ['tab' => 'mine']) }}" class="ui-btn ui-btn-ghost">Tiket Saya</a></div>
+                <div class="flex flex-wrap gap-2">@if ($agentDashboard['is_tier_one'])<a href="{{ route('tickets.queue') }}" class="ui-btn ui-btn-secondary">Buka Monitoring Tiket</a>@endif<a href="{{ route('tickets.queue', ['tab' => 'mine']) }}" class="ui-btn ui-btn-ghost">Tiket Saya</a></div>
             </div>
 
             <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
