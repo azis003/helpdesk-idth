@@ -28,6 +28,11 @@
         : (($sla['paused'] ?? false)
             ? 'Dijeda karena status menunggu'
             : (($sla['overdue'] ?? false) ? 'Melewati target SLA' : (($sla['near_limit'] ?? false) ? 'Mendekati batas SLA' : 'SLA berjalan')));
+    $slaTone = ! $sla || ! ($sla['uses_sla'] ?? false)
+        ? 'neutral'
+        : (($sla['paused'] ?? false)
+            ? 'info'
+            : (($sla['overdue'] ?? false) ? 'danger' : (($sla['near_limit'] ?? false) ? 'warning' : 'success')));
     $activity = $ticket->publicComments
         ->map(fn ($comment): array => [
             'title' => 'Balasan publik',
@@ -49,8 +54,8 @@
             :submitted-at="$submittedAt"
         />
 
-        <div class="mt-5 flex items-center gap-2 text-xs font-bold text-[#78909a]" role="note" aria-label="Batas akses Ketua Tim Kerja">
-            <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#fff0b9] text-[#8b6100]" aria-hidden="true">i</span>
+        <div class="mt-5 flex items-start gap-2.5 rounded-[var(--tm-r-md)] border border-[color:var(--tm-info-200)] bg-[color:var(--tm-info-50)] px-4 py-3 text-xs leading-5 text-[color:var(--tm-info-700)]" role="note" aria-label="Batas akses Ketua Tim Kerja">
+            <svg class="mt-px h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="7.25" /><path d="M10 9.25v4" /><path d="M10 6.75h.01" /></svg>
             <span>Mode baca saja untuk pemantauan tim. Data internal dan lampiran privat tidak ditampilkan.</span>
         </div>
 
@@ -77,16 +82,19 @@
                             <span class="ticket-reference-section-description block">Balasan publik antara Pemohon dan Tim TI.</span>
                         </span>
                     </summary>
-                    <div class="ticket-reference-card-body space-y-4">
+                    <div class="ticket-reference-card-body space-y-3">
                         @forelse ($ticket->publicComments as $comment)
-                            <article class="rounded-xl border border-[#dfe8ec] bg-[#fbfdfd] p-4">
-                                <header class="flex flex-wrap items-start justify-between gap-3">
-                                    <p class="text-sm font-extrabold text-[#35505b]">{{ $comment->authorName ?? 'Sistem' }}</p>
+                            <article class="rounded-[var(--tm-r-md)] border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface-sunken)] p-4 transition-colors hover:border-[color:var(--tm-border)]">
+                                <header class="flex flex-wrap items-center justify-between gap-3">
+                                    <div class="flex min-w-0 items-center gap-2.5">
+                                        <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--tm-r-full)] bg-[color:var(--tm-brand-100)] text-[0.7rem] font-semibold uppercase text-[color:var(--tm-brand-700)]" aria-hidden="true">{{ mb_substr($comment->authorName ?? 'S', 0, 1) }}</span>
+                                        <p class="truncate text-sm font-semibold text-[color:var(--tm-text)]">{{ $comment->authorName ?? 'Sistem' }}</p>
+                                    </div>
                                     @if ($comment->createdAt)
-                                        <time class="text-xs text-[#78909a]" datetime="{{ $comment->createdAt->toIso8601String() }}">{{ $comment->createdAt->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }} WIB</time>
+                                        <time class="shrink-0 text-xs tabular-nums text-[color:var(--tm-text-faint)]" datetime="{{ $comment->createdAt->toIso8601String() }}">{{ $comment->createdAt->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }} WIB</time>
                                     @endif
                                 </header>
-                                <p class="mt-3 whitespace-pre-line text-sm leading-7 text-[#526f79]">{{ $comment->body }}</p>
+                                <p class="mt-3 whitespace-pre-line text-sm leading-7 text-[color:var(--tm-text-secondary)]">{{ $comment->body }}</p>
                             </article>
                         @empty
                             <p class="ticket-reference-empty">Belum ada balasan publik.</p>
@@ -97,18 +105,28 @@
                 <section class="ticket-reference-card" aria-labelledby="team-chair-sla-heading">
                     <div class="ticket-reference-card-header flex flex-wrap items-center justify-between gap-3">
                         <h2 id="team-chair-sla-heading" class="ticket-reference-card-heading">SLA tiket</h2>
-                        <span class="rounded-full bg-[#f1f5f9] px-2.5 py-1 text-xs font-bold text-[#526f79]">{{ $slaState }}</span>
+                        <span @class([
+                            'inline-flex items-center gap-1.5 rounded-[var(--tm-r-full)] border px-2.5 py-1 text-xs font-semibold',
+                            'border-[color:var(--tm-border)] bg-[color:var(--tm-n-50)] text-[color:var(--tm-text-secondary)]' => $slaTone === 'neutral',
+                            'border-[color:var(--tm-info-200)] bg-[color:var(--tm-info-50)] text-[color:var(--tm-info-700)]' => $slaTone === 'info',
+                            'border-[color:var(--tm-success-200)] bg-[color:var(--tm-success-50)] text-[color:var(--tm-success-700)]' => $slaTone === 'success',
+                            'border-[color:var(--tm-warning-200)] bg-[color:var(--tm-warning-50)] text-[color:var(--tm-warning-700)]' => $slaTone === 'warning',
+                            'border-[color:var(--tm-danger-200)] bg-[color:var(--tm-danger-50)] text-[color:var(--tm-danger-700)]' => $slaTone === 'danger',
+                        ])>
+                            <span class="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true"></span>
+                            {{ $slaState }}
+                        </span>
                     </div>
                     <dl class="grid gap-4 p-5 sm:grid-cols-3 sm:p-6">
-                        <div>
+                        <div class="rounded-[var(--tm-r-md)] border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface-sunken)] p-4">
                             <dt class="ticket-reference-info-label">Target</dt>
-                            <dd class="ticket-reference-info-value mt-1">{{ ($sla && ($sla['uses_sla'] ?? false)) ? (($sla['target_working_days'] ?? null) !== null ? $sla['target_working_days'].' hari kerja' : $formatMinutes($sla['target_working_minutes'] ?? null)) : 'Tidak menggunakan SLA' }}</dd>
+                            <dd class="ticket-reference-info-value mt-1 tabular-nums">{{ ($sla && ($sla['uses_sla'] ?? false)) ? (($sla['target_working_days'] ?? null) !== null ? $sla['target_working_days'].' hari kerja' : $formatMinutes($sla['target_working_minutes'] ?? null)) : 'Tidak menggunakan SLA' }}</dd>
                         </div>
-                        <div>
+                        <div class="rounded-[var(--tm-r-md)] border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface-sunken)] p-4">
                             <dt class="ticket-reference-info-label">Sisa waktu aktif</dt>
-                            <dd class="ticket-reference-info-value mt-1">{{ ($sla && ($sla['uses_sla'] ?? false)) ? $formatMinutes($sla['remaining_minutes'] ?? null) : 'Tidak tersedia' }}</dd>
+                            <dd class="ticket-reference-info-value mt-1 tabular-nums">{{ ($sla && ($sla['uses_sla'] ?? false)) ? $formatMinutes($sla['remaining_minutes'] ?? null) : 'Tidak tersedia' }}</dd>
                         </div>
-                        <div>
+                        <div class="rounded-[var(--tm-r-md)] border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface-sunken)] p-4">
                             <dt class="ticket-reference-info-label">Kepatuhan</dt>
                             <dd class="ticket-reference-info-value mt-1">{{ ! $sla || ($sla['compliant'] ?? null) === null ? 'Belum diukur' : (($sla['compliant'] ?? false) ? 'Sesuai target' : 'Tidak sesuai target') }}</dd>
                         </div>
@@ -116,7 +134,7 @@
                 </section>
             </div>
 
-            <aside class="min-w-0 space-y-6">
+            <aside class="min-w-0 space-y-6 lg:sticky lg:top-6">
                 <section class="ticket-reference-card overflow-hidden" aria-labelledby="ticket-information-heading">
                     <div class="ticket-reference-card-header">
                         <h2 id="ticket-information-heading" class="ticket-reference-card-heading">Informasi Tiket</h2>
@@ -142,7 +160,7 @@
                         </div>
                         <div class="ticket-reference-info-item">
                             <dt class="ticket-reference-info-label">Pembaruan Terakhir</dt>
-                            <dd class="ticket-reference-info-value">{{ $updatedAt }} WIB</dd>
+                            <dd class="ticket-reference-info-value tabular-nums">{{ $updatedAt }} WIB</dd>
                         </div>
 
                         <div class="ticket-reference-info-divider" aria-hidden="true"></div>
@@ -153,8 +171,8 @@
                                 <dd class="ticket-reference-assignee">
                                     <span class="ticket-reference-assignee-avatar" aria-hidden="true">{{ $assigneeInitials }}</span>
                                     <span class="min-w-0">
-                                        <span class="block truncate text-sm font-semibold text-[#0b1c30]">{{ $assigneeName }}</span>
-                                        <span class="mt-0.5 block text-xs text-[#434655]">{{ $ticket->assignedTierLabel() ?? 'Tim TI' }}</span>
+                                        <span class="block truncate text-sm font-semibold text-[color:var(--tm-text)]">{{ $assigneeName }}</span>
+                                        <span class="mt-0.5 block text-xs text-[color:var(--tm-text-muted)]">{{ $ticket->assignedTierLabel() ?? 'Tim TI' }}</span>
                                     </span>
                                 </dd>
                             @else
@@ -168,7 +186,7 @@
                     <summary class="ticket-reference-card-header ticket-reference-collapsible-summary flex items-center justify-between gap-4">
                         <span id="ticket-attachments-heading" class="ticket-reference-card-heading">Lampiran</span>
                     </summary>
-                    <div class="ticket-reference-card-body !p-4">
+                    <div class="ticket-reference-card-body">
                         <p class="ticket-reference-empty">Lampiran tidak tersedia pada akses pemantauan.</p>
                     </div>
                 </details>
