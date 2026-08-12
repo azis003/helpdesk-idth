@@ -30,8 +30,8 @@
 @section('content')
     <div class="ticket-reference-content">
         <nav class="mb-5" aria-label="Navigasi detail tiket">
-            <a href="{{ route('tickets.index') }}" class="ui-action-link inline-flex items-center gap-2">
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <a href="{{ route('tickets.index') }}" class="inline-flex items-center gap-1.5 rounded-[var(--tm-r-full)] border border-[color:var(--tm-border)] bg-[color:var(--tm-surface)] px-3 py-1.5 text-xs font-semibold text-[color:var(--tm-text-secondary)] transition-colors hover:border-[color:var(--tm-brand-300)] hover:bg-[color:var(--tm-brand-50)] hover:text-[color:var(--tm-brand-700)]">
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m15 19-7-7 7-7" />
                 </svg>
                 Kembali ke Tiket Saya
@@ -41,11 +41,14 @@
         <header class="ticket-reference-page-header">
             <div class="min-w-0">
                 <div class="flex flex-wrap items-center gap-2.5">
-                    <h1 class="ticket-reference-number">{{ $ticket->label }}</h1>
-                    <x-status-badge :status="$ticket->status" class="!border-[#b9c7ff] !bg-[#e7ebff] !text-[#0037b0]" />
-                    <x-priority-badge :priority="$ticket->priority" class="!border-[#d6dce8] !bg-[#f1f4f8] !text-[#25344c]" />
+                    <h1 class="ticket-reference-number tabular-nums">{{ $ticket->label }}</h1>
+                    <x-status-badge :status="$ticket->status" />
+                    <x-priority-badge :priority="$ticket->priority" />
                 </div>
-                <p class="ticket-reference-subtitle">Dibuat pada {{ $submittedAt }} WIB</p>
+                <p class="ticket-reference-subtitle inline-flex items-center gap-1.5">
+                    <svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="7.25" /><path d="M10 6v4.25l2.5 1.5" /></svg>
+                    Dibuat pada {{ $submittedAt }} WIB
+                </p>
             </div>
 
             @if ($actions['cancel'] || $actions['confirm'] || $actions['notSatisfied'] || $canReopen)
@@ -128,7 +131,7 @@
                                     <h3 class="ticket-reference-action-title">Ya, sudah sesuai</h3>
                                     <p class="ticket-reference-action-copy">Tiket akan ditutup dan tercatat selesai.</p>
                                 </div>
-                                <button type="submit" class="ui-btn w-full bg-[#0037b0] text-white hover:bg-[#1d4ed8]">Konfirmasi selesai</button>
+                                <button type="submit" class="ui-btn ui-btn-primary w-full justify-center">Konfirmasi selesai</button>
                             </form>
                         @endif
 
@@ -140,10 +143,13 @@
                                     <label for="not-satisfied-reason" class="ticket-reference-action-copy">Jelaskan bagian yang masih bermasalah agar petugas dapat menindaklanjuti.</label>
                                     <textarea id="not-satisfied-reason" name="reason" rows="3" required class="ticket-reference-textarea mt-2" placeholder="Contoh: masalah yang sama masih muncul.">{{ old('reason') }}</textarea>
                                     @error('reason')
-                                        <p class="mt-1.5 text-xs font-bold text-[#ba1a1a]">{{ $message }}</p>
+                                        <p class="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-[color:var(--tm-danger-600)]">
+                                            <svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="7.25" /><path d="M10 6.5v4" /><path d="M10 13.25h.01" /></svg>
+                                            {{ $message }}
+                                        </p>
                                     @enderror
                                 </div>
-                                <button type="submit" class="ui-btn w-full border border-[#d99d18] bg-[#fff7df] text-[#805b00] hover:bg-[#ffefc3]" data-ticket-resolution-submit>Minta perbaikan</button>
+                                <button type="submit" class="ui-btn ui-btn-warning w-full justify-center" data-ticket-resolution-submit>Minta perbaikan</button>
                             </form>
                         @endif
                     </div>
@@ -163,11 +169,14 @@
                         <label for="reopen-reason" class="ticket-reference-field-label">Alasan membuka kembali</label>
                         <textarea id="reopen-reason" name="reason" rows="3" class="ticket-reference-textarea mt-1.5" placeholder="Contoh: masalah yang sama muncul kembali.">{{ old('reason') }}</textarea>
                         @error('reason')
-                            <p class="mt-1.5 text-xs font-bold text-[#ba1a1a]">{{ $message }}</p>
+                            <p class="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-[color:var(--tm-danger-600)]">
+                                <svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="7.25" /><path d="M10 6.5v4" /><path d="M10 13.25h.01" /></svg>
+                                {{ $message }}
+                            </p>
                         @enderror
                     </div>
                     <div class="flex justify-end">
-                        <button type="submit" class="ui-btn border border-[#c4c5d7] bg-white text-[#0b1c30] hover:border-[#0037b0] hover:bg-[#eff4ff]" data-ticket-resolution-submit>Buka kembali tiket</button>
+                        <button type="submit" class="ui-btn ui-btn-secondary" data-ticket-resolution-submit>Buka kembali tiket</button>
                     </div>
                 </form>
             </section>
@@ -187,7 +196,7 @@
                                 <h3 class="ticket-reference-info-label">Informasi yang Anda kirim</h3>
                                 <dl class="mt-3 grid gap-x-6 gap-y-4 sm:grid-cols-2">
                                     @foreach ($submittedFields as $field)
-                                        <div>
+                                        <div class="rounded-[var(--tm-r-md)] border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface-sunken)] px-4 py-3">
                                             <dt class="ticket-reference-field-label">{{ $field['label'] }}</dt>
                                             <dd class="ticket-reference-field-value">{{ $field['value'] }}</dd>
                                         </div>
@@ -224,7 +233,7 @@
                 <details class="ticket-reference-card ticket-reference-collapsible" aria-labelledby="ticket-reply-heading" @if (! $isClosed) open @endif>
                     <summary class="ticket-reference-card-header ticket-reference-collapsible-summary flex items-center justify-between gap-4">
                         <span id="ticket-reply-heading" class="ticket-reference-section-title flex min-w-0 items-center gap-2">
-                            <svg class="h-6 w-6 shrink-0 text-[#0b1c30]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <svg class="h-5 w-5 shrink-0 text-[color:var(--tm-brand-600)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 5.5h16v11H8l-4 3v-14Z" />
                                 <path stroke-linecap="round" d="M8 9h8M8 12h5" />
                             </svg>
@@ -241,7 +250,10 @@
                                     <label for="requester-reply-body" class="ticket-reference-field-label">Balasan ke Tim TI</label>
                                     <textarea id="requester-reply-body" name="body" rows="5" required class="ticket-reference-textarea mt-1.5" placeholder="Ketik pesan atau informasi tambahan di sini...">{{ old('body') }}</textarea>
                                     @error('body')
-                                        <p class="mt-1.5 text-xs font-bold text-[#ba1a1a]">{{ $message }}</p>
+                                        <p class="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-[color:var(--tm-danger-600)]">
+                                            <svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="7.25" /><path d="M10 6.5v4" /><path d="M10 13.25h.01" /></svg>
+                                            {{ $message }}
+                                        </p>
                                     @enderror
 
                                     @if ($replyAttachmentPolicies->isNotEmpty())
@@ -262,7 +274,7 @@
                                     @endif
 
                                     <div class="mt-4 flex flex-wrap items-center justify-end gap-3">
-                                        <button type="submit" class="ui-btn bg-[#0037b0] text-white hover:bg-[#1d4ed8]" data-ticket-communication-submit>Kirim Pesan</button>
+                                        <button type="submit" class="ui-btn ui-btn-primary" data-ticket-communication-submit>Kirim Pesan</button>
                                     </div>
                                 </div>
                             </form>
@@ -271,7 +283,7 @@
                                 <div class="ticket-reference-avatar" aria-hidden="true">{{ $currentUserInitials }}</div>
                                 <div class="min-w-0 flex-1">
                                     <label for="requester-reply-disabled" class="ticket-reference-field-label">Balasan ke Tim TI</label>
-                                    <textarea id="requester-reply-disabled" rows="5" disabled class="ticket-reference-textarea mt-1.5 disabled:cursor-not-allowed disabled:bg-[#f3f5fa]" placeholder="Ketik pesan atau informasi tambahan di sini..."></textarea>
+                                    <textarea id="requester-reply-disabled" rows="5" disabled class="ticket-reference-textarea mt-1.5 disabled:cursor-not-allowed disabled:bg-[color:var(--tm-n-50)]" placeholder="Ketik pesan atau informasi tambahan di sini..."></textarea>
                                     <p class="ticket-reference-file-help mt-2">Balasan tidak tersedia karena tiket sudah berstatus akhir.</p>
                                 </div>
                             </div>
@@ -280,7 +292,7 @@
                 </details>
             </div>
 
-            <aside class="min-w-0 space-y-6">
+            <aside class="min-w-0 space-y-6 lg:sticky lg:top-6">
                 <section class="ticket-reference-card overflow-hidden" aria-labelledby="ticket-information-heading">
                     <div class="ticket-reference-card-header">
                         <h2 id="ticket-information-heading" class="ticket-reference-card-heading">Informasi Tiket</h2>
@@ -301,7 +313,7 @@
                         @if ($ticket->sla)
                             <div class="ticket-reference-info-item">
                                 <dt class="ticket-reference-info-label">Estimasi Selesai</dt>
-                                <dd class="ticket-reference-info-value">{{ $ticket->sla['target'] }}</dd>
+                                <dd class="ticket-reference-info-value tabular-nums">{{ $ticket->sla['target'] }}</dd>
                             </div>
                         @endif
 
@@ -320,8 +332,8 @@
                                 <dd class="ticket-reference-assignee">
                                     <span class="ticket-reference-assignee-avatar" aria-hidden="true">{{ $assigneeInitials }}</span>
                                     <span class="min-w-0">
-                                        <span class="block truncate text-sm font-semibold text-[#0b1c30]">{{ $assigneeName }}</span>
-                                        <span class="mt-0.5 block text-xs text-[#434655]">Tim TI</span>
+                                        <span class="block truncate text-sm font-semibold text-[color:var(--tm-text)]">{{ $assigneeName }}</span>
+                                        <span class="mt-0.5 block text-xs text-[color:var(--tm-text-muted)]">Tim TI</span>
                                     </span>
                                 </dd>
                             @else
@@ -335,12 +347,12 @@
                     <summary class="ticket-reference-card-header ticket-reference-collapsible-summary flex items-center justify-between gap-4">
                         <span id="ticket-attachments-heading" class="ticket-reference-card-heading">Lampiran</span>
                     </summary>
-                    <div class="ticket-reference-card-body !p-4">
+                    <div class="ticket-reference-card-body">
                         @if ($ticket->hasAttachments())
-                            <ul class="space-y-3">
+                            <ul class="space-y-2">
                                 @foreach ($ticket->attachments as $attachment)
                                     <li>
-                                        <a href="{{ $attachment['url'] }}" class="ticket-reference-attachment-link" download>
+                                        <a href="{{ $attachment['url'] }}" class="ticket-reference-attachment-link rounded-[var(--tm-r-md)] transition-colors hover:bg-[color:var(--tm-brand-50)]" download>
                                             <span class="ticket-reference-attachment-icon" aria-hidden="true">
                                                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                                                     <rect x="3.5" y="4" width="17" height="16" rx="1.5" />
@@ -348,10 +360,13 @@
                                                 </svg>
                                             </span>
                                             <span class="min-w-0 flex-1">
-                                                <span class="block truncate text-sm font-medium text-[#0b1c30]">{{ $attachment['name'] }}</span>
-                                                <span class="mt-0.5 block text-xs text-[#434655]">{{ $attachment['meta'] }}</span>
+                                                <span class="block truncate text-sm font-medium text-[color:var(--tm-text)]">{{ $attachment['name'] }}</span>
+                                                <span class="mt-0.5 block text-xs text-[color:var(--tm-text-muted)]">{{ $attachment['meta'] }}</span>
                                             </span>
-                                            <span class="shrink-0 text-xs font-semibold text-[#0037b0]">Unduh</span>
+                                            <span class="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[color:var(--tm-brand-700)]">
+                                                <svg class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4v8" /><path d="m6.5 8.75 3.5 3.5 3.5-3.5" /><path d="M4.5 15.25h11" /></svg>
+                                                Unduh
+                                            </span>
                                         </a>
                                     </li>
                                 @endforeach
