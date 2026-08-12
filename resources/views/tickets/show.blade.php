@@ -383,7 +383,7 @@
                                 <label for="ticket-public-reply-body" class="ticket-reference-field-label">{{ $canRequesterReply ? 'Balasan ke Tim TI' : 'Balasan ke Pemohon' }}</label>
                                 <textarea id="ticket-public-reply-body" name="body" rows="5" required class="ticket-reference-textarea mt-1.5" placeholder="Ketik pesan atau informasi tambahan di sini...">{{ old('body') }}</textarea>
                                 @error('body')
-                                    <x-field-error :message="$message" class="mt-1.5 !text-xs" />
+                                    <x-field-error :message="$message" />
                                 @enderror
 
                                 @if ($commentPublicPolicies->isNotEmpty())
@@ -762,7 +762,7 @@
                         <ul class="mt-4 space-y-2">
                             @foreach ($ticketAttachments as $attachment)
                                 <li>
-                                    <a href="{{ route('attachments.download', $attachment) }}" class="ticket-reference-attachment-link group rounded-[var(--tm-r-md)] transition-[background-color,border-color] duration-[var(--tm-dur-fast)] hover:bg-[color:var(--tm-brand-50)]">
+                                    <a href="{{ route('attachments.download', $attachment) }}" class="ticket-reference-attachment-link rounded-[var(--tm-r-md)] transition-[background-color,border-color] duration-[var(--tm-dur-fast)] hover:bg-[color:var(--tm-brand-50)]">
                                         <span class="ticket-reference-attachment-icon" aria-hidden="true">
                                             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="4" width="17" height="16" rx="1.5" /><path stroke-linecap="round" stroke-linejoin="round" d="m6.5 16 3.2-3.4 2.5 2.6 2-2.1 3.3 2.9M8.5 9.3h.01" /></svg>
                                         </span>
@@ -797,33 +797,8 @@
                 </div>
             </section>
 
-            @if ($showActionPanel)
-            <div class="contents">
-
-            @if ($canChangePriority)
-                <x-ui.modal-panel id="ticket-priority-modal" labelledby="priority-heading" :auto-open="$errors->any() && old('_action_modal') === 'ticket-priority-modal'">
-                <section class="ui-panel" aria-labelledby="priority-heading">
-                    <div class="ui-panel-header">
-                        <div>
-                            <h2 id="priority-heading" class="ui-section-title">Ubah Prioritas</h2>
-                            <p class="ui-section-description">Pilih prioritas yang sesuai dengan dampak dan urgensi tiket.</p>
-                        </div>
-                    </div>
-                    <form method="POST" action="{{ route('tickets.priority.update', $ticket) }}" class="space-y-4 p-5 sm:p-6" data-ticket-priority-form>
-                        @csrf
-                        @method('PUT')
-                        <input type="hidden" name="_action_modal" value="ticket-priority-modal">
-                        <div>
-                            <label for="ticket-priority" class="ui-field-label">Prioritas <span class="text-[color:var(--tm-danger-600)]" aria-hidden="true">*</span></label>
-                            <select id="ticket-priority" name="priority" required class="ui-select mt-2">
-                                @foreach ($priorityOptions as $value => $label)
-                                    <option value="{{ $value }}" @selected($currentPriority === $value)>{{ $label }}</option>
-                                @endforeach
-                            </select>
-                            @error('priority')<x-field-error :message="$message" />@enderror
-                        </div>
-                        <div>
-                            <label for="priority-change-reason" class="ui-field-label">Alasan perubahan <span class="text-[color:var(--tm-danger-600)]" aria-hidden="true">*</span></label>
-                            <textarea id="priority-change-reason" name="reason" rows="3" required maxlength="1000" class="ui-textarea mt-2" placeholder="Jelaskan mengapa prioritas perlu disesuaikan.">{{ old('reason') }}</textarea>
-                            @error('reason')<x-field-error :message="$message" />@enderror
-                        </div>
+            @include('tickets._action-modals')
+        </aside>
+    </div>
+    </div>
+@endsection
