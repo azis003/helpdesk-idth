@@ -1,5 +1,6 @@
 @php
     $isTierOne = $agentDashboard['is_tier_one'];
+    $isTechnician = ! $isTierOne;
     $assignedTickets = $agentDashboard['assigned_tickets'] ?? collect();
     $queueTickets = $agentDashboard['queue_tickets'] ?? collect();
     $todayLabel = now($periodTimezone)->locale('id')->translatedFormat('l, d M Y');
@@ -93,32 +94,51 @@
     @endif
 
     <section aria-labelledby="helpdesk-summary-heading">
-        <h2 id="helpdesk-summary-heading" class="sr-only">Ringkasan pekerjaan Helpdesk</h2>
-        <dl class="hd-stat-grid">
-            <div class="hd-stat-card">
-                <div class="hd-stat-card-head"><dt>Total Tiket</dt><span class="hd-stat-icon hd-stat-icon--blue" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4.5" y="5" width="15" height="14" rx="1.5" /><path stroke-linecap="round" d="M8 9h8M8 12.5h5M8 16h6" /></svg></span></div>
-                <dd class="hd-stat-value">{{ $agentDashboard['summary']['total'] }}</dd>
-            </div>
-            <div class="hd-stat-card">
-                <div class="hd-stat-card-head"><dt>Antrian Tiket</dt><span class="hd-stat-icon hd-stat-icon--blue" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M5 6.5h14M5 12h14M5 17.5h9" /><path stroke-linecap="round" d="M18 17.5h.01" /></svg></span></div>
-                <dd class="hd-stat-value">{{ $agentDashboard['summary']['queue'] }}</dd>
-            </div>
-            <div class="hd-stat-card">
-                <div class="hd-stat-card-head"><dt>Dikerjakan Sendiri</dt><span class="hd-stat-icon hd-stat-icon--indigo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3" /><path stroke-linecap="round" d="M5.5 19a6.5 6.5 0 0 1 13 0" /></svg></span></div>
-                <dd class="hd-stat-value">{{ $agentDashboard['summary']['self_handled'] }}</dd>
-            </div>
-            <div class="hd-stat-card">
-                <div class="hd-stat-card-head"><dt>Dikerjakan Teknisi</dt><span class="hd-stat-icon hd-stat-icon--warning" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m14.5 6.5 3-3 3 3-3 3M16.5 8.5 9 16m-3.5-.5 3 3M4.5 19.5l2.5-1 1-2.5-3-3-2.5 1-1 2.5 3 3Z" /></svg></span></div>
-                <dd class="hd-stat-value">{{ $agentDashboard['summary']['technician'] }}</dd>
-            </div>
-            <div class="hd-stat-card">
-                <div class="hd-stat-card-head"><dt>Tiket Selesai</dt><span class="hd-stat-icon hd-stat-icon--success" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8" /><path stroke-linecap="round" stroke-linejoin="round" d="m8.5 12 2.3 2.3 4.7-4.7" /></svg></span></div>
-                <dd class="hd-stat-value">{{ $agentDashboard['summary']['finished'] }}</dd>
-            </div>
+        <h2 id="helpdesk-summary-heading" class="sr-only">Ringkasan pekerjaan {{ $isTechnician ? 'teknisi' : 'Helpdesk' }}</h2>
+        <dl @class(['hd-stat-grid', 'hd-stat-grid--technician' => $isTechnician])>
+            @if ($isTierOne)
+                <div class="hd-stat-card">
+                    <div class="hd-stat-card-head"><dt>Total Tiket</dt><span class="hd-stat-icon hd-stat-icon--blue" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4.5" y="5" width="15" height="14" rx="1.5" /><path stroke-linecap="round" d="M8 9h8M8 12.5h5M8 16h6" /></svg></span></div>
+                    <dd class="hd-stat-value">{{ $agentDashboard['summary']['total'] }}</dd>
+                </div>
+                <div class="hd-stat-card">
+                    <div class="hd-stat-card-head"><dt>Antrian Tiket</dt><span class="hd-stat-icon hd-stat-icon--blue" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M5 6.5h14M5 12h14M5 17.5h9" /><path stroke-linecap="round" d="M18 17.5h.01" /></svg></span></div>
+                    <dd class="hd-stat-value">{{ $agentDashboard['summary']['queue'] }}</dd>
+                </div>
+                <div class="hd-stat-card">
+                    <div class="hd-stat-card-head"><dt>Dikerjakan Sendiri</dt><span class="hd-stat-icon hd-stat-icon--indigo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3" /><path stroke-linecap="round" d="M5.5 19a6.5 6.5 0 0 1 13 0" /></svg></span></div>
+                    <dd class="hd-stat-value">{{ $agentDashboard['summary']['self_handled'] }}</dd>
+                </div>
+                <div class="hd-stat-card">
+                    <div class="hd-stat-card-head"><dt>Dikerjakan Teknisi</dt><span class="hd-stat-icon hd-stat-icon--warning" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m14.5 6.5 3-3 3 3-3 3M16.5 8.5 9 16m-3.5-.5 3 3M4.5 19.5l2.5-1 1-2.5-3-3-2.5 1-1 2.5 3 3Z" /></svg></span></div>
+                    <dd class="hd-stat-value">{{ $agentDashboard['summary']['technician'] }}</dd>
+                </div>
+                <div class="hd-stat-card">
+                    <div class="hd-stat-card-head"><dt>Tiket Selesai</dt><span class="hd-stat-icon hd-stat-icon--success" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8" /><path stroke-linecap="round" stroke-linejoin="round" d="m8.5 12 2.3 2.3 4.7-4.7" /></svg></span></div>
+                    <dd class="hd-stat-value">{{ $agentDashboard['summary']['finished'] }}</dd>
+                </div>
+            @else
+                <div class="hd-stat-card">
+                    <div class="hd-stat-card-head"><dt>Tiket Aktif</dt><span class="hd-stat-icon hd-stat-icon--blue" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3" /><path stroke-linecap="round" d="M5.5 19a6.5 6.5 0 0 1 13 0" /></svg></span></div>
+                    <dd class="hd-stat-value">{{ $agentDashboard['assigned_count'] }}</dd>
+                    <p>Tiket yang di-assign kepada Anda.</p>
+                </div>
+                <div class="hd-stat-card">
+                    <div class="hd-stat-card-head"><dt>Menunggu Konfirmasi</dt><span class="hd-stat-icon hd-stat-icon--warning" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8" /><path stroke-linecap="round" d="M12 7.8v4.5l2.8 1.8" /></svg></span></div>
+                    <dd class="hd-stat-value">{{ $agentDashboard['awaiting_confirmation_count'] }}</dd>
+                    <p>Tiket sudah selesai dikerjakan dan menunggu respons Pemohon.</p>
+                </div>
+                <div class="hd-stat-card">
+                    <div class="hd-stat-card-head"><dt>Tiket Ditutup</dt><span class="hd-stat-icon hd-stat-icon--success" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8" /><path stroke-linecap="round" stroke-linejoin="round" d="m8.5 12 2.3 2.3 4.7-4.7" /></svg></span></div>
+                    <dd class="hd-stat-value">{{ $agentDashboard['closed_count'] }}</dd>
+                    <p>Tiket telah selesai ditangani.</p>
+                </div>
+            @endif
         </dl>
     </section>
 
-    <div class="hd-dashboard-grid">
+    <div @class(['hd-dashboard-grid' => $isTierOne, 'hd-technician-dashboard-section' => $isTechnician])>
+        @if ($isTierOne)
         <div class="hd-dashboard-primary">
             <section class="hd-panel hd-queue-panel" aria-labelledby="helpdesk-queue-heading">
                 <div class="hd-panel-header">
@@ -182,15 +202,17 @@
             </section>
 
         </div>
+        @endif
 
-        <aside class="hd-dashboard-sidebar" aria-label="Ringkasan tugas dan informasi Helpdesk">
+        <aside @class(['hd-dashboard-sidebar' => $isTierOne]) aria-label="{{ $isTierOne ? 'Ringkasan tugas dan informasi Helpdesk' : 'Pengumuman internal' }}">
+            @if ($isTierOne)
             <section class="hd-panel" aria-labelledby="helpdesk-assigned-heading">
                 <div class="hd-panel-header">
                     <div class="hd-section-heading">
                         <span class="hd-section-icon hd-section-icon--blue" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3" /><path stroke-linecap="round" d="M5.5 19a6.5 6.5 0 0 1 13 0" /></svg></span>
                         <h2 id="helpdesk-assigned-heading" class="hd-section-title">Tiket Saya</h2>
                     </div>
-                    <span class="hd-panel-count">{{ $agentDashboard['assigned_count'] }} Aktif</span>
+                    <span class="hd-panel-count">{{ $agentDashboard['assigned_count'] }} Tiket</span>
                 </div>
                 <div class="hd-task-list">
                     @forelse ($assignedTickets as $ticket)
@@ -205,6 +227,7 @@
                 </div>
                 <a href="{{ route('tickets.queue', ['tab' => 'mine']) }}" class="hd-outline-button">Buka Tiket Saya</a>
             </section>
+            @endif
 
             <section class="hd-panel" aria-labelledby="helpdesk-announcements-heading">
                 <div class="hd-panel-header">

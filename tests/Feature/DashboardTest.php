@@ -191,6 +191,62 @@ class DashboardTest extends TestCase
             });
     }
 
+    public function test_technician_dashboard_shows_personal_ticket_summary(): void
+    {
+        $technician = $this->createUser([Role::AgenTier2], ['name' => 'Teknisi Operasional']);
+        $otherTechnician = $this->createUser([Role::AgenTier2]);
+        $requester = $this->createUser([Role::Pemohon]);
+        $service = ServiceType::query()->where('code', 'SVC-01')->firstOrFail();
+
+        foreach ([
+            ['subject' => 'Tiket masih dikerjakan', 'status' => TicketStatus::Dikerjakan],
+            ['subject' => 'Tiket menunggu konfirmasi', 'status' => TicketStatus::MenungguKonfirmasi],
+            ['subject' => 'Tiket sudah ditutup', 'status' => TicketStatus::Ditutup],
+        ] as $ticket) {
+            Ticket::factory()->create([
+                ...$ticket,
+                'requester_id' => $requester->id,
+                'created_by_id' => $requester->id,
+                'service_type_id' => $service->id,
+                'assigned_to_id' => $technician->id,
+                'assigned_tier' => Role::AgenTier2->value,
+                'submitted_at' => now()->subHour(),
+            ]);
+        }
+
+        Ticket::factory()->create([
+            'subject' => 'Tiket milik teknisi lain',
+            'requester_id' => $requester->id,
+            'created_by_id' => $requester->id,
+            'service_type_id' => $service->id,
+            'assigned_to_id' => $otherTechnician->id,
+            'assigned_tier' => Role::AgenTier2->value,
+            'status' => TicketStatus::Ditutup,
+            'submitted_at' => now()->subHour(),
+        ]);
+
+        $this->actingAs($technician)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Tiket Aktif')
+            ->assertSee('Tiket yang di-assign kepada Anda.')
+            ->assertSee('Menunggu Konfirmasi')
+            ->assertSee('Tiket sudah selesai dikerjakan dan menunggu respons Pemohon.')
+            ->assertSee('Tiket Ditutup')
+            ->assertSee('Tiket telah selesai ditangani.')
+            ->assertDontSee('Dikerjakan Sendiri')
+            ->assertDontSee('Dikerjakan Teknisi')
+            ->assertDontSee('Antrian Tiket')
+            ->assertDontSee('Tiket Saya')
+            ->assertDontSee('Tiket masih dikerjakan')
+            ->assertSee('Pengumuman Internal')
+            ->assertViewHas('agentDashboard', function (array $dashboard): bool {
+                return $dashboard['assigned_count'] === 3
+                    && $dashboard['awaiting_confirmation_count'] === 1
+                    && $dashboard['closed_count'] === 1;
+            });
+    }
+
     public function test_helpdesk_dashboard_omits_removed_overall_analytics(): void
     {
         $admin = $this->createUser([Role::SuperAdmin]);

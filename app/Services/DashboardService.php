@@ -145,6 +145,12 @@ class DashboardService
             ->limit(8)
             ->get();
         $assignedCount = (clone $assignedQuery)->count();
+        $awaitingConfirmationCount = (clone $assignedQuery)
+            ->where('status', TicketStatus::MenungguKonfirmasi->value)
+            ->count();
+        $closedCount = (clone $assignedQuery)
+            ->where('status', TicketStatus::Ditutup->value)
+            ->count();
         $waitingRequesterCount = (clone $assignedQuery)
             ->where('status', TicketStatus::MenungguPemohon->value)
             ->count();
@@ -243,6 +249,8 @@ class DashboardService
             'queue_tickets' => $queueTickets,
             'assigned_count' => $assignedCount,
             'assigned_tickets' => $assignedTickets,
+            'awaiting_confirmation_count' => $awaitingConfirmationCount,
+            'closed_count' => $closedCount,
             'near_sla_count' => $nearSla->count(),
             'near_sla_tickets' => $nearSla,
             'overdue_sla_count' => $overdueSla->count(),
@@ -522,6 +530,8 @@ class DashboardService
             'queue_tickets' => collect(),
             'assigned_count' => 0,
             'assigned_tickets' => collect(),
+            'awaiting_confirmation_count' => 0,
+            'closed_count' => 0,
             'near_sla_count' => 0,
             'near_sla_tickets' => collect(),
             'overdue_sla_count' => 0,
