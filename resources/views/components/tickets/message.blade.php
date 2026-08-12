@@ -19,32 +19,34 @@
             'url' => route('attachments.download', $attachment),
         ])
         : collect($message->attachments);
+    $isInternalNote = $isOperationalMessage
+        && $message->visibility === \App\Enums\TicketCommentVisibility::Internal;
 @endphp
 
 @if ($variant === 'reference')
-    <article class="rounded-lg border border-[#c4c5d7] bg-[#f8f9ff] p-4">
+    <article class="rounded-[var(--tm-r-md)] border p-4 transition-shadow duration-200 hover:shadow-[var(--tm-sh-sm)] {{ $isInternalNote ? 'border-[color:var(--tm-warning-200)] bg-[color:var(--tm-warning-50)]' : 'border-[color:var(--tm-border)] bg-[color:var(--tm-n-25)]' }}">
         <header class="flex flex-wrap items-start justify-between gap-3">
             <div class="flex min-w-0 items-center gap-3">
-                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#dce9ff] text-xs font-bold text-[#0037b0]" aria-hidden="true">{{ $initial }}</span>
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold {{ $isInternalNote ? 'bg-[color:var(--tm-warning-100)] text-[color:var(--tm-warning-700)]' : 'bg-[color:var(--tm-brand-100)] text-[color:var(--tm-brand-700)]' }}" aria-hidden="true">{{ $initial }}</span>
                 <div class="min-w-0">
-                    <p class="truncate text-sm font-bold text-[#0b1c30]">{{ $authorName }}</p>
-                    <p class="mt-0.5 text-xs text-[#434655]">{{ $authorLabel }}</p>
+                    <p class="truncate text-sm font-bold text-[color:var(--tm-text)]">{{ $authorName }}</p>
+                    <p class="mt-0.5 text-xs {{ $isInternalNote ? 'font-bold text-[color:var(--tm-warning-700)]' : 'text-[color:var(--tm-text-muted)]' }}">{{ $authorLabel }}</p>
                 </div>
             </div>
 
             @if ($createdAt)
-                <time class="text-xs text-[#434655]" datetime="{{ $createdAt->toIso8601String() }}">{{ $createdAt->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }} WIB</time>
+                <time class="text-xs tabular-nums text-[color:var(--tm-text-muted)]" datetime="{{ $createdAt->toIso8601String() }}">{{ $createdAt->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }} WIB</time>
             @endif
         </header>
 
-        <p class="mt-4 whitespace-pre-line text-sm leading-6 text-[#434655]">{{ $body }}</p>
+        <p class="mt-4 whitespace-pre-line text-sm leading-6 text-[color:var(--tm-text-secondary)]">{{ $body }}</p>
 
         @if ($messageAttachments->isNotEmpty())
-            <ul class="mt-4 flex flex-wrap gap-2 border-t border-[#c4c5d7] pt-3">
+            <ul class="mt-4 flex flex-wrap gap-2 border-t border-[color:var(--tm-border-subtle)] pt-3">
                 @foreach ($messageAttachments as $attachment)
                     <li>
-                        <a href="{{ $attachment['url'] }}" class="inline-flex max-w-full items-center gap-1.5 rounded-md border border-[#c4c5d7] bg-white px-2.5 py-1.5 text-xs font-bold text-[#0037b0] hover:border-[#0037b0]">
-                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
+                        <a href="{{ $attachment['url'] }}" class="inline-flex max-w-full items-center gap-1.5 rounded-[var(--tm-r-sm)] border border-[color:var(--tm-border)] bg-[color:var(--tm-surface)] px-2.5 py-1.5 text-xs font-bold text-[color:var(--tm-brand-700)] transition hover:border-[color:var(--tm-brand-400)] hover:bg-[color:var(--tm-brand-50)]">
+                            <svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
                             <span class="truncate">{{ $attachment['name'] }}</span>
                         </a>
                     </li>
@@ -54,29 +56,29 @@
     </article>
 @else
 
-<article class="rounded-2xl border p-4 sm:p-5 {{ $message->fromRequester ? 'border-[#dce7eb] bg-[#f8fbfc]' : 'border-[#cdeef7] bg-[#f5fcfe]' }}">
+<article class="rounded-[var(--tm-r-lg)] border p-4 transition-shadow duration-200 hover:shadow-[var(--tm-sh-sm)] sm:p-5 {{ $message->fromRequester ? 'border-[color:var(--tm-border)] bg-[color:var(--tm-n-25)]' : 'border-[color:var(--tm-brand-100)] bg-[color:var(--tm-brand-50)]' }}">
     <header class="flex flex-wrap items-start justify-between gap-3">
         <div class="flex min-w-0 items-center gap-3">
-            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-extrabold {{ $message->fromRequester ? 'bg-[#e3ecef] text-[#526f79]' : 'bg-[#d7f5fc] text-[#147a79]' }}" aria-hidden="true">{{ $message->initial() }}</span>
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--tm-r-md)] text-xs font-extrabold {{ $message->fromRequester ? 'bg-[color:var(--tm-n-100)] text-[color:var(--tm-text-secondary)]' : 'bg-[color:var(--tm-brand-100)] text-[color:var(--tm-brand-700)]' }}" aria-hidden="true">{{ $message->initial() }}</span>
             <div class="min-w-0">
-                <p class="truncate text-sm font-extrabold text-[#35505b]">{{ $message->authorName }}</p>
-                <p class="mt-0.5 text-xs text-[#78909a]">{{ $message->roleLabel() }}</p>
+                <p class="truncate text-sm font-extrabold text-[color:var(--tm-text)]">{{ $message->authorName }}</p>
+                <p class="mt-0.5 text-xs text-[color:var(--tm-text-muted)]">{{ $message->roleLabel() }}</p>
             </div>
         </div>
 
         @if ($message->createdAt)
-            <time class="text-xs text-[#78909a]" datetime="{{ $message->createdAt->toIso8601String() }}">{{ $message->createdAt->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</time>
+            <time class="text-xs tabular-nums text-[color:var(--tm-text-muted)]" datetime="{{ $message->createdAt->toIso8601String() }}">{{ $message->createdAt->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</time>
         @endif
     </header>
 
-    <p class="mt-4 whitespace-pre-line text-sm leading-7 text-[#526f79]">{{ $message->body }}</p>
+    <p class="mt-4 whitespace-pre-line text-sm leading-7 text-[color:var(--tm-text-secondary)]">{{ $message->body }}</p>
 
     @if ($message->hasAttachments())
-        <ul class="mt-4 flex flex-wrap gap-2 border-t border-[#e3ecef] pt-3">
+        <ul class="mt-4 flex flex-wrap gap-2 border-t border-[color:var(--tm-border-subtle)] pt-3">
             @foreach ($message->attachments as $attachment)
                 <li>
-                    <a href="{{ $attachment['url'] }}" class="inline-flex items-center gap-1.5 rounded-lg border border-[#cfe0e5] bg-white px-2.5 py-1.5 text-xs font-bold text-[#0f766e] hover:border-[#98dff3]">
-                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
+                    <a href="{{ $attachment['url'] }}" class="inline-flex items-center gap-1.5 rounded-[var(--tm-r-sm)] border border-[color:var(--tm-border)] bg-[color:var(--tm-surface)] px-2.5 py-1.5 text-xs font-bold text-[color:var(--tm-brand-700)] transition hover:border-[color:var(--tm-brand-400)] hover:bg-[color:var(--tm-brand-50)]">
+                        <svg class="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
                         {{ $attachment['name'] }}
                     </a>
                 </li>

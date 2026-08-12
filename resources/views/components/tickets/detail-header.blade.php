@@ -9,8 +9,8 @@
 ])
 
 <nav class="mb-5" aria-label="Navigasi detail tiket">
-    <a href="{{ $backUrl }}" class="ui-action-link inline-flex items-center gap-2">
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+    <a href="{{ $backUrl }}" class="ui-action-link inline-flex items-center gap-1.5 rounded-[var(--tm-r-full)] border border-[color:var(--tm-border)] bg-[color:var(--tm-surface)] px-3 py-1.5 text-xs font-semibold shadow-[var(--tm-sh-xs)] transition hover:-translate-x-0.5 hover:border-[color:var(--tm-brand-300)]">
+        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="m15 19-7-7 7-7" />
         </svg>
         {{ $backLabel }}
@@ -21,12 +21,18 @@
     <div class="min-w-0 w-full">
         <div class="flex flex-wrap items-center gap-2.5">
             <h1 class="ticket-reference-number">{{ $ticketLabel }}</h1>
-            <x-status-badge :status="$status" class="!border-[#b9c7ff] !bg-[#e7ebff] !text-[#0037b0]" />
-            <x-priority-badge :priority="$priority" class="!border-[#d6dce8] !bg-[#f1f4f8] !text-[#25344c]" />
+            <x-status-badge :status="$status" />
+            <x-priority-badge :priority="$priority" />
         </div>
 
         <div class="ticket-reference-header-meta">
-            <p class="ticket-reference-subtitle">Dibuat pada {{ $submittedAt }} WIB</p>
+            <p class="ticket-reference-subtitle inline-flex items-center gap-1.5">
+                <svg class="h-3.5 w-3.5 shrink-0 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5V12l3 1.8" />
+                </svg>
+                Dibuat pada {{ $submittedAt }} WIB
+            </p>
 
             @if ($showActions && isset($actions))
                 <details class="ticket-reference-action-menu" data-ticket-action-menu>
