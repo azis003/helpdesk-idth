@@ -9,47 +9,52 @@
     $teamSummary = $currentTeamMembership?->workTeam
         ? $currentTeamMembership->workTeam->name.' - '.($isChair ? 'Ketua' : 'Anggota')
         : '—';
+
+    // Presentasional saja - tidak mengubah data maupun logika.
+    $userDetailTile = 'rounded-[var(--tm-r-md)] border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-sunken)] p-3.5';
+    $userDetailLabel = 'text-[0.7rem] font-bold uppercase tracking-[0.08em] text-[color:var(--tm-text-faint)]';
+    $userDetailValue = 'mt-1.5 text-sm font-semibold text-[color:var(--tm-text)]';
 @endphp
 
 <dl class="grid gap-3 p-5 sm:grid-cols-2 sm:p-6">
-    <div class="rounded-lg bg-[#f8fafb] p-3">
-        <dt class="text-xs font-bold uppercase tracking-wide text-[#78909a]">Nama Pengguna</dt>
-        <dd class="mt-1 text-sm font-semibold text-[#172d45]">{{ $user->name }}</dd>
+    <div class="{{ $userDetailTile }}">
+        <dt class="{{ $userDetailLabel }}">Nama Pengguna</dt>
+        <dd class="{{ $userDetailValue }}">{{ $user->name }}</dd>
     </div>
-    <div class="rounded-lg bg-[#f8fafb] p-3">
-        <dt class="text-xs font-bold uppercase tracking-wide text-[#78909a]">Username</dt>
-        <dd class="mt-1 text-sm font-semibold text-[#172d45]">{{ $user->username }}</dd>
+    <div class="{{ $userDetailTile }}">
+        <dt class="{{ $userDetailLabel }}">Username</dt>
+        <dd class="{{ $userDetailValue }}">{{ $user->username }}</dd>
     </div>
-    <div class="rounded-lg bg-[#f8fafb] p-3">
-        <dt class="text-xs font-bold uppercase tracking-wide text-[#78909a]">Email</dt>
-        <dd class="mt-1 break-all text-sm font-semibold text-[#172d45]">{{ $user->email ?: '—' }}</dd>
+    <div class="{{ $userDetailTile }}">
+        <dt class="{{ $userDetailLabel }}">Email</dt>
+        <dd class="{{ $userDetailValue }} break-all">{{ $user->email ?: '—' }}</dd>
     </div>
-    <div class="rounded-lg bg-[#f8fafb] p-3">
-        <dt class="text-xs font-bold uppercase tracking-wide text-[#78909a]">NIP</dt>
-        <dd class="mt-1 text-sm font-semibold text-[#172d45]">{{ $user->nip ?: '—' }}</dd>
+    <div class="{{ $userDetailTile }}">
+        <dt class="{{ $userDetailLabel }}">NIP</dt>
+        <dd class="{{ $userDetailValue }} tabular-nums">{{ $user->nip ?: '—' }}</dd>
     </div>
-    <div class="rounded-lg bg-[#f8fafb] p-3 sm:col-span-2">
-        <dt class="text-xs font-bold uppercase tracking-wide text-[#78909a]">Role</dt>
-        <dd class="mt-1 text-sm font-semibold text-[#172d45]">
+    <div class="{{ $userDetailTile }} sm:col-span-2">
+        <dt class="{{ $userDetailLabel }}">Role</dt>
+        <dd class="{{ $userDetailValue }}">
             @if ($displayRoles->isNotEmpty())
-                <ul class="list-disc space-y-1 pl-4">
+                <div class="flex flex-wrap gap-1.5">
                     @foreach ($displayRoles as $role)
-                        <li>{{ $role->managementLabel() }}</li>
+                        <span class="ui-chip">{{ $role->managementLabel() }}</span>
                     @endforeach
-                </ul>
+                </div>
             @else
-                Belum ada role
+                <span class="font-normal text-[color:var(--tm-text-faint)]">Belum ada role</span>
             @endif
         </dd>
     </div>
-    <div class="rounded-lg bg-[#f8fafb] p-3 sm:col-span-2">
-        <dt class="text-xs font-bold uppercase tracking-wide text-[#78909a]">Tim Kerja</dt>
-        <dd class="mt-1 text-sm font-semibold text-[#172d45]">{{ $teamSummary }}</dd>
+    <div class="{{ $userDetailTile }} sm:col-span-2">
+        <dt class="{{ $userDetailLabel }}">Tim Kerja</dt>
+        <dd class="{{ $userDetailValue }}">{{ $teamSummary }}</dd>
     </div>
-    <div class="rounded-lg bg-[#f8fafb] p-3 sm:col-span-2">
-        <dt class="text-xs font-bold uppercase tracking-wide text-[#78909a]">Status</dt>
-        <dd class="mt-1">
-            <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold {{ $user->is_active ? 'bg-[#e8faf4] text-[#087f5b]' : 'bg-[#eef2f4] text-[#657984]' }}">
+    <div class="{{ $userDetailTile }} sm:col-span-2">
+        <dt class="{{ $userDetailLabel }}">Status</dt>
+        <dd class="mt-1.5">
+            <span class="ui-status {{ $user->is_active ? 'ui-status-active' : 'ui-status-inactive' }}">
                 {{ $user->is_active ? 'Aktif' : 'Nonaktif' }}
             </span>
         </dd>
