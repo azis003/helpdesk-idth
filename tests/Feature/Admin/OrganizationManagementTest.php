@@ -172,6 +172,19 @@ class OrganizationManagementTest extends TestCase
         }
     }
 
+    public function test_user_edit_modal_is_rendered_outside_the_animated_main_content(): void
+    {
+        $admin = $this->createUser([Role::SuperAdmin], ['username' => 'modal-admin']);
+        $target = $this->createUser([Role::Pemohon], ['username' => 'modal-user']);
+
+        $response = $this->actingAs($admin)->get(route('admin.users.index'));
+
+        $response->assertOk()->assertSeeInOrder([
+            '</main>',
+            'id="user-edit-modal-'.$target->id.'"',
+        ], false);
+    }
+
     public function test_user_form_renders_skills_as_selectable_checkboxes(): void
     {
         $admin = $this->createUser([Role::SuperAdmin], ['username' => 'skill-checkbox-admin']);

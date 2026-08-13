@@ -232,6 +232,7 @@
         </div>
     </section>
 
+    @push('modals')
     <div id="user-create-modal" data-ui-modal data-auto-open="{{ $autoOpenForm === 'create' && $errors->any() ? 'true' : 'false' }}" data-reset-on-close="true" data-clear-on-close="true" class="fixed inset-0 z-50 hidden" aria-hidden="true">
         <div class="{{ $userModalOverlay }}" data-ui-modal-close></div>
         <div class="relative flex min-h-full items-start justify-center overflow-y-auto p-4 sm:items-center sm:p-8">
@@ -332,4 +333,5 @@
             </section>
         </div>
     </div>
+    @endpush
 @endsection

@@ -343,6 +343,7 @@
         </div>
     </div>
 
+    @stack('modals')
     @include('components.global-loading-overlay')
     @livewireScripts
 </body>
