@@ -74,5 +74,23 @@ All verification suites execute cleanly with zero regressions:
 
 ---
 
-## 7. Final Status
-W2.2 HUMAN QA CORRECTIVE COMPLETE — HUMAN RE-VERIFICATION REQUIRED
+## 7. Final Status & Accepted Contracts
+**W2.2 PASS — HUMAN QA ACCEPTED**
+
+Human QA has successfully verified the corrected responsive shell, including the validation of the duplicate-hamburger leak resolution (`W2.2-HQA-001`).
+
+### Accepted W2.2 Contracts
+- **Desktop/Mobile Visibility Breakpoint**: Viewports `>=1024px` use the desktop sidebar and toggler. Viewports `<=1023px` use the mobile hamburger trigger and left-aligned drawer.
+- **Drawer Placement & Anatomy**: Left-aligned navigation drawer with translucent backdrop and slide animation.
+- **Escape Key Close**: Escape key press closes the drawer instantly and restores focus.
+- **Backdrop Click**: Clicking the backdrop closes the drawer.
+- **Focus Trap Loop**: Keeps keyboard tab focus strictly within the active drawer elements while open.
+- **Focus Return**: Closing the drawer normally programmatically returns focus back to the hamburger toggle trigger.
+- **Safe Scroll Locking**: Scroll lock (`.overflow-hidden` on the body) is toggle-synchronized with the drawer and is not unlocked if other modals (e.g. `[data-password-reset-modal]` or `[data-ui-modal]`) are active.
+- **Pageshow Reset**: Immediate, non-animated drawer closure on pageshow / BFCache restore.
+- **Livewire Navigation Reset**: Intercepts `livewire:navigate` events and resets all drawer attributes instantly before page transition occurs.
+- **Resize Reset**: Viewport resize `>=1024px` resets the drawer state immediately and safely to closed without restoring focus.
+- **Mutual Menu Exclusion**: Opening the drawer closes the notifications details menu, and opening notifications closes the drawer immediately.
+- **Logout Action**: Secure `POST` logout trigger with CSRF protection.
+- **Role-Aware Sidebar**: Blade-side server-rendered conditional role navigation blocks.
+- **W2.1 Desktop Dimensions**: Maintained 224px (expanded) and 72px (collapsed) sidebar parameters.
