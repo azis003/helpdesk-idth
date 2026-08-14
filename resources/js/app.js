@@ -75,7 +75,72 @@ const setGlobalLoadingState = (active, message = 'Memproses permintaan...') => {
     }
 };
 
-window.addEventListener('pageshow', () => setGlobalLoadingState(false));
+const closeMobileMenu = (options = {}) => {
+    const { immediate = false, restoreFocus = true } = options;
+    const mobileMenu = document.querySelector('[data-mobile-menu]');
+    const mobileMenuTrigger = document.querySelector('[data-mobile-menu-trigger]');
+    const mobileMenuBackdrop = document.querySelector('[data-mobile-menu-backdrop]');
+    const mobileMenuPanel = document.querySelector('[data-mobile-menu-panel]');
+
+    if (!mobileMenu) return;
+
+    const isAnyOtherModalOpen = () => {
+        const pwdModal = document.querySelector('[data-password-reset-modal]');
+        const teamModal = document.querySelector('[data-team-create-modal]');
+        const uiModals = [...document.querySelectorAll('[data-ui-modal]')];
+
+        const pwdOpen = pwdModal && !pwdModal.classList.contains('hidden');
+        const teamOpen = teamModal && !teamModal.classList.contains('hidden');
+        const uiOpen = uiModals.some((m) => !m.classList.contains('hidden'));
+
+        return pwdOpen || teamOpen || uiOpen;
+    };
+
+    const performReset = () => {
+        mobileMenu.classList.remove('is-open');
+        mobileMenu.classList.add('hidden');
+        mobileMenu.setAttribute('aria-hidden', 'true');
+
+        if (mobileMenuTrigger) {
+            mobileMenuTrigger.setAttribute('aria-expanded', 'false');
+        }
+
+        if (mobileMenuPanel) {
+            mobileMenuPanel.classList.add('-translate-x-full');
+        }
+
+        if (mobileMenuBackdrop) {
+            mobileMenuBackdrop.classList.add('opacity-0');
+        }
+
+        if (!isAnyOtherModalOpen()) {
+            document.body.classList.remove('overflow-hidden');
+        }
+
+        if (restoreFocus && mobileMenuTrigger) {
+            mobileMenuTrigger.focus();
+        }
+    };
+
+    if (immediate) {
+        performReset();
+    } else {
+        mobileMenu.classList.remove('is-open');
+        mobileMenuPanel?.classList.add('-translate-x-full');
+        mobileMenuBackdrop?.classList.add('opacity-0');
+
+        window.setTimeout(() => {
+            if (!mobileMenu.classList.contains('is-open')) {
+                performReset();
+            }
+        }, 300);
+    }
+};
+
+window.addEventListener('pageshow', () => {
+    setGlobalLoadingState(false);
+    closeMobileMenu({ immediate: true, restoreFocus: false });
+});
 
 const requestFormSubmit = (form) => {
     if (typeof form.requestSubmit === 'function') {
@@ -285,38 +350,6 @@ if (mobileMenu && mobileMenuTrigger) {
 
     const getFocusableElements = () => [...mobileMenu.querySelectorAll(focusableSelector)];
 
-    const isAnyOtherModalOpen = () => {
-        const pwdModal = document.querySelector('[data-password-reset-modal]');
-        const teamModal = document.querySelector('[data-team-create-modal]');
-        const uiModals = [...document.querySelectorAll('[data-ui-modal]')];
-
-        const pwdOpen = pwdModal && !pwdModal.classList.contains('hidden');
-        const teamOpen = teamModal && !teamModal.classList.contains('hidden');
-        const uiOpen = uiModals.some((m) => !m.classList.contains('hidden'));
-
-        return pwdOpen || teamOpen || uiOpen;
-    };
-
-    const closeMobileMenu = () => {
-        mobileMenu.classList.remove('is-open');
-        mobileMenuPanel?.classList.add('-translate-x-full');
-        mobileMenuBackdrop?.classList.add('opacity-0');
-        
-        window.setTimeout(() => {
-            if (!mobileMenu.classList.contains('is-open')) {
-                mobileMenu.classList.add('hidden');
-                mobileMenu.setAttribute('aria-hidden', 'true');
-                mobileMenuTrigger.setAttribute('aria-expanded', 'false');
-                
-                if (!isAnyOtherModalOpen()) {
-                    document.body.classList.remove('overflow-hidden');
-                }
-                
-                mobileMenuTrigger.focus();
-            }
-        }, 300);
-    };
-
     const openMobileMenu = () => {
         if (notificationMenu && notificationMenu.open) {
             notificationMenu.open = false;
@@ -349,8 +382,8 @@ if (mobileMenu && mobileMenuTrigger) {
         }
     });
 
-    mobileMenuClose?.addEventListener('click', closeMobileMenu);
-    mobileMenuBackdrop?.addEventListener('click', closeMobileMenu);
+    mobileMenuClose?.addEventListener('click', () => closeMobileMenu());
+    mobileMenuBackdrop?.addEventListener('click', () => closeMobileMenu());
 
     mobileMenu.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
@@ -382,13 +415,7 @@ if (mobileMenu && mobileMenuTrigger) {
 
     const handleResize = () => {
         if (window.innerWidth >= 1024 && mobileMenu.classList.contains('is-open')) {
-            mobileMenu.classList.remove('is-open');
-            mobileMenu.classList.add('hidden');
-            mobileMenu.setAttribute('aria-hidden', 'true');
-            mobileMenuTrigger.setAttribute('aria-expanded', 'false');
-            if (!isAnyOtherModalOpen()) {
-                document.body.classList.remove('overflow-hidden');
-            }
+            closeMobileMenu({ immediate: true, restoreFocus: false });
         }
     };
     window.addEventListener('resize', handleResize);
@@ -400,27 +427,7 @@ if (notificationMenu) {
 
     summary?.addEventListener('click', () => {
         if (!notificationMenu.open) {
-            if (mobileMenu && mobileMenu.classList.contains('is-open')) {
-                mobileMenu.classList.remove('is-open');
-                mobileMenu.classList.add('hidden');
-                mobileMenu.setAttribute('aria-hidden', 'true');
-                if (mobileMenuTrigger) {
-                    mobileMenuTrigger.setAttribute('aria-expanded', 'false');
-                }
-                mobileMenuPanel?.classList.add('-translate-x-full');
-                mobileMenuBackdrop?.classList.add('opacity-0');
-                
-                const pwdModal = document.querySelector('[data-password-reset-modal]');
-                const teamModal = document.querySelector('[data-team-create-modal]');
-                const uiModals = [...document.querySelectorAll('[data-ui-modal]')];
-                const anyModalOpen = (pwdModal && !pwdModal.classList.contains('hidden')) ||
-                                     (teamModal && !teamModal.classList.contains('hidden')) ||
-                                     uiModals.some((m) => !m.classList.contains('hidden'));
-                
-                if (!anyModalOpen) {
-                    document.body.classList.remove('overflow-hidden');
-                }
-            }
+            closeMobileMenu({ immediate: true, restoreFocus: false });
         }
     });
 
@@ -1594,6 +1601,7 @@ if (brandingForm) {
 };
 
 document.addEventListener('livewire:navigate', () => {
+    closeMobileMenu({ immediate: true, restoreFocus: false });
     document.body.removeAttribute('data-sihati-page-initialized');
     setGlobalLoadingState(true, 'Memuat halaman...');
 });
