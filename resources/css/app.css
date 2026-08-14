@@ -261,12 +261,12 @@
         pointer-events: none;
     }
 
-    .ui-sidebar.is-collapsed .ui-sidebar-nav-container > nav {
+    .ui-sidebar.is-collapsed > nav {
         gap: 0.25rem;
         margin-top: 0.75rem !important;
     }
 
-    .ui-sidebar.is-collapsed .ui-sidebar-nav-container > nav:first-of-type {
+    .ui-sidebar.is-collapsed > nav:first-of-type {
         margin-top: 1rem !important;
     }
 
@@ -512,7 +512,7 @@
     }
 
     .ui-topbar {
-        min-height: 4.75rem;
+        min-height: 4.5rem;
         border-bottom: 1px solid #e0e8ec;
         background: #ffffff;
     }

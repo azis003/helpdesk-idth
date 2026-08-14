@@ -548,6 +548,10 @@ summary {
 	text-transform: uppercase;
 }
 
+.ui-sidebar-brand-collapsed-monogram {
+	display: none;
+}
+
 /* Sidebar collapsed overrides */
 .ui-sidebar.is-collapsed .ui-sidebar-header {
 	justify-content: center;
@@ -555,8 +559,11 @@ summary {
 }
 
 .ui-sidebar.is-collapsed .ui-sidebar-brand-logo {
-	max-width: 2.75rem;
-	height: 2.75rem;
+	display: none;
+}
+
+.ui-sidebar.is-collapsed .ui-sidebar-brand-collapsed-monogram {
+	display: inline-flex;
 }
 
 .ui-sidebar.is-collapsed .ui-sidebar-brand-text {
