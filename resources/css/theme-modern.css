@@ -2257,3 +2257,57 @@ a:not([class]):hover {
 		break-inside: avoid;
 	}
 }
+
+/* ==========================================================================
+   16. ACCESSIBILITY & SKIP-LINK
+   ========================================================================== */
+
+.ui-skip-link {
+	position: absolute;
+	top: -10rem;
+	left: 1.5rem;
+	z-index: 1000;
+	background-color: var(--tm-brand-600);
+	color: #ffffff;
+	padding: 0.75rem 1.5rem;
+	border-radius: 0 0 var(--tm-r-md) var(--tm-r-md);
+	font-weight: 700;
+	font-size: 0.875rem;
+	box-shadow: var(--tm-sh-xl);
+	transition: top var(--tm-dur-fast) var(--tm-ease);
+}
+
+.ui-skip-link:focus {
+	top: 0;
+	outline: 2px solid var(--tm-brand-500);
+	outline-offset: -4px;
+}
+
+#main-content {
+	scroll-margin-top: 5rem;
+}
+
+.ui-login-form {
+	max-width: 100% !important;
+}
+
+/* Guest layout & card overrides */
+@media (min-width: 1024px) {
+	.ui-login-main {
+		justify-content: center;
+		align-items: center;
+		padding: 3rem;
+	}
+	.ui-login-content {
+		max-width: 28rem !important;
+		background-color: var(--tm-surface) !important;
+		border: 1px solid var(--tm-border-subtle) !important;
+		box-shadow: var(--tm-sh-xl) !important;
+		padding: 2.5rem !important;
+		border-radius: var(--tm-r-xl) !important;
+	}
+	.ui-login-footer {
+		margin-top: 1rem !important;
+		padding-top: 1rem !important;
+	}
+}

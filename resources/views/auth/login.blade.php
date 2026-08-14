@@ -3,13 +3,16 @@
 @section('title', 'Masuk - '.$branding['application_name'])
 
 @section('content')
-    <h1 class="ui-login-title" aria-label="Masuk ke {{ $branding['application_name'] }}">{{ $branding['tagline'] ?: 'Portal Layanan TI' }}</h1>
+    <div class="space-y-1">
+        <h1 class="text-xl font-extrabold tracking-tight text-[color:var(--tm-text)]" aria-label="Masuk ke {{ $branding['application_name'] }}">{{ $branding['tagline'] ?: 'Portal Layanan TI' }}</h1>
+        <p class="text-sm text-[color:var(--tm-text-secondary)]">Masuk untuk mengakses dasbor dan tiket Anda.</p>
+    </div>
 
-    <form method="POST" action="{{ route('login.store') }}" class="ui-login-form">
+    <form method="POST" action="{{ route('login.store') }}" class="ui-login-form flex flex-col gap-4">
         @csrf
         <x-form-field name="username" label="Username" autocomplete="username" required autofocus class="ui-login-input" />
         <x-form-field name="password" label="Password" type="password" autocomplete="current-password" required class="ui-login-input" />
 
-        <button type="submit" class="ui-login-submit">Masuk</button>
+        <button type="submit" class="ui-login-submit ui-btn ui-btn-primary w-full justify-center">Masuk</button>
     </form>
 @endsection

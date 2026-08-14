@@ -9,6 +9,7 @@
     @livewireStyles
 </head>
 <body class="min-h-screen font-sans antialiased" data-livewire-navigation>
+    <a href="#main-content" class="ui-skip-link">Lewati ke konten utama</a>
     @php
         $currentUser = auth()->user()->loadMissing('roles');
         $isSuperAdmin = $currentUser->hasRole(\App\Enums\Role::SuperAdmin);
@@ -400,7 +401,7 @@
                 </div>
             </header>
 
-            <main class="ui-main">
+            <main id="main-content" tabindex="-1" class="ui-main focus:outline-none">
                 @include('components.flash')
                 @yield('content')
             </main>

@@ -4,10 +4,10 @@
     // Presentasional saja - tidak mengubah data maupun logika notifikasi.
     $notifItem = 'flex flex-col gap-4 p-5 transition-[background-color] duration-[var(--tm-dur-fast)] ease-[var(--tm-ease)] sm:flex-row sm:items-start sm:justify-between sm:p-6';
     $notifRead = 'bg-[color:var(--tm-surface)]';
-    $notifUnread = 'bg-[color:var(--tm-brand-50)]';
-    $notifDotRead = 'mt-1.5 h-2.5 w-2.5 shrink-0 rounded-[var(--tm-r-full)] bg-[color:var(--tm-border-strong)]';
-    $notifDotUnread = 'mt-1.5 h-2.5 w-2.5 shrink-0 rounded-[var(--tm-r-full)] bg-[color:var(--tm-brand-500)]';
-    $notifMarkRead = 'text-xs font-extrabold text-[color:var(--tm-brand-700)] transition-[color] duration-[var(--tm-dur-fast)] ease-[var(--tm-ease)] hover:text-[color:var(--tm-brand-800)]';
+    $notifUnread = 'bg-[color:var(--tm-brand-50)]/50';
+    $notifDotRead = 'mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[color:var(--tm-border-strong)]';
+    $notifDotUnread = 'mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[color:var(--tm-brand-500)]';
+    $notifMarkRead = 'text-xs font-extrabold text-[color:var(--tm-brand-700)] transition-[color] duration-[var(--tm-dur-fast)] ease-[var(--tm-ease)] hover:text-[color:var(--tm-brand-800)] focus:outline-none focus:underline';
     $notifEmptyTitle = 'Belum ada notifikasi';
     $notifEmptyDescription = 'Pembaruan penting dari tiket Anda akan muncul di sini.';
 @endphp
@@ -30,7 +30,7 @@
     </x-page-header>
 
     <section class="ui-panel mt-6 overflow-hidden" aria-labelledby="notifications-heading">
-        <div class="ui-panel-header">
+        <div class="ui-panel-header border-b border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-sunken)]/30 px-5 py-4 sm:px-6">
             <h2 id="notifications-heading" class="ui-section-title">Pembaruan terbaru</h2>
             <p class="ui-section-description">Notifikasi tersimpan di akun Anda dan dapat dibuka kembali kapan saja.</p>
         </div>
@@ -48,14 +48,19 @@
                         <div class="flex min-w-0 gap-3">
                             <span class="{{ $notification->read_at ? $notifDotRead : $notifDotUnread }}" aria-hidden="true"></span>
                             <div class="min-w-0">
-                                <p class="text-sm font-extrabold text-[color:var(--tm-text)]">{{ $data['title'] ?? 'Notifikasi tiket' }}</p>
+                                <p class="text-sm font-extrabold text-[color:var(--tm-text)]">
+                                    @if (! $notification->read_at)
+                                        <span class="inline-flex items-center rounded-full bg-[color:var(--tm-brand-100)] px-1.5 py-0.5 text-[0.62rem] font-bold uppercase tracking-wide text-[color:var(--tm-brand-800)] mr-1.5 shrink-0">Baru</span>
+                                    @endif
+                                    {{ $data['title'] ?? 'Notifikasi tiket' }}
+                                </p>
                                 <p class="mt-1 text-sm leading-6 text-[color:var(--tm-text-secondary)]">{{ $data['message'] ?? 'Ada pembaruan pada tiket.' }}</p>
                                 <time class="mt-2 block text-xs tabular-nums text-[color:var(--tm-text-muted)]" datetime="{{ $notification->created_at?->toIso8601String() }}">{{ $notification->created_at?->timezone(config('app.timezone'))->translatedFormat('d M Y, H:i') }}</time>
                             </div>
                         </div>
-                        <div class="flex shrink-0 items-center gap-3 pl-5 sm:pl-0">
+                        <div class="flex shrink-0 items-center gap-3 pl-5 sm:pl-0 mt-2 sm:mt-0 flex-wrap">
                             @if ($ticketId)
-                                <a href="{{ route('tickets.show', $ticketId) }}" class="ui-action-link">Buka tiket</a>
+                                <a href="{{ route('tickets.show', $ticketId) }}" class="ui-action-link focus:outline-none focus:underline">Buka tiket</a>
                             @endif
                             @if (! $notification->read_at)
                                 <form method="POST" action="{{ route('notifications.read', $notification->id) }}">

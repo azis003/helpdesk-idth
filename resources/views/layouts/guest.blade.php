@@ -7,29 +7,30 @@
     <title>@yield('title', $branding['application_name'])</title>
     @vite(['resources/css/app.css', 'resources/css/theme-modern.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen font-sans text-slate-900 antialiased">
-    <div class="ui-login-shell">
-        <div class="ui-login-accent" aria-hidden="true"></div>
+<body class="min-h-screen font-sans text-slate-900 antialiased bg-[color:var(--tm-n-50)]">
+    <a href="#main-content" class="ui-skip-link">Lewati ke konten utama</a>
+    <div class="ui-login-shell flex min-h-screen">
+        <div class="ui-login-accent w-1.5 shrink-0 bg-[color:var(--tm-brand-600)]" aria-hidden="true"></div>
 
-        <main class="ui-login-main">
-            <div class="ui-login-content">
-                <a href="{{ url('/') }}" class="ui-login-logo" aria-label="Beranda {{ $branding['application_name'] }}">
+        <main id="main-content" tabindex="-1" class="ui-login-main flex flex-1 min-w-0 justify-center items-center p-4 sm:p-8 focus:outline-none">
+            <div class="ui-login-content w-full max-w-[28rem] rounded-2xl border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface)] p-6 sm:p-10 shadow-xl flex flex-col gap-6">
+                <a href="{{ url('/') }}" class="ui-login-logo flex flex-col items-start gap-2.5" aria-label="Beranda {{ $branding['application_name'] }}">
                     @if ($branding['logo_url'])
-                        <img src="{{ $branding['logo_url'] }}" alt="Logo {{ $branding['organization_name'] }}" class="max-h-16 max-w-[16rem] object-contain object-left">
+                        <img src="{{ $branding['logo_url'] }}" alt="Logo {{ $branding['organization_name'] }}" class="h-12 w-auto max-w-[14rem] object-contain">
                     @else
-                        <span class="ui-login-wordmark">
-                            <span class="ui-login-wordmark-accent" aria-hidden="true"></span>
+                        <span class="ui-login-wordmark flex items-center gap-1.5 text-2xl font-black tracking-tight text-[color:var(--tm-text)]">
+                            <span class="ui-login-wordmark-accent h-5 w-1 bg-[color:var(--tm-brand-600)] rounded" aria-hidden="true"></span>
                             {{ $branding['application_name'] }}
                         </span>
                     @endif
-                    <span class="ui-login-logo-caption">{{ $branding['organization_name'] }}{{ $branding['tagline'] ? ' · '.$branding['tagline'] : '' }}</span>
+                    <span class="ui-login-logo-caption text-xs font-semibold text-[color:var(--tm-text-muted)]">{{ $branding['organization_name'] }}{{ $branding['tagline'] ? ' · '.$branding['tagline'] : '' }}</span>
                 </a>
 
                 @include('components.flash')
 
                 @yield('content')
 
-                <footer class="ui-login-footer">
+                <footer class="ui-login-footer mt-4 border-t border-[color:var(--tm-border-subtle)] pt-4 text-center text-xs text-[color:var(--tm-text-muted)]">
                     <p>&copy; {{ now()->year }} {{ $branding['organization_name'] }}. Hak cipta dilindungi.</p>
                 </footer>
             </div>
