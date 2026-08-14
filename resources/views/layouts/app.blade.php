@@ -47,7 +47,6 @@
                 <div class="ui-sidebar-brand">
                     @if ($branding['logo_url'])
                         <img src="{{ $branding['logo_url'] }}" alt="Logo {{ $branding['organization_name'] }}" class="ui-sidebar-brand-logo">
-                        <span class="ui-brand-mark ui-sidebar-brand-collapsed-monogram" aria-hidden="true">{{ $branding['monogram'] }}</span>
                     @else
                         <span class="ui-brand-mark">{{ $branding['monogram'] }}</span>
                     @endif
