@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\WorkTeam;
 use Database\Seeders\ServiceCatalogSeeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 class OrganizationManagementTest extends TestCase
@@ -531,32 +532,27 @@ class OrganizationManagementTest extends TestCase
         $this->actingAs($admin)->get(route('admin.users.edit', $admin))->assertOk()->assertSee('Riwayat organisasi');
         $this->actingAs($admin)->get(route('admin.teams.index'))->assertOk()->assertSee('Tim Halaman');
         $this->actingAs($admin)->get(route('admin.skills.index'))->assertOk()->assertSee('Dukungan Aplikasi')->assertDontSee('Kategori Masalah');
-        $this->actingAs($admin)->get(route('admin.catalog.index', ['section' => 'services']))
-            ->assertOk()
-            ->assertSee('Manajemen Layanan')
-            ->assertSee('Syarat keahlian')
-            ->assertSeeInOrder(['Menu Utama', 'Master Data', 'Konfigurasi', 'Laporan'])
-            ->assertSee('Manajemen Pengguna')
-            ->assertSee('Manajemen Tim Kerja')
-            ->assertSee('Manajemen Keahlian')
-            ->assertDontSee('Manajemen Formulir')
-            ->assertSee('Manajemen Lokasi')
-            ->assertDontSee('Manajemen SLA')
-            ->assertDontSee('Parameter Batas Waktu')
-            ->assertDontSee('Parameter Jam Layanan')
-            ->assertDontSee('Kebijakan Lampiran')
-            ->assertSee('Manajemen Pengumuman')
-            ->assertSee('Manajemen Aplikasi')
-            ->assertSee('Identitas Aplikasi')
-            ->assertSee('Laporan Bulanan')
-            ->assertSee('Audit Trail')
-            ->assertSee('class="ui-sidebar-dropdown"', false)
-            ->assertSee('class="ui-mobile-nav-dropdown"', false)
-            ->assertSee('href="'.route('admin.catalog.index', ['section' => 'services']).'" class="ui-nav-link is-active"', false);
-        $this->actingAs($admin)->get(route('admin.catalog.index', ['section' => 'locations']))
-            ->assertOk()
-            ->assertSee('Manajemen Lokasi')
-            ->assertSee('href="'.route('admin.catalog.index', ['section' => 'locations']).'" class="ui-nav-link is-active"', false);
+        $serviceCatalogUrl = route('admin.catalog.index', ['section' => 'services']);
+        $serviceCatalogResponse = $this->actingAs($admin)->get($serviceCatalogUrl);
+        $serviceCatalogResponse->assertOk();
+        $this->assertResponseContainsWithoutDump($serviceCatalogResponse, 'Manajemen Layanan');
+        $this->assertResponseContainsWithoutDump($serviceCatalogResponse, 'Syarat keahlian');
+        $this->assertResponseContainsWithoutDump($serviceCatalogResponse, 'Identitas Aplikasi');
+        $this->assertAdminNavigation(
+            $this->navigationXPath($serviceCatalogResponse),
+            $serviceCatalogUrl,
+            route('admin.locations.index'),
+        );
+
+        $locationCatalogUrl = route('admin.catalog.index', ['section' => 'locations']);
+        $locationCatalogResponse = $this->actingAs($admin)->get($locationCatalogUrl);
+        $locationCatalogResponse->assertOk();
+        $this->assertResponseContainsWithoutDump($locationCatalogResponse, 'Manajemen Lokasi');
+        $this->assertAdminNavigation(
+            $this->navigationXPath($locationCatalogResponse),
+            $locationCatalogUrl,
+            $locationCatalogUrl,
+        );
     }
 
     public function test_skill_management_matches_user_list_controls_and_searches(): void
@@ -579,5 +575,130 @@ class OrganizationManagementTest extends TestCase
             ->assertDontSee('skill-create-slug', false)
             ->assertSee('data-ui-modal-open="skill-create-modal"', false)
             ->assertSee('data-ui-modal-open="skill-edit-modal-', false);
+    }
+
+    private function navigationXPath(TestResponse $response): \DOMXPath
+    {
+        $content = $response->getContent();
+        $this->assertIsString($content, 'Organization page response must contain HTML.');
+
+        $document = new \DOMDocument;
+        $previousErrorMode = libxml_use_internal_errors(true);
+
+        try {
+            $loaded = $document->loadHTML($content, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING);
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previousErrorMode);
+        }
+
+        $this->assertTrue($loaded, 'Organization page response must be parseable HTML.');
+
+        return new \DOMXPath($document);
+    }
+
+    private function assertResponseContainsWithoutDump(TestResponse $response, string $needle): void
+    {
+        $content = $response->getContent();
+
+        $this->assertIsString($content, 'Organization page response must contain HTML.');
+        $this->assertTrue(
+            str_contains($content, $needle),
+            sprintf('Organization page must contain "%s".', $needle),
+        );
+    }
+
+    private function assertAdminNavigation(\DOMXPath $xpath, string $activeHref, string $locationHref): void
+    {
+        $desktopScope = "//aside[@id='app-sidebar' and @data-sidebar]";
+        $mobileScope = "//header//nav[@aria-label='Navigasi mobile']";
+
+        $this->assertSame(1, $this->xpathCount($xpath, $desktopScope), 'Desktop navigation must use the application sidebar.');
+        $this->assertSame(1, $this->xpathCount($xpath, $mobileScope), 'Mobile navigation must use its dedicated navigation region.');
+        $this->assertSame(
+            ['Menu Utama', 'Master Data', 'Konfigurasi', 'Laporan'],
+            $this->xpathValues($xpath, $desktopScope.'/nav/@aria-label'),
+            'Desktop administration navigation groups must remain ordered and distinct.',
+        );
+        $this->assertSame(
+            ['Menu Utama', 'Master Data', 'Konfigurasi', 'Laporan'],
+            $this->xpathValues($xpath, $mobileScope."/div[contains(concat(' ', normalize-space(@class), ' '), ' ui-mobile-nav-group-label ')]"),
+            'Mobile administration navigation groups must remain ordered and distinct.',
+        );
+
+        $links = [
+            route('dashboard') => 'Dashboard',
+            route('admin.users.index') => 'Manajemen Pengguna',
+            route('admin.teams.index') => 'Manajemen Tim Kerja',
+            route('admin.skills.index') => 'Manajemen Keahlian',
+            route('admin.catalog.index', ['section' => 'services']) => 'Manajemen Layanan',
+            $locationHref => 'Manajemen Lokasi',
+            route('admin.announcements.index') => 'Manajemen Pengumuman',
+            route('admin.branding.index') => 'Manajemen Aplikasi',
+            route('reports.index') => 'Laporan Bulanan',
+            route('admin.audit-logs.index') => 'Audit Trail',
+        ];
+
+        foreach ($links as $href => $label) {
+            $this->assertNavigationLink($xpath, $desktopScope, $href, $label, 'ui-nav-link', $href === $activeHref);
+            $this->assertNavigationLink($xpath, $mobileScope, $href, $label, 'ui-mobile-nav-link', $href === $activeHref);
+        }
+
+        foreach (['Manajemen Formulir', 'Manajemen SLA', 'Parameter Batas Waktu', 'Parameter Jam Layanan', 'Kebijakan Lampiran'] as $label) {
+            $expression = $desktopScope."//a[normalize-space(.)='".$label."'] | ".$mobileScope."//a[normalize-space(.)='".$label."']";
+            $this->assertSame(0, $this->xpathCount($xpath, $expression), sprintf('Navigation must not expose "%s".', $label));
+        }
+
+        foreach ([route('tickets.index'), route('tickets.queue'), route('approvals.index')] as $unauthorizedHref) {
+            $expression = $desktopScope."//a[starts-with(@href, '".$unauthorizedHref."')] | ".$mobileScope."//a[starts-with(@href, '".$unauthorizedHref."')]";
+            $this->assertSame(0, $this->xpathCount($xpath, $expression), sprintf('Super Admin navigation must not expose operational URL "%s".', $unauthorizedHref));
+        }
+    }
+
+    private function assertNavigationLink(
+        \DOMXPath $xpath,
+        string $scope,
+        string $href,
+        string $label,
+        string $baseClass,
+        bool $active,
+    ): void {
+        $links = $xpath->query($scope."//a[@href='".$href."']");
+        $this->assertNotFalse($links, sprintf('Navigation selector for "%s" must be valid.', $label));
+        $this->assertSame(1, $links->length, sprintf('Navigation must contain one "%s" link for %s.', $label, $href));
+
+        $link = $links->item(0);
+        $this->assertNotNull($link, sprintf('Navigation link "%s" must be available.', $label));
+        $classes = preg_split('/\s+/', trim((string) $link->attributes?->getNamedItem('class')?->nodeValue)) ?: [];
+        $this->assertContains($baseClass, $classes, sprintf('Navigation link "%s" must use %s.', $label, $baseClass));
+        $this->assertSame($label, trim((string) preg_replace('/\s+/', ' ', $link->textContent)), sprintf('Navigation link for %s must retain its label.', $href));
+
+        if ($active) {
+            $this->assertContains('is-active', $classes, sprintf('Navigation link "%s" must represent the active route.', $label));
+        } else {
+            $this->assertNotContains('is-active', $classes, sprintf('Navigation link "%s" must not be marked active.', $label));
+        }
+    }
+
+    private function xpathCount(\DOMXPath $xpath, string $expression): int
+    {
+        $nodes = $xpath->query($expression);
+        $this->assertNotFalse($nodes, sprintf('XPath expression must be valid: %s', $expression));
+
+        return $nodes->length;
+    }
+
+    /** @return list<string> */
+    private function xpathValues(\DOMXPath $xpath, string $expression): array
+    {
+        $nodes = $xpath->query($expression);
+        $this->assertNotFalse($nodes, sprintf('XPath expression must be valid: %s', $expression));
+        $values = [];
+
+        foreach ($nodes as $node) {
+            $values[] = trim((string) preg_replace('/\s+/', ' ', $node->textContent));
+        }
+
+        return $values;
     }
 }

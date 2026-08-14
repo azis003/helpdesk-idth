@@ -406,23 +406,66 @@ class CatalogManagementTest extends TestCase
 
         $this->assertFalse($building->fresh()->is_active);
 
+        $service = ServiceType::query()->where('code', 'SVC-01')->firstOrFail();
+        $policyPayload = [
+            'service_type_id' => $service->id,
+            'type_key' => 'supporting',
+            'label' => 'Dokumen pendukung',
+            'max_file_size_kb' => 10240,
+            'max_file_count' => 5,
+            'allowed_mimes_text' => 'application/pdf, image/png',
+            'allowed_extensions_text' => 'pdf, png',
+            'visibility' => 'both',
+            'is_active' => '1',
+        ];
+
+        $this->actingAs($admin)
+            ->post(route('admin.catalog.attachment-policies.store'), $policyPayload)
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $policy = AttachmentPolicy::query()
+            ->where('service_type_id', $service->id)
+            ->where('type_key', 'supporting')
+            ->firstOrFail();
+        $this->assertTrue($policy->is_active);
+        $this->assertSame(['application/pdf', 'image/png'], $policy->allowed_mimes);
+        $this->assertSame(['pdf', 'png'], $policy->allowed_extensions);
+
         $this->actingAs($admin)
             ->post(route('admin.catalog.attachment-policies.store'), [
-                'type_key' => 'supporting',
-                'label' => 'Dokumen pendukung',
-                'max_file_size_kb' => 10240,
-                'max_file_count' => 5,
-                'allowed_mimes_text' => 'application/pdf, image/png',
-                'allowed_extensions_text' => 'pdf, png',
-                'visibility' => 'both',
+                ...$policyPayload,
+                'label' => 'Duplikat dokumen pendukung',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors('type_key');
+
+        $this->assertSame(1, AttachmentPolicy::query()
+            ->where('service_type_id', $service->id)
+            ->where('type_key', 'supporting')
+            ->count());
+
+        $this->actingAs($admin)
+            ->put(route('admin.catalog.attachment-policies.update', $policy), [
+                ...$policyPayload,
+                'label' => 'Dokumen pendukung terverifikasi',
+                'max_file_size_kb' => 8192,
+                'max_file_count' => 3,
+                'allowed_mimes_text' => 'application/pdf, image/jpeg',
+                'allowed_extensions_text' => 'pdf, jpg, jpeg',
+                'visibility' => 'internal',
             ])
             ->assertRedirect()
             ->assertSessionHasNoErrors();
 
-        $policy = AttachmentPolicy::query()->where('type_key', 'supporting')->firstOrFail();
+        $policy->refresh();
+        $this->assertSame('Dokumen pendukung terverifikasi', $policy->label);
+        $this->assertSame(8192, $policy->max_file_size_kb);
+        $this->assertSame(3, $policy->max_file_count);
+        $this->assertSame(['application/pdf', 'image/jpeg'], $policy->allowed_mimes);
+        $this->assertSame(['pdf', 'jpg', 'jpeg'], $policy->allowed_extensions);
+        $this->assertSame('internal', $policy->visibility);
         $this->assertTrue($policy->is_active);
-        $this->assertSame(['application/pdf', 'image/png'], $policy->allowed_mimes);
-        $this->assertSame(['pdf', 'png'], $policy->allowed_extensions);
     }
 
     public function test_super_admin_and_tier_one_can_manage_announcements(): void

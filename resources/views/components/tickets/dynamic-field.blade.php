@@ -53,9 +53,6 @@
     @endif
 
     @if ($hasError)
-        <p id="{{ $fieldId }}-error" class="mt-2 flex items-center gap-1.5 text-sm font-medium text-[color:var(--tm-danger-600)]">
-            <svg class="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="7.25" /><path d="M10 6.5v4" /><path d="M10 13.25h.01" /></svg>
-            {{ $errors->first('fields.'.$field->key) }}
-        </p>
+        <x-field-error :id="$fieldId.'-error'" :message="$errors->first('fields.'.$field->key)" />
     @endif
 </div>
