@@ -1,7 +1,7 @@
 # W2.1 Authenticated Shell Structure and Branding Implementation Report
 
 ## Current Status
-* **W2.1 Authenticated Shell & Branding**: `W2.1 CORRECTIVE IMPLEMENTATION COMPLETE — HUMAN BROWSER VERIFICATION REQUIRED`
+* **W2.1 Authenticated Shell & Branding**: `W2.1 RUNTIME CORRECTIVE COMPLETE — HUMAN RE-VERIFICATION REQUIRED`
 * **W2.2 Mobile Shell & Drawer Redesign**: `NOT STARTED`
 
 ---
@@ -65,9 +65,42 @@ The shell layout has been updated to remove legacy conflicting geometry (`paddin
 
 ---
 
-## 4. Conformance & Test Verification
+## 4. Human QA Findings & Corrective Action
 
-### 4.1 Automated Test Execution
+Manual inspection in real browsers identified two key issues in the initial W2.1 runtime implementation:
+
+### 4.1 Defect A: Expanded Brand Shows Both Logo and Monogram
+* **Symptom**: In expanded state with an institutional logo uploaded, the collapsed monogram "HT" remained visible beside the logo, squeezing/truncating application text and breaking the brand block.
+* **Root Cause**: The rule `.ui-sidebar-brand-collapsed-monogram { display: none; }` was defined early in the cascade, and was subsequently overridden by a generic later rule `.ui-brand-mark { display: inline-flex; }` which matched the monogram span.
+* **Corrective Action**: Increased CSS selector specificity in `theme-modern.css` to guarantee precedence over any generic `.ui-brand-mark` styling rules:
+  ```css
+  .ui-sidebar .ui-sidebar-brand-collapsed-monogram {
+      display: none;
+  }
+  .ui-sidebar.is-collapsed .ui-sidebar-brand-logo {
+      display: none;
+  }
+  .ui-sidebar.is-collapsed .ui-sidebar-brand-collapsed-monogram {
+      display: inline-flex;
+  }
+  ```
+
+### 4.2 Defect B: Modal Backdrop Does Not Cover Full Shell
+* **Symptom**: When a ticket action modal was opened, the workspace topbar remained white and visually above the dimmed layer. The modal felt contained inside the page body rather than being a global screen-level element.
+* **Root Cause**: The ticket modal template (`tickets._action-modals`) was included inside the page content's right-side `<aside>` subtree in `tickets.show`. This nested layout containment restricted the modal backdrop's stacking context.
+* **Corrective Action**: Relocated the modal template inclusion into the existing global `@stack('modals')` rendered at the body-root level of `layouts.app` using Blade pushes:
+  ```html
+  @push('modals')
+      @include('tickets._action-modals')
+  @endpush
+  ```
+  This resolves the stacking/dimming defect globally as a shell-level layering correction without modifying the internal layout, forms, input fields, validation behavior, or ID contracts of the 14 action modals.
+
+---
+
+## 5. Conformance & Test Verification
+
+### 5.1 Automated Test Execution
 * **Pre-correction php artisan test**:
   - Total: `140`, Passed: `139`, Skipped: `1` (concurrency test), Failed: `0`, Errors: `0`, Assertions: `1780`.
   - Status: PASS
@@ -75,7 +108,7 @@ The shell layout has been updated to remove legacy conflicting geometry (`paddin
   - Total: `140`, Passed: `139`, Skipped: `1` (concurrency test), Failed: `0`, Errors: `0`, Assertions: `1780`.
   - Status: PASS
 
-### 4.2 Build and Cache Compilation
+### 5.2 Build and Cache Compilation
 * **php artisan view:cache**:
   - Command output: `Blade templates cached successfully.`
   - Exit code: `0`
@@ -87,13 +120,14 @@ The shell layout has been updated to remove legacy conflicting geometry (`paddin
 
 ---
 
-## 5. Human Browser Verification Checklist & QA Requirements
+## 6. Human Browser Verification Checklist & QA Requirements
 > [!WARNING]
 > Actual human browser QA has **NOT** yet been completed because a controllable browser is unavailable for runtime validation.
 
 Manual QA verification must be conducted on the following items:
-* [ ] **Expanded Sidebar (>= 1024px)**: Sidebar width is exactly `256px`. Brand logo has height `44px` (`2.75rem`) and auto width. Topbar sticky header contains only the toggle and page title.
-* [ ] **Collapsed Sidebar (>= 1024px)**: Toggle collapses sidebar to exactly `72px` (`4.5rem`). Monogram/logo is perfectly centered. Sidebar labels and titles are completely hidden.
+* [ ] **Expanded Sidebar (>= 1024px)**: Sidebar width is exactly `256px`. Brand logo has height `44px` (`2.75rem`) and auto width. Topbar sticky header contains only the toggle and page title. Monogram is completely hidden.
+* [ ] **Collapsed Sidebar (>= 1024px)**: Toggle collapses sidebar to exactly `72px` (`4.5rem`). Monogram/logo is perfectly centered. Sidebar labels and titles are completely hidden. Logo image is completely hidden.
 * [ ] **Responsive Transition**: Content column adapts naturally without visual shift, overlap, or scrollbars when resizing the browser between `1024px` and wider screen dimensions.
 * [ ] **Keyboard Focus-Visible**: Tab navigation displays a visible ring on interactive elements.
 * [ ] **Mobile Layout Smoke Test (768px & 390px)**: Because W2.1 relocated topbar positioning globally from `fixed` to `sticky` within the workspace container, verify that topbar layout, headers, and buttons are fully aligned and function correctly on smaller viewports.
+* [ ] **Modal Layering & Backdrop**: Open a ticket action modal (e.g. triage or comment). Verify the dimmed backdrop covers the entire viewport including sidebar and topbar, and that the modal window sits on top of all layers.

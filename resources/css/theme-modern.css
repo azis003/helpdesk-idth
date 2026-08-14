@@ -548,7 +548,7 @@ summary {
 	text-transform: uppercase;
 }
 
-.ui-sidebar-brand-collapsed-monogram {
+.ui-sidebar .ui-sidebar-brand-collapsed-monogram {
 	display: none;
 }
 

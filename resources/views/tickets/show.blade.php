@@ -797,8 +797,11 @@
                 </div>
             </section>
 
-            @include('tickets._action-modals')
         </aside>
     </div>
     </div>
+
+    @push('modals')
+        @include('tickets._action-modals')
+    @endpush
 @endsection
