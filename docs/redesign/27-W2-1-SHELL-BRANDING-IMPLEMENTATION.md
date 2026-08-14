@@ -1,7 +1,7 @@
 # W2.1 Authenticated Shell Structure and Branding Implementation Report
 
 ## Current Status
-* **W2.1 Authenticated Shell & Branding**: `W2.1 UX REFINEMENT COMPLETE — HUMAN RE-VERIFICATION REQUIRED`
+* **W2.1 Authenticated Shell & Branding**: `W2.1 FINAL DENSITY & BRAND REFINEMENT COMPLETE — HUMAN RE-VERIFICATION REQUIRED`
 * **W2.2 Mobile Shell & Drawer Redesign**: `NOT STARTED`
 
 ---
@@ -31,7 +31,7 @@ In accordance with the principle of **"Ubah wajahnya, jangan bongkar mesinnya" (
 The brand header has been relocated directly into the desktop sidebar as the primary header block:
 * **Brand Container**: `<div class="ui-sidebar-header">` sits at the top of the sidebar.
 * **Proportional Branding (Expanded)**: 
-  - If a rectangular logo URL is provided, it is rendered with height-constrained proportional sizing (`height: 2.75rem`, `width: auto`, `max-width: 6.5rem`, `object-fit: contain`) preventing distortion or forcing it into a square box.
+  - If a rectangular logo URL is provided, it is rendered with height-constrained proportional sizing (`height: 2.5rem`, `width: auto`, `max-width: 5rem`, `object-fit: contain`) preventing distortion or forcing it into a square box.
   - Fallback square monogram/logo uses a sleek, custom styled `.ui-brand-mark` with `height: 2.75rem`, `width: 2.75rem`, and correct centered text alignment.
 * **Collapsed Branding**:
   - If an uploaded logo is present, it is rendered using the real logo image in both expanded and collapsed states. The collapsed state scales the logo image down proportionally (`height: 2rem`, `max-width: 3.5rem`) and centers it in the rail. The monogram "HT" is not displayed in collapsed state when a logo exists.
@@ -41,7 +41,7 @@ The brand header has been relocated directly into the desktop sidebar as the pri
 ### 3.2 Shell Geometry and Flex Layout
 The shell layout has been updated to remove legacy conflicting geometry (`padding-top: 4.75rem` on `.ui-content-shell` and `15rem` sidebar width):
 * **Sidebar Sizing**:
-  - Expanded width: exactly `16rem` / `256px`.
+  - Expanded width: exactly `14rem` / `224px`.
   - Collapsed width: exactly `4.5rem` / `72px`.
 * **Workspace Consumption**:
   - Sized via standard flex growth: `flex: 1`, `min-width: 0` inside `.ui-shell.lg:flex`.
@@ -79,9 +79,7 @@ The shell layout has been updated to remove legacy conflicting geometry (`paddin
 
 ## 5. UX Refinement Pass
 
-A follow-up UX refinement was performed to address human QA feedback on branding proportion and spacing:
-
-### 5.1 Sidebar Brand Proportion & Spacing Rebalance
+### 5.1 Sidebar Brand Spacing Rebalance
 * **Issue**: The expanded brand block felt visually imbalanced, showing excessive dead space. Sidebar menus also felt too empty horizontally, leaving a wide right-side empty gutter.
 * **Corrective Action**:
   - Tightened horizontal padding of `.ui-sidebar nav` from `1rem` to `0.75rem`. This stretches the nav items horizontally to comfortably fill the available space and minimize empty margins.
@@ -97,9 +95,30 @@ A follow-up UX refinement was performed to address human QA feedback on branding
 
 ---
 
-## 6. Conformance & Test Verification
+## 6. Final Density & Brand Composition Refinement
 
-### 6.1 Automated Test Execution
+### 6.1 W2.1-HQA-003: Expanded Sidebar Width Over-allocation
+* **Issue**: Real browser QA determined that the `16rem` / `256px` expanded sidebar was wider than necessary, causing the main workspace to feel squeezed on medium displays.
+* **Corrective Action**:
+  - Reduced the expanded sidebar width from `16rem` (`256px`) to `14rem` (`224px`) in [app.css](file:///c:/Users/Personal/Herd/helpdesk-idth/resources/css/app.css).
+  - Maintained the collapsed rail width at `4.5rem` (`72px`) and the workspace behavior as `flex: 1` and `min-width: 0` to preserve the fluid content column scaling.
+
+### 6.2 W2.1-HQA-004: Brand Header Internal Composition Density
+* **Issue**: The spacing between the left edge and the logo, as well as between the logo and the text, was too wide, preventing them from reading as a single compact unit.
+* **Corrective Action**:
+  - Reduced the `.ui-sidebar-header` padding from `1rem` to `0.75rem` (`12px`) to shift the logo closer to the left edge.
+  - Tightened the gap in `.ui-sidebar-brand` from `0.65rem` to `0.4rem` (`~6px`) and ensured the text block gets `flex: 1` for proper alignment and truncation.
+  - Adjusted the expanded logo visual dimensions in [theme-modern.css](file:///c:/Users/Personal/Herd/helpdesk-idth/resources/css/theme-modern.css) to `height: 2.5rem` and `max-width: 5rem`.
+
+### 6.3 Logo Intrinsic Whitespace Analysis
+* **Observation**: Part of the visual gap between the visible logo artwork and the text in the human screenshot may be due to transparent whitespace margins baked directly inside the custom uploaded logo image asset itself.
+* **Guideline**: No negative margins, transforms, or destructive crops (`object-fit: cover`) have been introduced to force-crop the image. If the visual spacing remains excessive after applying these refined layout rules, the branding asset file itself should be trimmed/re-uploaded by the owner, rather than accumulating CSS hacks.
+
+---
+
+## 7. Conformance & Test Verification
+
+### 7.1 Automated Test Execution
 * **Pre-correction php artisan test**:
   - Total: `140`, Passed: `139`, Skipped: `1` (concurrency test), Failed: `0`, Errors: `0`, Assertions: `1780`.
   - Status: PASS
@@ -107,7 +126,7 @@ A follow-up UX refinement was performed to address human QA feedback on branding
   - Total: `140`, Passed: `139`, Skipped: `1` (concurrency test), Failed: `0`, Errors: `0`, Assertions: `1780`.
   - Status: PASS
 
-### 6.2 Build and Cache Compilation
+### 7.2 Build and Cache Compilation
 * **php artisan view:cache**:
   - Command output: `Blade templates cached successfully.`
   - Exit code: `0`
@@ -119,12 +138,12 @@ A follow-up UX refinement was performed to address human QA feedback on branding
 
 ---
 
-## 7. Human Browser Verification Checklist & QA Requirements
+## 8. Human Browser Verification Checklist & QA Requirements
 > [!WARNING]
 > Actual human browser QA has **NOT** yet been completed because a controllable browser is unavailable for runtime validation.
 
 Manual QA verification must be conducted on the following items:
-* [ ] **Expanded Sidebar (>= 1024px)**: Sidebar width is exactly `256px`. Brand logo has height `44px` (`2.75rem`) and auto width. Topbar sticky header contains only the toggle and page title. Monogram is completely hidden.
+* [ ] **Expanded Sidebar (>= 1024px)**: Sidebar width is exactly `224px` (`14rem`). Left brand padding is `12px` (`0.75rem`). Logo height is `40px` (`2.5rem`). Logo-to-text gap is `~6px` (`0.4rem`).
 * [ ] **Collapsed Sidebar (>= 1024px)**: Toggle collapses sidebar to exactly `72px` (`4.5rem`). Brand logo image is visible, centered, and scaled down proportionally to `height: 2rem; max-width: 3.5rem;` without monogram fallback. Sidebar labels and titles are completely hidden.
 * [ ] **Responsive Transition**: Content column adapts naturally without visual shift, overlap, or scrollbars when resizing the browser between `1024px` and wider screen dimensions.
 * [ ] **Keyboard Focus-Visible**: Tab navigation displays a visible ring on interactive elements.

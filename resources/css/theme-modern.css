@@ -481,7 +481,7 @@ summary {
 	height: 4.5rem;
 	display: flex;
 	align-items: center;
-	padding: 0 1rem;
+	padding: 0 0.75rem;
 	border-bottom: 1px solid var(--tm-border-subtle);
 	flex-shrink: 0;
 }
@@ -489,9 +489,10 @@ summary {
 .ui-sidebar-brand {
 	display: flex;
 	align-items: center;
-	gap: 0.65rem;
+	gap: 0.4rem;
 	text-decoration: none;
 	min-width: 0;
+	width: 100%;
 }
 
 .ui-sidebar-brand:hover {
@@ -499,10 +500,10 @@ summary {
 }
 
 .ui-sidebar-brand-logo {
-	height: 2.75rem;
-	max-height: 2.75rem;
+	height: 2.5rem;
+	max-height: 2.5rem;
 	width: auto;
-	max-width: 6.5rem;
+	max-width: 5rem;
 	border-radius: var(--tm-r-sm);
 	object-fit: contain;
 	flex-shrink: 0;
@@ -512,6 +513,7 @@ summary {
 	display: flex;
 	flex-direction: column;
 	min-width: 0;
+	flex: 1;
 }
 
 .ui-sidebar-brand-title {

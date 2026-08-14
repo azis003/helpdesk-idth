@@ -228,7 +228,7 @@
     .ui-sidebar {
         position: sticky;
         top: 0;
-        width: 16rem;
+        width: 14rem;
         height: 100vh;
         max-height: 100vh;
         overflow-x: hidden;
