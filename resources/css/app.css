@@ -222,13 +222,13 @@
     }
 
     .ui-content-shell {
-        padding-top: 4.75rem;
+        padding-top: 0;
     }
 
     .ui-sidebar {
         position: sticky;
         top: 0;
-        width: 15rem;
+        width: 16rem;
         height: 100vh;
         max-height: 100vh;
         overflow-x: hidden;
@@ -236,17 +236,15 @@
         background: #ffffff;
         border-right: 1px solid #dce6ea;
         color: #455a63;
-        padding: 3.5rem 1rem 1.25rem;
+        padding: 0;
         scrollbar-color: #c8d8de transparent;
         scrollbar-width: thin;
         transition: width 260ms ease, padding 260ms ease;
     }
 
     .ui-sidebar.is-collapsed {
-        width: 4.25rem;
-        padding-top: 4rem;
-        padding-right: 0.6rem;
-        padding-left: 0.6rem;
+        width: 4.5rem;
+        padding: 0;
     }
 
     .ui-nav-label {
@@ -263,12 +261,12 @@
         pointer-events: none;
     }
 
-    .ui-sidebar.is-collapsed > nav {
+    .ui-sidebar.is-collapsed .ui-sidebar-nav-container > nav {
         gap: 0.25rem;
         margin-top: 0.75rem !important;
     }
 
-    .ui-sidebar.is-collapsed > nav:first-of-type {
+    .ui-sidebar.is-collapsed .ui-sidebar-nav-container > nav:first-of-type {
         margin-top: 1rem !important;
     }
 
@@ -462,15 +460,14 @@
     .ui-sidebar.is-collapsed .ui-nav-link {
         justify-content: center;
         height: 2.75rem;
-        width: 3rem;
+        width: 2.75rem;
         margin-inline: auto;
-        padding-right: 0.7rem;
-        padding-left: 0.7rem;
+        padding: 0;
     }
 
     .ui-sidebar.is-collapsed .ui-nav-disclosure-row {
         height: 2.75rem;
-        width: 3rem;
+        width: 2.75rem;
         margin-inline: auto;
         gap: 0;
     }
@@ -478,14 +475,13 @@
     .ui-sidebar.is-collapsed .ui-nav-disclosure-link {
         width: 2rem;
         flex: 0 0 2rem;
-        padding-right: 0.3rem;
-        padding-left: 0.3rem;
+        padding: 0;
     }
 
     .ui-sidebar.is-collapsed .ui-nav-disclosure-toggle {
         height: 2.75rem;
-        width: 1rem;
-        flex-basis: 1rem;
+        width: 0.75rem;
+        flex-basis: 0.75rem;
         padding: 0;
     }
 
