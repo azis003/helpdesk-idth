@@ -265,6 +265,180 @@ if (sidebar && sidebarToggle) {
     renderSidebar();
 }
 
+// Mobile Navigation Drawer Toggler
+const mobileMenu = document.querySelector('[data-mobile-menu]');
+const mobileMenuTrigger = document.querySelector('[data-mobile-menu-trigger]');
+const mobileMenuClose = document.querySelector('[data-mobile-menu-close]');
+const mobileMenuBackdrop = document.querySelector('[data-mobile-menu-backdrop]');
+const mobileMenuPanel = document.querySelector('[data-mobile-menu-panel]');
+const notificationMenu = document.querySelector('[data-notification-menu]');
+
+if (mobileMenu && mobileMenuTrigger) {
+    const focusableSelector = [
+        'button:not([disabled]):not([tabindex="-1"])',
+        'a[href]:not([disabled]):not([tabindex="-1"])',
+        'input:not([disabled])',
+        'select:not([disabled])',
+        'textarea:not([disabled])',
+        '[tabindex]:not([tabindex="-1"])',
+    ].join(', ');
+
+    const getFocusableElements = () => [...mobileMenu.querySelectorAll(focusableSelector)];
+
+    const isAnyOtherModalOpen = () => {
+        const pwdModal = document.querySelector('[data-password-reset-modal]');
+        const teamModal = document.querySelector('[data-team-create-modal]');
+        const uiModals = [...document.querySelectorAll('[data-ui-modal]')];
+
+        const pwdOpen = pwdModal && !pwdModal.classList.contains('hidden');
+        const teamOpen = teamModal && !teamModal.classList.contains('hidden');
+        const uiOpen = uiModals.some((m) => !m.classList.contains('hidden'));
+
+        return pwdOpen || teamOpen || uiOpen;
+    };
+
+    const closeMobileMenu = () => {
+        mobileMenu.classList.remove('is-open');
+        mobileMenuPanel?.classList.add('-translate-x-full');
+        mobileMenuBackdrop?.classList.add('opacity-0');
+        
+        window.setTimeout(() => {
+            if (!mobileMenu.classList.contains('is-open')) {
+                mobileMenu.classList.add('hidden');
+                mobileMenu.setAttribute('aria-hidden', 'true');
+                mobileMenuTrigger.setAttribute('aria-expanded', 'false');
+                
+                if (!isAnyOtherModalOpen()) {
+                    document.body.classList.remove('overflow-hidden');
+                }
+                
+                mobileMenuTrigger.focus();
+            }
+        }, 300);
+    };
+
+    const openMobileMenu = () => {
+        if (notificationMenu && notificationMenu.open) {
+            notificationMenu.open = false;
+        }
+
+        mobileMenu.classList.remove('hidden');
+        mobileMenu.setAttribute('aria-hidden', 'false');
+        mobileMenuTrigger.setAttribute('aria-expanded', 'true');
+        document.body.classList.add('overflow-hidden');
+
+        window.requestAnimationFrame(() => {
+            mobileMenu.classList.add('is-open');
+            mobileMenuPanel?.classList.remove('-translate-x-full');
+            mobileMenuBackdrop?.classList.remove('opacity-0');
+
+            window.requestAnimationFrame(() => {
+                const focusable = getFocusableElements();
+                const initialFocus = mobileMenuClose || focusable[0];
+                initialFocus?.focus();
+            });
+        });
+    };
+
+    mobileMenuTrigger.addEventListener('click', () => {
+        const isOpen = mobileMenu.classList.contains('is-open');
+        if (isOpen) {
+            closeMobileMenu();
+        } else {
+            openMobileMenu();
+        }
+    });
+
+    mobileMenuClose?.addEventListener('click', closeMobileMenu);
+    mobileMenuBackdrop?.addEventListener('click', closeMobileMenu);
+
+    mobileMenu.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            closeMobileMenu();
+            return;
+        }
+
+        if (event.key !== 'Tab') {
+            return;
+        }
+
+        const focusableElements = getFocusableElements();
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (!firstElement || !lastElement) {
+            return;
+        }
+
+        if (event.shiftKey && document.activeElement === firstElement) {
+            event.preventDefault();
+            lastElement.focus();
+        } else if (!event.shiftKey && document.activeElement === lastElement) {
+            event.preventDefault();
+            firstElement.focus();
+        }
+    });
+
+    const handleResize = () => {
+        if (window.innerWidth >= 1024 && mobileMenu.classList.contains('is-open')) {
+            mobileMenu.classList.remove('is-open');
+            mobileMenu.classList.add('hidden');
+            mobileMenu.setAttribute('aria-hidden', 'true');
+            mobileMenuTrigger.setAttribute('aria-expanded', 'false');
+            if (!isAnyOtherModalOpen()) {
+                document.body.classList.remove('overflow-hidden');
+            }
+        }
+    };
+    window.addEventListener('resize', handleResize);
+}
+
+// Notifications Dropdown Refinements
+if (notificationMenu) {
+    const summary = notificationMenu.querySelector('summary');
+
+    summary?.addEventListener('click', () => {
+        if (!notificationMenu.open) {
+            if (mobileMenu && mobileMenu.classList.contains('is-open')) {
+                mobileMenu.classList.remove('is-open');
+                mobileMenu.classList.add('hidden');
+                mobileMenu.setAttribute('aria-hidden', 'true');
+                if (mobileMenuTrigger) {
+                    mobileMenuTrigger.setAttribute('aria-expanded', 'false');
+                }
+                mobileMenuPanel?.classList.add('-translate-x-full');
+                mobileMenuBackdrop?.classList.add('opacity-0');
+                
+                const pwdModal = document.querySelector('[data-password-reset-modal]');
+                const teamModal = document.querySelector('[data-team-create-modal]');
+                const uiModals = [...document.querySelectorAll('[data-ui-modal]')];
+                const anyModalOpen = (pwdModal && !pwdModal.classList.contains('hidden')) ||
+                                     (teamModal && !teamModal.classList.contains('hidden')) ||
+                                     uiModals.some((m) => !m.classList.contains('hidden'));
+                
+                if (!anyModalOpen) {
+                    document.body.classList.remove('overflow-hidden');
+                }
+            }
+        }
+    });
+
+    notificationMenu.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && notificationMenu.open) {
+            event.preventDefault();
+            notificationMenu.open = false;
+            summary?.focus();
+        }
+    });
+
+    document.addEventListener('click', (event) => {
+        if (notificationMenu.open && !notificationMenu.contains(event.target)) {
+            notificationMenu.open = false;
+        }
+    });
+}
+
 const navigationDisclosures = [...document.querySelectorAll('[data-nav-disclosure]')];
 
 navigationDisclosures.forEach((disclosure) => {

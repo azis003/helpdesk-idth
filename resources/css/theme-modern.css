@@ -619,6 +619,10 @@ summary {
 
 .ui-topbar-brand-logo {
 	border-radius: var(--tm-r-sm);
+	height: 2.25rem;
+	width: auto;
+	max-width: 4.5rem;
+	object-fit: contain;
 }
 
 .ui-brand-mark {
@@ -2144,6 +2148,65 @@ a:not([class]):hover {
 	.hd-risk-item:hover {
 		transform: none;
 	}
+}
+
+.ui-mobile-menu-button {
+	width: 2.25rem;
+	height: 2.25rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+}
+
+/* Mobile Menu Drawer */
+[data-mobile-menu] {
+	transition: visibility 300ms;
+}
+
+[data-mobile-menu].hidden {
+	display: none !important;
+}
+
+[data-mobile-menu].is-open [data-mobile-menu-backdrop] {
+	opacity: 1;
+}
+
+[data-mobile-menu].is-open [data-mobile-menu-panel] {
+	transform: translateX(0);
+}
+
+[data-mobile-menu-panel] .ui-mobile-nav-link {
+	display: flex;
+	align-items: center;
+	padding: 0.625rem 0.875rem;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+	border-radius: var(--tm-r-md);
+	color: var(--tm-text-secondary);
+	font-weight: 550;
+	transition: background-color var(--tm-dur-fast) var(--tm-ease), color var(--tm-dur-fast) var(--tm-ease);
+	text-decoration: none;
+}
+
+[data-mobile-menu-panel] .ui-mobile-nav-link:hover {
+	background-color: var(--tm-n-100);
+	color: var(--tm-n-900);
+}
+
+[data-mobile-menu-panel] .ui-mobile-nav-link.is-active {
+	background-color: var(--tm-brand-50);
+	color: var(--tm-brand-800);
+	font-weight: 700;
+}
+
+[data-mobile-menu-panel] .ui-mobile-nav-group-label {
+	padding: 0.75rem 0.875rem 0.375rem;
+	font-size: 0.6875rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--tm-text-faint);
 }
 
 /* ==========================================================================

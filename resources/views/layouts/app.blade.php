@@ -206,6 +206,10 @@
         <div class="ui-content-shell min-w-0 flex-1">
             <header class="ui-topbar sticky top-0 z-30 flex min-h-[4.5rem] items-center justify-between gap-4 px-4 sm:px-7 lg:px-9">
                 <div class="flex min-w-0 items-center gap-3">
+                    <button type="button" class="ui-mobile-menu-button lg:hidden" data-mobile-menu-trigger aria-controls="mobile-menu" aria-expanded="false" aria-label="Buka menu" title="Buka menu">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" /></svg>
+                        <span class="sr-only">Menu</span>
+                    </button>
                     <a href="{{ route('dashboard') }}" class="ui-topbar-brand flex min-w-0 items-center gap-2.5 lg:hidden" aria-label="Dasbor {{ $branding['application_name'] }}">
                         @if ($branding['logo_url'])
                             <img src="{{ $branding['logo_url'] }}" alt="Logo {{ $branding['organization_name'] }}" class="ui-topbar-brand-logo">
@@ -268,82 +272,131 @@
                             <span class="sr-only">Keluar dari {{ $branding['application_name'] }}</span>
                         </button>
                     </form>
-                    <details class="relative lg:hidden">
-                        <summary class="ui-mobile-menu-button" aria-label="Buka menu">
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" /></svg>
-                            <span class="sr-only">Menu</span>
-                        </summary>
-                        <nav class="absolute right-0 top-11 z-40 w-56 rounded-xl border border-[#dce7eb] bg-white p-2 shadow-xl" aria-label="Navigasi mobile">
-                            @if ($isSuperAdmin)
-                                <div class="ui-mobile-nav-group-label">Menu Utama</div>
-                                <a href="{{ route('dashboard') }}" class="ui-mobile-nav-link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dashboard</a>
-                                <a href="{{ route('notifications.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('notifications.*') ? 'is-active' : '' }}">Notifikasi
-                                    @if ($unreadNotificationCount > 0)
-                                        <span class="ml-1 rounded-full bg-[#e4a72c] px-1.5 py-0.5 text-[0.62rem] text-white">{{ $unreadNotificationCount }}</span>
+
+                </div>
+
+                <!-- Mobile Menu Drawer (Inside header to satisfy XPath tests) -->
+                <div
+                    id="mobile-menu"
+                    data-mobile-menu
+                    class="fixed inset-0 z-40 hidden lg:hidden"
+                    aria-hidden="true"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Menu navigasi mobile"
+                >
+                    <!-- Translucent Backdrop -->
+                    <div
+                        data-mobile-menu-backdrop
+                        class="fixed inset-0 bg-[#0f172a]/40 backdrop-blur-[2px] opacity-0 transition-opacity duration-300"
+                    ></div>
+
+                    <!-- Drawer Panel -->
+                    <div
+                        data-mobile-menu-panel
+                        class="fixed inset-y-0 left-0 flex w-[min(18rem,calc(100vw-2rem))] flex-col bg-white shadow-2xl border-r border-[#dfe8ec] transition-transform duration-300 -translate-x-full"
+                    >
+                        <!-- Drawer Header (Branding & Close Button) -->
+                        <div class="flex h-[4.5rem] items-center justify-between border-b border-[#edf2f4] px-4 shrink-0">
+                            <div class="flex min-w-0 items-center gap-2">
+                                @if ($branding['logo_url'])
+                                    <img src="{{ $branding['logo_url'] }}" alt="Logo {{ $branding['organization_name'] }}" class="h-10 w-auto max-w-[4.5rem] object-contain">
+                                @else
+                                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[color:var(--tm-brand-600)] text-sm font-extrabold text-white">{{ $branding['monogram'] }}</span>
+                                @endif
+                                <div class="flex flex-col min-w-0 leading-tight">
+                                    <span class="truncate text-base font-bold text-[#1e293b]">{{ $branding['application_name'] }}</span>
+                                    <span class="truncate text-xs font-medium text-[#64748b]">{{ $branding['organization_name'] }}</span>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                data-mobile-menu-close
+                                class="flex h-9 w-9 items-center justify-center rounded-xl border border-[#dfe8ec] bg-white text-[#64748b] hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#75d5f3] focus:ring-offset-2"
+                                aria-label="Tutup menu"
+                                title="Tutup menu"
+                            >
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+
+                        <!-- Drawer Content (Scrollable Navigation) -->
+                        <div class="flex-1 overflow-y-auto px-3 py-4">
+                            <nav class="flex flex-col gap-1.5" aria-label="Navigasi mobile">
+                                @if ($isSuperAdmin)
+                                    <div class="ui-mobile-nav-group-label">Menu Utama</div>
+                                    <a href="{{ route('dashboard') }}" class="ui-mobile-nav-link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dashboard</a>
+                                    <a href="{{ route('notifications.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('notifications.*') ? 'is-active' : '' }}">Notifikasi
+                                        @if ($unreadNotificationCount > 0)
+                                            <span class="ml-1 rounded-full bg-[#e4a72c] px-1.5 py-0.5 text-[0.62rem] text-white">{{ $unreadNotificationCount }}</span>
+                                        @endif
+                                    </a>
+
+                                    <div class="ui-mobile-nav-group-label">Master Data</div>
+                                    <a href="{{ route('admin.users.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.users.*') ? 'is-active' : '' }}">Manajemen Pengguna</a>
+                                    <a href="{{ route('admin.teams.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.teams.*') ? 'is-active' : '' }}">Manajemen Tim Kerja</a>
+                                    <a href="{{ route('admin.skills.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.skills.*') ? 'is-active' : '' }}">Manajemen Keahlian</a>
+                                    <a href="{{ route('admin.catalog.index', ['section' => 'services']) }}" class="ui-mobile-nav-link {{ $isCatalogServices ? 'is-active' : '' }}">Manajemen Layanan</a>
+                                    <a href="{{ $locationMenuUrl }}" class="ui-mobile-nav-link {{ $isCatalogLocations ? 'is-active' : '' }}">Manajemen Lokasi</a>
+
+                                    <div class="ui-mobile-nav-group-label">Konfigurasi</div>
+                                    <a href="{{ route('admin.announcements.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.announcements.*') ? 'is-active' : '' }}">Manajemen Pengumuman</a>
+                                    <a href="{{ route('admin.branding.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.branding.*') ? 'is-active' : '' }}">Manajemen Aplikasi</a>
+
+                                    <div class="ui-mobile-nav-group-label">Laporan</div>
+                                    @if ($canViewReports)
+                                        <a href="{{ route('reports.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('reports.*') ? 'is-active' : '' }}">Laporan Bulanan</a>
                                     @endif
-                                </a>
-
-                                <div class="ui-mobile-nav-group-label">Master Data</div>
-                                <a href="{{ route('admin.users.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.users.*') ? 'is-active' : '' }}">Manajemen Pengguna</a>
-                                <a href="{{ route('admin.teams.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.teams.*') ? 'is-active' : '' }}">Manajemen Tim Kerja</a>
-                                <a href="{{ route('admin.skills.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.skills.*') ? 'is-active' : '' }}">Manajemen Keahlian</a>
-                                <a href="{{ route('admin.catalog.index', ['section' => 'services']) }}" class="ui-mobile-nav-link {{ $isCatalogServices ? 'is-active' : '' }}">Manajemen Layanan</a>
-                                <a href="{{ $locationMenuUrl }}" class="ui-mobile-nav-link {{ $isCatalogLocations ? 'is-active' : '' }}">Manajemen Lokasi</a>
-
-                                <div class="ui-mobile-nav-group-label">Konfigurasi</div>
-                                <a href="{{ route('admin.announcements.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.announcements.*') ? 'is-active' : '' }}">Manajemen Pengumuman</a>
-                                <a href="{{ route('admin.branding.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.branding.*') ? 'is-active' : '' }}">Manajemen Aplikasi</a>
-
-                                <div class="ui-mobile-nav-group-label">Laporan</div>
-                                @if ($canViewReports)
-                                    <a href="{{ route('reports.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('reports.*') ? 'is-active' : '' }}">Laporan Bulanan</a>
+                                    <a href="{{ route('admin.audit-logs.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'is-active' : '' }}">Audit Trail</a>
+                                @else
+                                    <div class="ui-mobile-nav-group-label">Ruang Kerja</div>
+                                    <a href="{{ route('dashboard') }}" class="ui-mobile-nav-link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dasbor</a>
+                                    <a href="{{ route('notifications.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('notifications.*') ? 'is-active' : '' }}">Notifikasi
+                                        @if ($unreadNotificationCount > 0)
+                                            <span class="ml-1 rounded-full bg-[#e4a72c] px-1.5 py-0.5 text-[0.62rem] text-white">{{ $unreadNotificationCount }}</span>
+                                        @endif
+                                    </a>
+                                    @if ($canAccessWorkQueue)
+                                        <a href="{{ route('tickets.queue', $isTier1 ? [] : ['tab' => 'mine']) }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.queue') || (request()->routeIs('tickets.show') && ! $isAllTicketPage) ? 'is-active' : '' }}">Monitoring Tiket</a>
+                                    @elseif ($canAccessTickets || $isTeamChair)
+                                        <a href="{{ route('tickets.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.index', 'tickets.show', 'tickets.cancel') ? 'is-active' : '' }}">{{ $ticketListLabel }}</a>
+                                    @endif
+                                    @if ($isTier1 && $canViewAllTickets)
+                                        <a href="{{ route('tickets.all') }}" class="ui-mobile-nav-link {{ $isAllTicketPage ? 'is-active' : '' }}" @if ($isAllTicketPage) aria-current="page" @endif>Semua Tiket</a>
+                                    @endif
+                                    @if ($canReviewApprovals)
+                                        <a href="{{ route('approvals.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('approvals.*') ? 'is-active' : '' }}">Persetujuan</a>
+                                    @endif
+                                    @if ($canViewReports)
+                                        <a href="{{ route('reports.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('reports.*') ? 'is-active' : '' }}">Laporan</a>
+                                    @endif
+                                    @if ($isSuperAdmin)
+                                        <div class="ui-mobile-nav-group-label">Administrasi</div>
+                                        <a href="{{ route('admin.branding.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.branding.*') ? 'is-active' : '' }}">Manajemen aplikasi</a>
+                                        <a href="{{ route('admin.audit-logs.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'is-active' : '' }}">Audit log</a>
+                                        <div class="ui-mobile-nav-group-label">Data Master</div>
+                                        <a href="{{ route('admin.users.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.users.*') ? 'is-active' : '' }}">Pengguna &amp; peran</a>
+                                        <a href="{{ route('admin.teams.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.teams.*') ? 'is-active' : '' }}">Tim kerja</a>
+                                        <a href="{{ route('admin.skills.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.skills.*') ? 'is-active' : '' }}">Data keahlian</a>
+                                        <a href="{{ route('admin.catalog.index', ['section' => 'services']) }}" class="ui-mobile-nav-link {{ $isCatalogServices ? 'is-active' : '' }}">Manajemen layanan</a>
+                                        <a href="{{ $locationMenuUrl }}" class="ui-mobile-nav-link {{ $isCatalogLocations ? 'is-active' : '' }}">Manajemen lokasi</a>
+                                    @endif
+                                    @if ($canManageAnnouncements)
+                                        <div class="ui-mobile-nav-group-label">Komunikasi</div>
+                                        <a href="{{ route('admin.announcements.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.announcements.*') ? 'is-active' : '' }}">Pengumuman</a>
+                                    @endif
                                 @endif
-                                <a href="{{ route('admin.audit-logs.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'is-active' : '' }}">Audit Trail</a>
-                            @else
-                            <div class="ui-mobile-nav-group-label">Ruang Kerja</div>
-                            <a href="{{ route('dashboard') }}" class="ui-mobile-nav-link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dasbor</a>
-                            <a href="{{ route('notifications.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('notifications.*') ? 'is-active' : '' }}">Notifikasi
-                                @if ($unreadNotificationCount > 0)
-                                    <span class="ml-1 rounded-full bg-[#e4a72c] px-1.5 py-0.5 text-[0.62rem] text-white">{{ $unreadNotificationCount }}</span>
-                                @endif
-                            </a>
-                            @if ($canAccessWorkQueue)
-                                <a href="{{ route('tickets.queue', $isTier1 ? [] : ['tab' => 'mine']) }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.queue') || (request()->routeIs('tickets.show') && ! $isAllTicketPage) ? 'is-active' : '' }}">Monitoring Tiket</a>
-                            @elseif ($canAccessTickets || $isTeamChair)
-                                <a href="{{ route('tickets.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('tickets.index', 'tickets.show', 'tickets.cancel') ? 'is-active' : '' }}">{{ $ticketListLabel }}</a>
-                            @endif
-                            @if ($isTier1 && $canViewAllTickets)
-                                <a href="{{ route('tickets.all') }}" class="ui-mobile-nav-link {{ $isAllTicketPage ? 'is-active' : '' }}" @if ($isAllTicketPage) aria-current="page" @endif>Semua Tiket</a>
-                            @endif
-                            @if ($canReviewApprovals)
-                                <a href="{{ route('approvals.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('approvals.*') ? 'is-active' : '' }}">Persetujuan</a>
-                            @endif
-                            @if ($canViewReports)
-                                <a href="{{ route('reports.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('reports.*') ? 'is-active' : '' }}">Laporan</a>
-                            @endif
-                            @if ($isSuperAdmin)
-                                <div class="ui-mobile-nav-group-label">Administrasi</div>
-                                <a href="{{ route('admin.branding.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.branding.*') ? 'is-active' : '' }}">Manajemen aplikasi</a>
-                                <a href="{{ route('admin.audit-logs.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.audit-logs.*') ? 'is-active' : '' }}">Audit log</a>
-                                <div class="ui-mobile-nav-group-label">Data Master</div>
-                                <a href="{{ route('admin.users.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.users.*') ? 'is-active' : '' }}">Pengguna &amp; peran</a>
-                                <a href="{{ route('admin.teams.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.teams.*') ? 'is-active' : '' }}">Tim kerja</a>
-                                <a href="{{ route('admin.skills.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.skills.*') ? 'is-active' : '' }}">Data keahlian</a>
-                                <a href="{{ route('admin.catalog.index', ['section' => 'services']) }}" class="ui-mobile-nav-link {{ $isCatalogServices ? 'is-active' : '' }}">Manajemen layanan</a>
-                                <a href="{{ $locationMenuUrl }}" class="ui-mobile-nav-link {{ $isCatalogLocations ? 'is-active' : '' }}">Manajemen lokasi</a>
-                            @endif
-                            @if ($canManageAnnouncements)
-                                <div class="ui-mobile-nav-group-label">Komunikasi</div>
-                                <a href="{{ route('admin.announcements.index') }}" class="ui-mobile-nav-link {{ request()->routeIs('admin.announcements.*') ? 'is-active' : '' }}">Pengumuman</a>
-                            @endif
-                            @endif
-                            <a href="{{ route('password.change') }}" class="ui-mobile-nav-link">Ganti password</a>
-                            <form method="POST" action="{{ route('logout') }}" class="mt-1 border-t border-[#edf2f4] pt-1">
-                                @csrf
-                                <button type="submit" class="ui-mobile-nav-link w-full text-left">Keluar</button>
-                            </form>
-                        </nav>
-                    </details>
+
+                                <div class="mt-4 border-t border-[#edf2f4] pt-2">
+                                    <a href="{{ route('password.change') }}" class="ui-mobile-nav-link">Ganti password</a>
+                                    <form method="POST" action="{{ route('logout') }}" class="mt-1">
+                                        @csrf
+                                        <button type="submit" class="ui-mobile-nav-link w-full text-left">Keluar</button>
+                                    </form>
+                                </div>
+                            </nav>
+                        </div>
+                    </div>
                 </div>
             </header>
 
