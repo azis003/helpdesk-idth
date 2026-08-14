@@ -1,8 +1,8 @@
 # W2.1 Authenticated Shell Structure and Branding Implementation Report
 
 ## Current Status
-* **W2.1 Authenticated Shell & Branding**: `W2.1 FINAL DENSITY & BRAND REFINEMENT COMPLETE — HUMAN RE-VERIFICATION REQUIRED`
-* **W2.2 Mobile Shell & Drawer Redesign**: `NOT STARTED`
+* **W2.1 Authenticated Shell & Branding**: `W2.1 PASS — HUMAN QA ACCEPTED`
+* **W2.2 Mobile Shell & Drawer Redesign**: `IN PROGRESS`
 
 ---
 
@@ -110,23 +110,28 @@ The shell layout has been updated to remove legacy conflicting geometry (`paddin
   - Tightened the gap in `.ui-sidebar-brand` from `0.65rem` to `0.4rem` (`~6px`) and ensured the text block gets `flex: 1` for proper alignment and truncation.
   - Adjusted the expanded logo visual dimensions in [theme-modern.css](file:///c:/Users/Personal/Herd/helpdesk-idth/resources/css/theme-modern.css) to `height: 2.5rem` and `max-width: 5rem`.
 
-### 6.3 Logo Intrinsic Whitespace Analysis
-* **Observation**: Part of the visual gap between the visible logo artwork and the text in the human screenshot may be due to transparent whitespace margins baked directly inside the custom uploaded logo image asset itself.
-* **Guideline**: No negative margins, transforms, or destructive crops (`object-fit: cover`) have been introduced to force-crop the image. If the visual spacing remains excessive after applying these refined layout rules, the branding asset file itself should be trimmed/re-uploaded by the owner, rather than accumulating CSS hacks.
+---
+
+## 7. Human QA Acceptance & Final Geometry
+Following the density and brand composition refinements, the desktop structure was presented to the project owner and has been **HUMAN-ACCEPTED**.
+
+The final accepted desktop parameters are:
+* **Expanded Sidebar Width**: `14rem` / `224px`
+* **Collapsed Sidebar Width**: `4.5rem` / `72px`
+* **Brand Header**: Compact proportional logo + application identity
+* **Collapsed Brand Header (with logo)**: Real logo centered, NO monogram fallback
+* **Modal Containment**: Global `body-root` stack `@stack('modals')` preserved and used via `@push('modals')` from child views.
 
 ---
 
-## 7. Conformance & Test Verification
+## 8. Conformance & Test Verification
 
-### 7.1 Automated Test Execution
-* **Pre-correction php artisan test**:
-  - Total: `140`, Passed: `139`, Skipped: `1` (concurrency test), Failed: `0`, Errors: `0`, Assertions: `1780`.
-  - Status: PASS
-* **Post-correction php artisan test**:
+### 8.1 Automated Test Execution
+* **Final post-correction php artisan test**:
   - Total: `140`, Passed: `139`, Skipped: `1` (concurrency test), Failed: `0`, Errors: `0`, Assertions: `1780`.
   - Status: PASS
 
-### 7.2 Build and Cache Compilation
+### 8.2 Build and Cache Compilation
 * **php artisan view:cache**:
   - Command output: `Blade templates cached successfully.`
   - Exit code: `0`
@@ -135,17 +140,3 @@ The shell layout has been updated to remove legacy conflicting geometry (`paddin
   - Exit code: `0`
 * **git diff --check**:
   - Exit code: `0` (no whitespace anomalies or check conflicts).
-
----
-
-## 8. Human Browser Verification Checklist & QA Requirements
-> [!WARNING]
-> Actual human browser QA has **NOT** yet been completed because a controllable browser is unavailable for runtime validation.
-
-Manual QA verification must be conducted on the following items:
-* [ ] **Expanded Sidebar (>= 1024px)**: Sidebar width is exactly `224px` (`14rem`). Left brand padding is `12px` (`0.75rem`). Logo height is `40px` (`2.5rem`). Logo-to-text gap is `~6px` (`0.4rem`).
-* [ ] **Collapsed Sidebar (>= 1024px)**: Toggle collapses sidebar to exactly `72px` (`4.5rem`). Brand logo image is visible, centered, and scaled down proportionally to `height: 2rem; max-width: 3.5rem;` without monogram fallback. Sidebar labels and titles are completely hidden.
-* [ ] **Responsive Transition**: Content column adapts naturally without visual shift, overlap, or scrollbars when resizing the browser between `1024px` and wider screen dimensions.
-* [ ] **Keyboard Focus-Visible**: Tab navigation displays a visible ring on interactive elements.
-* [ ] **Mobile Layout Smoke Test (768px & 390px)**: Because W2.1 relocated topbar positioning globally from `fixed` to `sticky` within the workspace container, verify that topbar layout, headers, and buttons are fully aligned and function correctly on smaller viewports.
-* [ ] **Modal Layering & Backdrop**: Open a ticket action modal (e.g. triage or comment). Verify the dimmed backdrop covers the entire viewport including sidebar and topbar, and that the modal window sits on top of all layers.
