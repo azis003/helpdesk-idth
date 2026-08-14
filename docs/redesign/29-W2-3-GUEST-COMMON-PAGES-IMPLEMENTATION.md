@@ -63,7 +63,16 @@
 
 ---
 
-## 7. Regression Gate Results
+## 7. Human QA Corrections
+*   **W2.3-HQA-001 (Login Brand Logo Proportion)**:
+    *   **Root Cause**: The uploaded logo uses a landscape 1400x600 px layout (aspect ratio 7:3 / 2.33). Because the previous CSS constraint `max-w-[4rem]` (64px) capped the horizontal size, it forced the rendered height down to ~27px, causing it to appear too small next to the identity text. No excessive padding was found in the source image itself.
+    *   **Correction**: Replaced inline utility classes with a dedicated `.ui-guest-brand-logo` class in `resources/css/theme-modern.css`.
+    *   **Final Geometry**: `height: 2.5rem; max-width: 5rem; width: auto; object-fit: contain; flex-shrink: 0;`
+    *   **Spacing**: Utilized a compact gap of `0.5rem` (`gap-2`) in the container. No distorting hacks, negative margins, or absolute positioning scaling overrides were used.
+
+---
+
+## 8. Regression Gate Results
 *   **Automated Tests**: `139 passed, 1 skipped, 1780 assertions` (all tests passed).
 *   **Non-Vendor Routes**: Exactly `112` non-vendor routes.
 *   **Blade Views**: Cached successfully.
@@ -74,5 +83,5 @@
 
 ---
 
-## 8. Conformance Status
-**W2.3 STATIC CORRECTIVE COMPLETE — HUMAN BROWSER VERIFICATION REQUIRED**
+## 9. Conformance Status
+**W2.3 HUMAN QA CORRECTIVE COMPLETE — HUMAN RE-VERIFICATION REQUIRED**

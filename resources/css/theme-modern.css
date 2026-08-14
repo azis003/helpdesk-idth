@@ -2291,6 +2291,14 @@ a:not([class]):hover {
 	max-width: 100% !important;
 }
 
+.ui-guest-brand-logo {
+	height: 2.5rem;
+	width: auto;
+	max-width: 5rem;
+	object-fit: contain;
+	flex-shrink: 0;
+}
+
 /* Guest layout & card overrides */
 @media (min-width: 1024px) {
 	.ui-login-main {
