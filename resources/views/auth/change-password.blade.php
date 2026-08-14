@@ -28,6 +28,6 @@
 
     <div class="rounded-lg bg-[color:var(--tm-n-50)] p-3 border border-[color:var(--tm-border-subtle)] text-xs text-[color:var(--tm-text-muted)]">
         <p class="font-bold mb-1">Panduan Keamanan:</p>
-        <p>Jangan bagikan kata sandi Anda kepada siapa pun. Admin atau tim support Helpdesk tidak akan pernah meminta kata sandi Anda.</p>
+        <p>Jaga kerahasiaan kata sandi dan jangan membagikannya kepada pihak lain.</p>
     </div>
 @endsection

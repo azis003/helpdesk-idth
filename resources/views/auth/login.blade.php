@@ -4,8 +4,12 @@
 
 @section('content')
     <div class="space-y-1">
-        <h1 class="text-xl font-extrabold tracking-tight text-[color:var(--tm-text)]" aria-label="Masuk ke {{ $branding['application_name'] }}">{{ $branding['tagline'] ?: 'Portal Layanan TI' }}</h1>
-        <p class="text-sm text-[color:var(--tm-text-secondary)]">Masuk untuk mengakses dasbor dan tiket Anda.</p>
+        <h1 class="text-xl font-extrabold tracking-tight text-[color:var(--tm-text)]" aria-label="Masuk ke {{ $branding['application_name'] }}">Masuk</h1>
+        @if ($branding['tagline'])
+            <p class="text-sm text-[color:var(--tm-text-secondary)]">{{ $branding['tagline'] }}</p>
+        @else
+            <p class="text-sm text-[color:var(--tm-text-secondary)]">Masuk untuk mengakses dasbor dan tiket Anda.</p>
+        @endif
     </div>
 
     <form method="POST" action="{{ route('login.store') }}" class="ui-login-form flex flex-col gap-4">

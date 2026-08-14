@@ -14,16 +14,16 @@
 
         <main id="main-content" tabindex="-1" class="ui-login-main flex flex-1 min-w-0 justify-center items-center p-4 sm:p-8 focus:outline-none">
             <div class="ui-login-content w-full max-w-[28rem] rounded-2xl border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface)] p-6 sm:p-10 shadow-xl flex flex-col gap-6">
-                <a href="{{ url('/') }}" class="ui-login-logo flex flex-col items-start gap-2.5" aria-label="Beranda {{ $branding['application_name'] }}">
+                <a href="{{ url('/') }}" class="flex items-center gap-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--tm-brand-500)] rounded-xl" aria-label="Beranda {{ $branding['application_name'] }}">
                     @if ($branding['logo_url'])
-                        <img src="{{ $branding['logo_url'] }}" alt="Logo {{ $branding['organization_name'] }}" class="h-12 w-auto max-w-[14rem] object-contain">
+                        <img src="{{ $branding['logo_url'] }}" alt="Logo {{ $branding['organization_name'] }}" class="h-10 w-auto max-w-[4rem] object-contain shrink-0">
                     @else
-                        <span class="ui-login-wordmark flex items-center gap-1.5 text-2xl font-black tracking-tight text-[color:var(--tm-text)]">
-                            <span class="ui-login-wordmark-accent h-5 w-1 bg-[color:var(--tm-brand-600)] rounded" aria-hidden="true"></span>
-                            {{ $branding['application_name'] }}
-                        </span>
+                        <span class="ui-brand-mark flex h-10 w-10 items-center justify-center rounded-xl bg-[color:var(--tm-brand-600)] text-sm font-bold text-white shrink-0" aria-hidden="true">{{ $branding['monogram'] }}</span>
                     @endif
-                    <span class="ui-login-logo-caption text-xs font-semibold text-[color:var(--tm-text-muted)]">{{ $branding['organization_name'] }}{{ $branding['tagline'] ? ' · '.$branding['tagline'] : '' }}</span>
+                    <div class="flex flex-col min-w-0">
+                        <span class="text-base font-extrabold tracking-tight text-[color:var(--tm-text)] leading-tight">{{ $branding['application_name'] }}</span>
+                        <span class="text-xs font-semibold text-[color:var(--tm-text-muted)] truncate leading-tight">{{ $branding['organization_name'] }}</span>
+                    </div>
                 </a>
 
                 @include('components.flash')

@@ -26,7 +26,7 @@
                 <div class="space-y-1.5">
                     <p class="text-xs font-extrabold uppercase tracking-widest text-[color:var(--tm-danger-600)]">403 · Akses ditolak</p>
                     <h1 class="text-xl font-extrabold tracking-tight text-[color:var(--tm-text)]">Aksi ini tidak tersedia untuk akun Anda.</h1>
-                    <p class="text-sm leading-relaxed text-[color:var(--tm-text-secondary)]">Hak akses diperiksa di server berdasarkan status akun, role, dan aturan domain.</p>
+                    <p class="text-sm leading-relaxed text-[color:var(--tm-text-secondary)]">Akun Anda tidak memiliki izin untuk mengakses halaman atau menjalankan tindakan ini.</p>
                 </div>
 
                 <a href="{{ auth()->check() ? route('dashboard') : route('login') }}" class="ui-btn ui-btn-primary w-full justify-center">

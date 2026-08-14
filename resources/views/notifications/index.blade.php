@@ -30,7 +30,7 @@
     </x-page-header>
 
     <section class="ui-panel mt-6 overflow-hidden" aria-labelledby="notifications-heading">
-        <div class="ui-panel-header border-b border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-sunken)]/30 px-5 py-4 sm:px-6">
+        <div class="ui-panel-header border-b border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface-sunken)]/30 px-5 py-4 sm:px-6">
             <h2 id="notifications-heading" class="ui-section-title">Pembaruan terbaru</h2>
             <p class="ui-section-description">Notifikasi tersimpan di akun Anda dan dapat dibuka kembali kapan saja.</p>
         </div>
@@ -72,7 +72,7 @@
                     </article>
                 @endforeach
             </div>
-            <div class="border-t border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-sunken)] px-5 py-4 tabular-nums sm:px-6">
+            <div class="border-t border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface-sunken)] px-5 py-4 tabular-nums sm:px-6">
                 {{ $notifications->links() }}
             </div>
         @endif
