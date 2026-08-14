@@ -2153,7 +2153,6 @@ a:not([class]):hover {
 .ui-mobile-menu-button {
 	width: 2.25rem;
 	height: 2.25rem;
-	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	padding: 0;

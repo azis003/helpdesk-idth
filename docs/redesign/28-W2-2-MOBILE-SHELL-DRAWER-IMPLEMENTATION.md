@@ -56,3 +56,23 @@ All verification suites execute cleanly with zero regressions:
 *   **Command**: `php artisan test`
 *   **Tests Run**: 140 total (139 passed, 1 skipped)
 *   **Assertions**: 1780 assertions
+
+---
+
+## 6. Human QA Corrections & Hardening
+
+### W2.2-HQA-001: Mobile Menu Trigger Leaked into Desktop
+*   **Defect**: On desktop viewports (>=1024px), both the mobile menu hamburger and the desktop sidebar-collapse hamburger were visible simultaneously.
+*   **Root Cause**: Custom `.ui-mobile-menu-button { display: inline-flex }` in `theme-modern.css` overrode the Tailwind responsive `lg:hidden` utility.
+*   **Correction**:
+    *   Removed `display: inline-flex;` from `.ui-mobile-menu-button` in [theme-modern.css](file:///c:/Users/Personal/Herd/helpdesk-idth/resources/css/theme-modern.css).
+    *   Added the `inline-flex` utility class directly to the button element in [app.blade.php](file:///c:/Users/Personal/Herd/helpdesk-idth/resources/views/layouts/app.blade.php) so that responsive visibility is handled entirely by Tailwind (`inline-flex lg:hidden`).
+*   **Post-Correction Gate Results**:
+    *   `php artisan test` passed with `139 passed, 1 skipped, 1780 assertions`.
+    *   Vite assets compiled successfully with zero console/build warnings.
+    *   `git diff --check` reported zero trailing white spaces or syntax style discrepancies.
+
+---
+
+## 7. Final Status
+W2.2 HUMAN QA CORRECTIVE COMPLETE — HUMAN RE-VERIFICATION REQUIRED

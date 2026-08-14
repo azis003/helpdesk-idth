@@ -206,7 +206,7 @@
         <div class="ui-content-shell min-w-0 flex-1">
             <header class="ui-topbar sticky top-0 z-30 flex min-h-[4.5rem] items-center justify-between gap-4 px-4 sm:px-7 lg:px-9">
                 <div class="flex min-w-0 items-center gap-3">
-                    <button type="button" class="ui-mobile-menu-button lg:hidden" data-mobile-menu-trigger aria-controls="mobile-menu" aria-expanded="false" aria-label="Buka menu" title="Buka menu">
+                    <button type="button" class="ui-mobile-menu-button inline-flex lg:hidden" data-mobile-menu-trigger aria-controls="mobile-menu" aria-expanded="false" aria-label="Buka menu" title="Buka menu">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" /></svg>
                         <span class="sr-only">Menu</span>
                     </button>
