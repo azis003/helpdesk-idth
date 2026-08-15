@@ -65,84 +65,100 @@
             </div>
         </form>
 
-        <div class="px-5 py-5 sm:px-6">
-            <div class="hidden overflow-x-auto rounded-[var(--tm-r-md)] border border-[color:var(--tm-border-subtle)] md:block">
-                <table class="ui-table w-full min-w-[62rem]">
-                    <caption class="sr-only">Daftar gedung beserta lantai, status, dan aksi pengelolaan</caption>
-                    <thead>
-                        <tr>
-                            <th scope="col" class="w-14 text-center">No</th>
-                            <th scope="col" class="w-56">Nama Gedung</th>
-                            <th scope="col">Daftar Lantai</th>
-                            <th scope="col" class="w-28 text-center">Status</th>
-                            <th scope="col" class="w-56 text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($buildings as $building)
-                            <tr>
-                                <td class="text-center align-top font-semibold tabular-nums text-[color:var(--tm-text-muted)]">{{ ($buildings->firstItem() ?? 1) + $loop->index }}</td>
-                                <td class="align-top">
-                                    <p class="font-semibold text-[color:var(--tm-text)]">{{ $building->name }}</p>
-                                    <p class="mt-1 text-xs tabular-nums text-[color:var(--tm-text-faint)]">{{ $building->floors->count() }} lantai terdaftar</p>
-                                </td>
-                                <td class="align-top">
-                                    @if ($building->floors->isNotEmpty())
-                                        <ul class="grid gap-2 sm:grid-cols-2" aria-label="Lantai pada {{ $building->name }}">
-                                            @foreach ($building->floors as $floor)
-                                                <li class="{{ $locFloorCard }}">
-                                                    <div class="min-w-0">
-                                                        <p class="truncate font-semibold text-[color:var(--tm-text)]">{{ $floor->name }}</p>
-                                                        <span class="ui-status {{ $floor->is_active ? 'ui-status-active' : 'ui-status-inactive' }} mt-1">{{ $floor->is_active ? 'Aktif' : 'Nonaktif' }}</span>
-                                                    </div>
-                                                    <button type="button" data-ui-modal-open="location-floor-edit-modal-{{ $floor->id }}" class="{{ $locIconBtn }} h-8 w-8" aria-label="Edit lantai {{ $floor->name }}" title="Edit lantai">
-                                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 2.651 2.651M4.5 19.5l4.04-.808a2 2 0 0 0 1.02-.55l8.95-8.95a2 2 0 0 0 0-2.828l-.884-.884a2 2 0 0 0-2.828 0l-8.95 8.95a2 2 0 0 0-.55 1.02L4.5 19.5Z" /></svg>
-                                                    </button>
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    @else
-                                        <p class="text-sm text-[color:var(--tm-text-faint)]">Belum ada lantai.</p>
-                                    @endif
-                                </td>
-                                <td class="text-center align-top">
-                                    <span class="ui-status {{ $building->is_active ? 'ui-status-active' : 'ui-status-inactive' }}">{{ $building->is_active ? 'Aktif' : 'Nonaktif' }}</span>
-                                </td>
-                                <td class="align-top">
-                                    <div class="flex flex-wrap justify-center gap-2">
-                                        @if ($building->is_active)
-                                            <button type="button" data-ui-modal-open="location-floor-create-modal-{{ $building->id }}" class="{{ $locAddFloorBtn }}" aria-label="Tambah lantai pada {{ $building->name }}" title="Tambah lantai">
-                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" d="M12 5v14M5 12h14" /></svg>
-                                                <span>Tambah lantai</span>
-                                            </button>
-                                        @else
-                                            <button type="button" disabled class="{{ $locAddFloorDisabled }}" aria-label="Aktifkan gedung terlebih dahulu untuk menambah lantai pada {{ $building->name }}" title="Aktifkan gedung terlebih dahulu">
-                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" d="M12 5v14M5 12h14" /></svg>
-                                                <span>Tambah lantai</span>
-                                            </button>
-                                        @endif
-                                        <button type="button" data-ui-modal-open="location-building-edit-modal-{{ $building->id }}" class="{{ $locIconBtn }} h-9 w-9" aria-label="Edit gedung {{ $building->name }}" title="Edit gedung">
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 2.651 2.651M4.5 19.5l4.04-.808a2 2 0 0 0 1.02-.55l8.95-8.95a2 2 0 0 0 0-2.828l-.884-.884a2 2 0 0 0-2.828 0l-8.95 8.95a2 2 0 0 0-.55 1.02L4.5 19.5Z" /></svg>
-                                        </button>
-                                        <form method="POST" action="{{ route('admin.catalog.buildings.status', [$building, $building->is_active ? 'deactivate' : 'activate']) }}" @if ($building->is_active) data-swal-confirm="Nonaktifkan gedung {{ $building->name }}? Pastikan semua lantai sudah nonaktif." @endif>
-                                            @csrf
-                                            <button type="submit" class="{{ $building->is_active ? $locToggleDanger : $locToggleSuccess }}">{{ $building->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="p-0">
-                                    <x-empty-state :title="$locEmptyTitle" :description="$locEmptyDescription" />
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+        <div class="px-5 py-5 sm:px-6 flex flex-col gap-6">
+            @forelse ($buildings as $building)
+                <article class="border border-[color:var(--tm-border)] bg-[color:var(--tm-surface)] rounded-[var(--tm-r-md)] shadow-[var(--tm-sh-xs)] overflow-hidden hover:border-[color:var(--tm-brand-200)] transition-colors duration-[var(--tm-dur-fast)]">
+                    <!-- Card Header -->
+                    <div class="flex items-center justify-between gap-4 border-b border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface-sunken)] px-5 py-3.5 sm:px-6">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <h3 class="font-bold text-sm sm:text-base text-[color:var(--tm-text)] truncate">{{ $building->name }}</h3>
+                            <span class="inline-flex items-center rounded-full bg-[color:var(--tm-brand-50)] px-2 py-0.5 text-xs font-bold text-[color:var(--tm-brand-700)] shrink-0">
+                                {{ $building->floors->count() }} lantai
+                            </span>
+                        </div>
+                        <span class="ui-status {{ $building->is_active ? 'ui-status-active' : 'ui-status-inactive' }} shrink-0">
+                            {{ $building->is_active ? 'Aktif' : 'Nonaktif' }}
+                        </span>
+                    </div>
 
-            <div class="mt-4 flex flex-col gap-3 text-sm text-[color:var(--tm-text-muted)] sm:flex-row sm:items-center sm:justify-between">
+                    <!-- Card Body Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-[color:var(--tm-border-subtle)]">
+                        <!-- Left Panel: Info & Actions (Desktop left column, mobile bottom actions) -->
+                        <div class="p-5 sm:p-6 order-last lg:order-first flex flex-col justify-between gap-4 bg-[color:var(--tm-surface)]">
+                            <div class="text-xs text-[color:var(--tm-text-muted)] space-y-1.5">
+                                <p>Status Gedung: <span class="font-bold text-[color:var(--tm-text)]">{{ $building->is_active ? 'Aktif' : 'Nonaktif' }}</span></p>
+                                <p>Diperbarui: <span class="font-semibold tabular-nums text-[color:var(--tm-text-secondary)]">{{ $building->updated_at?->timezone(config('app.timezone'))?->translatedFormat('d M Y, H:i') }}</span></p>
+                            </div>
+
+                            <div class="flex flex-col gap-2">
+                                @if ($building->is_active)
+                                    <button type="button" data-ui-modal-open="location-floor-create-modal-{{ $building->id }}" class="{{ $locAddFloorBtn }} w-full justify-center" aria-label="Tambah lantai pada {{ $building->name }}">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" d="M12 5v14M5 12h14" /></svg>
+                                        <span>Tambah lantai</span>
+                                    </button>
+                                @else
+                                    <button type="button" disabled class="{{ $locAddFloorDisabled }} w-full justify-center" aria-label="Aktifkan gedung terlebih dahulu untuk menambah lantai pada {{ $building->name }}" title="Aktifkan gedung terlebih dahulu">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" d="M12 5v14M5 12h14" /></svg>
+                                        <span>Tambah lantai</span>
+                                    </button>
+                                @endif
+
+                                <div class="flex gap-2">
+                                    <button type="button" data-ui-modal-open="location-building-edit-modal-{{ $building->id }}" class="{{ $locIconBtn }} h-9 flex-1 justify-center gap-1.5 px-3 text-xs font-bold" aria-label="Edit gedung {{ $building->name }}">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 2.651 2.651M4.5 19.5l4.04-.808a2 2 0 0 0 1.02-.55l8.95-8.95a2 2 0 0 0 0-2.828l-.884-.884a2 2 0 0 0-2.828 0l-8.95 8.95a2 2 0 0 0-.55 1.02L4.5 19.5Z" /></svg>
+                                        <span>Edit</span>
+                                    </button>
+
+                                    <form method="POST" action="{{ route('admin.catalog.buildings.status', [$building, $building->is_active ? 'deactivate' : 'activate']) }}" @if ($building->is_active) data-swal-confirm="Nonaktifkan gedung {{ $building->name }}? Pastikan semua lantai sudah nonaktif." @endif class="flex-1">
+                                        @csrf
+                                        <button type="submit" class="{{ $building->is_active ? $locToggleDanger : $locToggleSuccess }} w-full justify-center h-9 px-3 text-xs font-bold">
+                                            {{ $building->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Panel: Floor list (Desktop right/span-2, mobile top) -->
+                        <div class="p-5 sm:p-6 lg:col-span-2 order-first lg:order-last bg-[color:var(--tm-surface)]">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-[color:var(--tm-text-secondary)] mb-3">Daftar Lantai</h4>
+                            @if ($building->floors->isNotEmpty())
+                                <ul class="grid gap-3 sm:grid-cols-2" aria-label="Lantai pada {{ $building->name }}">
+                                    @foreach ($building->floors as $floor)
+                                        <li class="flex items-center justify-between gap-3 rounded-[var(--tm-r-sm)] border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface-sunken)] p-3 hover:border-[color:var(--tm-brand-200)] transition-colors duration-[var(--tm-dur-fast)]">
+                                            <div class="min-w-0">
+                                                <p class="truncate font-semibold text-sm text-[color:var(--tm-text)]">{{ $floor->name }}</p>
+                                                <span class="ui-status {{ $floor->is_active ? 'ui-status-active' : 'ui-status-inactive' }} mt-1 text-[0.68rem] px-1.5 py-0.5 inline-block">
+                                                    {{ $floor->is_active ? 'Aktif' : 'Nonaktif' }}
+                                                </span>
+                                            </div>
+                                            <div class="flex shrink-0 gap-1.5 items-center">
+                                                <button type="button" data-ui-modal-open="location-floor-edit-modal-{{ $floor->id }}" class="{{ $locIconBtn }} h-8 w-8" aria-label="Edit lantai {{ $floor->name }}" title="Edit lantai">
+                                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 2.651 2.651M4.5 19.5l4.04-.808a2 2 0 0 0 1.02-.55l8.95-8.95a2 2 0 0 0 0-2.828l-.884-.884a2 2 0 0 0-2.828 0l-8.95 8.95a2 2 0 0 0-.55 1.02L4.5 19.5Z" /></svg>
+                                                </button>
+                                                <form method="POST" action="{{ route('admin.catalog.floors.status', [$floor, $floor->is_active ? 'deactivate' : 'activate']) }}" @if ($floor->is_active) data-swal-confirm="Nonaktifkan lantai {{ $floor->name }}?" @endif>
+                                                    @csrf
+                                                    <button type="submit" class="{{ $floor->is_active ? $locToggleDangerSm : $locToggleSuccessSm }} h-8 px-2.5 font-bold text-[0.68rem]" aria-label="{{ $floor->is_active ? 'Nonaktifkan' : 'Aktifkan' }} lantai {{ $floor->name }}">
+                                                        {{ $floor->is_active ? 'Nonaktif' : 'Aktif' }}
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @else
+                                <p class="text-sm text-[color:var(--tm-text-faint)] py-5 text-center border border-dashed border-[color:var(--tm-border)] rounded-[var(--tm-r-sm)] bg-[color:var(--tm-surface-sunken)]">
+                                    Belum ada lantai pada gedung ini.
+                                </p>
+                            @endif
+                        </div>
+                    </div>
+                </article>
+            @empty
+                <x-empty-state :title="$locEmptyTitle" :description="$locEmptyDescription" />
+            @endforelse
+
+            <div class="mt-2 flex flex-col gap-3 text-sm text-[color:var(--tm-text-muted)] sm:flex-row sm:items-center sm:justify-between">
                 <p>
                     @if ($buildings->total() > 0)
                         Menampilkan <span class="font-semibold tabular-nums text-[color:var(--tm-text-secondary)]">{{ $buildings->firstItem() }}–{{ $buildings->lastItem() }}</span> dari <span class="font-semibold tabular-nums text-[color:var(--tm-text-secondary)]">{{ $buildings->total() }}</span> gedung
@@ -154,70 +170,6 @@
                     <div>{{ $buildings->links() }}</div>
                 @endif
             </div>
-        </div>
-
-        <div class="divide-y divide-[color:var(--tm-border-subtle)] border-t border-[color:var(--tm-border-subtle)] md:hidden">
-            @forelse ($buildings as $building)
-                <article class="p-5">
-                    <div class="flex items-start justify-between gap-3">
-                        <div class="min-w-0">
-                            <p class="text-xs font-bold uppercase tracking-wide tabular-nums text-[color:var(--tm-text-faint)]">No. {{ ($buildings->firstItem() ?? 1) + $loop->index }}</p>
-                            <h3 class="mt-1 font-bold text-[color:var(--tm-text)]">{{ $building->name }}</h3>
-                        </div>
-                        <span class="ui-status {{ $building->is_active ? 'ui-status-active' : 'ui-status-inactive' }} shrink-0">{{ $building->is_active ? 'Aktif' : 'Nonaktif' }}</span>
-                    </div>
-
-                    <div class="mt-4 rounded-[var(--tm-r-md)] border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-sunken)] p-4">
-                        <div class="flex items-center justify-between gap-3">
-                            <h4 class="text-xs font-bold uppercase tracking-wide text-[color:var(--tm-text-faint)]">Daftar lantai</h4>
-                            <span class="text-xs font-semibold tabular-nums text-[color:var(--tm-text-secondary)]">{{ $building->floors->count() }} lantai</span>
-                        </div>
-                        @if ($building->floors->isNotEmpty())
-                            <ul class="mt-3 space-y-2" aria-label="Lantai pada {{ $building->name }}">
-                                @foreach ($building->floors as $floor)
-                                    <li class="{{ $locFloorCard }}">
-                                        <div class="min-w-0">
-                                            <p class="truncate text-sm font-semibold text-[color:var(--tm-text)]">{{ $floor->name }}</p>
-                                            <span class="ui-status {{ $floor->is_active ? 'ui-status-active' : 'ui-status-inactive' }} mt-1">{{ $floor->is_active ? 'Aktif' : 'Nonaktif' }}</span>
-                                        </div>
-                                        <div class="flex shrink-0 gap-2">
-                                            <button type="button" data-ui-modal-open="location-floor-edit-modal-{{ $floor->id }}" class="{{ $locIconBtn }} h-8 w-8" aria-label="Edit lantai {{ $floor->name }}" title="Edit lantai">
-                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 2.651 2.651M4.5 19.5l4.04-.808a2 2 0 0 0 1.02-.55l8.95-8.95a2 2 0 0 0 0-2.828l-.884-.884a2 2 0 0 0-2.828 0l-8.95 8.95a2 2 0 0 0-.55 1.02L4.5 19.5Z" /></svg>
-                                            </button>
-                                            <form method="POST" action="{{ route('admin.catalog.floors.status', [$floor, $floor->is_active ? 'deactivate' : 'activate']) }}" @if ($floor->is_active) data-swal-confirm="Nonaktifkan lantai {{ $floor->name }}?" @endif>
-                                                @csrf
-                                                <button type="submit" class="{{ $floor->is_active ? $locToggleDangerSm : $locToggleSuccessSm }}">{{ $floor->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button>
-                                            </form>
-                                        </div>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        @else
-                            <p class="mt-3 text-sm text-[color:var(--tm-text-faint)]">Belum ada lantai pada gedung ini.</p>
-                        @endif
-                    </div>
-
-                    <div class="mt-4 flex flex-wrap justify-end gap-2">
-                        @if ($building->is_active)
-                            <button type="button" data-ui-modal-open="location-floor-create-modal-{{ $building->id }}" class="{{ $locAddFloorBtn }}">
-                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" d="M12 5v14M5 12h14" /></svg>
-                                Tambah lantai
-                            </button>
-                        @endif
-                        <button type="button" data-ui-modal-open="location-building-edit-modal-{{ $building->id }}" class="{{ $locIconBtn }} h-9 w-9" aria-label="Edit gedung {{ $building->name }}" title="Edit gedung">
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 2.651 2.651M4.5 19.5l4.04-.808a2 2 0 0 0 1.02-.55l8.95-8.95a2 2 0 0 0 0-2.828l-.884-.884a2 2 0 0 0-2.828 0l-8.95 8.95a2 2 0 0 0-.55 1.02L4.5 19.5Z" /></svg>
-                        </button>
-                        <form method="POST" action="{{ route('admin.catalog.buildings.status', [$building, $building->is_active ? 'deactivate' : 'activate']) }}" @if ($building->is_active) data-swal-confirm="Nonaktifkan gedung {{ $building->name }}? Pastikan semua lantai sudah nonaktif." @endif>
-                            @csrf
-                            <button type="submit" class="{{ $building->is_active ? $locToggleDanger : $locToggleSuccess }}">{{ $building->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button>
-                        </form>
-                    </div>
-                </article>
-            @empty
-                <div class="p-5">
-                    <x-empty-state :title="$locEmptyTitle" :description="$locEmptyDescription" />
-                </div>
-            @endforelse
         </div>
     </section>
 

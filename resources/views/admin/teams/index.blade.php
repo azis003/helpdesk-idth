@@ -27,76 +27,95 @@
             </button>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="ui-table w-full min-w-[62rem]">
-                <caption class="sr-only">Daftar tim kerja beserta ketua, anggota, deskripsi, dan aksi</caption>
-                <thead>
-                    <tr>
-                        <th scope="col" class="w-14 text-center">No</th>
-                        <th scope="col">Nama Tim Kerja</th>
-                        <th scope="col">Ketua Tim Kerja</th>
-                        <th scope="col">Anggota</th>
-                        <th scope="col">Deskripsi</th>
-                        <th scope="col" class="w-24 text-center">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($teams as $team)
-                        @php
-                            $chairUser = $team->currentChair?->user;
-                            $memberRows = $team->currentMembers
-                                ->reject(fn ($member): bool => $chairUser !== null && (int) $member->id === (int) $chairUser->id)
-                                ->values();
-                        @endphp
-                        <tr>
-                            <td class="text-center font-semibold tabular-nums text-[color:var(--tm-text-muted)]">{{ $loop->iteration }}</td>
-                            <td>
-                                <p class="font-semibold text-[color:var(--tm-text)]">{{ $team->name }}</p>
-                                <span class="ui-status {{ $team->is_active ? 'ui-status-active' : 'ui-status-inactive' }} mt-2">
+        <div class="px-5 py-5 sm:px-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                @forelse ($teams as $team)
+                    @php
+                        $chairUser = $team->currentChair?->user;
+                        $memberRows = $team->currentMembers
+                            ->reject(fn ($member): bool => $chairUser !== null && (int) $member->id === (int) $chairUser->id)
+                            ->values();
+                    @endphp
+                    <article class="flex flex-col justify-between rounded-[var(--tm-r-md)] border border-[color:var(--tm-border)] bg-[color:var(--tm-surface)] shadow-[var(--tm-sh-xs)] hover:border-[color:var(--tm-brand-200)] transition-colors duration-[var(--tm-dur-fast)]">
+                        <!-- Card Header -->
+                        <div class="flex items-start justify-between gap-4 border-b border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface-sunken)] p-4 sm:p-5">
+                            <div class="min-w-0">
+                                <h3 class="font-bold text-sm sm:text-base text-[color:var(--tm-text)] truncate" title="{{ $team->name }}">{{ $team->name }}</h3>
+                                <span class="ui-status {{ $team->is_active ? 'ui-status-active' : 'ui-status-inactive' }} mt-1.5 inline-block text-[0.68rem] px-1.5 py-0.5">
                                     {{ $team->is_active ? 'Aktif' : 'Nonaktif' }}
                                 </span>
-                            </td>
-                            <td>
-                                @if ($chairUser)
-                                    <p class="font-semibold text-[color:var(--tm-text)]">{{ $chairUser->name }}</p>
-                                    <p class="mt-0.5 text-xs text-[color:var(--tm-text-faint)]">{{ '@'.$chairUser->username }}</p>
-                                @else
-                                    <span class="text-[color:var(--tm-text-faint)]">—</span>
-                                @endif
-                            </td>
-                            <td>
+                            </div>
+                            <!-- Edit Button -->
+                            <div class="flex items-center gap-2">
+                                <span class="sr-only">Aksi</span>
+                                <button type="button" data-ui-modal-open="team-edit-modal-{{ $team->id }}" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--tm-r-sm)] border border-[color:var(--tm-border)] bg-[color:var(--tm-surface)] text-[color:var(--tm-text-secondary)] transition-colors duration-[var(--tm-dur-fast)] hover:border-[color:var(--tm-brand-300)] hover:bg-[color:var(--tm-brand-50)] hover:text-[color:var(--tm-brand-700)]" aria-label="Edit tim {{ $team->name }}" title="Edit tim">
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 2.651 2.651M4.5 19.5l4.04-.808a2 2 0 0 0 1.02-.55l8.95-8.95a2 2 0 0 0 0-2.828l-.884-.884a2 2 0 0 0-2.828 0l-8.95 8.95a2 2 0 0 0-.55 1.02L4.5 19.5Z" /></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div class="flex-1 p-4 sm:p-5 space-y-4">
+                            <!-- Description -->
+                            @if ($team->description)
+                                <p class="text-xs sm:text-sm text-[color:var(--tm-text-secondary)] leading-relaxed break-words" title="{{ $team->description }}">{{ $team->description }}</p>
+                            @else
+                                <p class="text-xs sm:text-sm text-[color:var(--tm-text-faint)] italic">Tidak ada deskripsi.</p>
+                            @endif
+
+                            <!-- Chair Section -->
+                            <div class="border-t border-[color:var(--tm-border-subtle)] pt-4">
+                                <h4 class="text-[0.68rem] font-bold uppercase tracking-wider text-[color:var(--tm-text-muted)]">Ketua Tim Kerja</h4>
+                                <div class="mt-2 flex items-center gap-2.5">
+                                    @if ($chairUser)
+                                        <!-- Mini Avatar -->
+                                        <div class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--tm-brand-600)] text-xs font-bold text-white uppercase">
+                                            {{ substr($chairUser->name, 0, 2) }}
+                                        </div>
+                                        <div class="min-w-0">
+                                            <p class="text-xs sm:text-sm font-semibold text-[color:var(--tm-text)] truncate">{{ $chairUser->name }}</p>
+                                            <p class="text-[0.68rem] text-[color:var(--tm-text-faint)] truncate">{{ '@'.$chairUser->username }}</p>
+                                        </div>
+                                    @else
+                                        <div class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--tm-n-100)] text-xs font-bold text-[color:var(--tm-text-faint)]">
+                                            —
+                                        </div>
+                                        <p class="text-xs text-[color:var(--tm-text-faint)] italic">Belum ditentukan</p>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <!-- Members Section -->
+                            <div class="border-t border-[color:var(--tm-border-subtle)] pt-4">
+                                <div class="flex items-center justify-between gap-2 mb-2">
+                                    <h4 class="text-[0.68rem] font-bold uppercase tracking-wider text-[color:var(--tm-text-muted)]">Anggota</h4>
+                                    <span class="inline-flex items-center rounded-full bg-[color:var(--tm-brand-50)] px-2 py-0.5 text-xs font-bold text-[color:var(--tm-brand-700)]">
+                                        {{ $memberRows->count() }} orang
+                                    </span>
+                                </div>
                                 @if ($memberRows->isNotEmpty())
-                                    <div class="flex flex-wrap items-center gap-1.5">
+                                    <div class="flex flex-wrap gap-1.5 max-h-[7.5rem] overflow-y-auto pr-1">
                                         @foreach ($memberRows as $member)
-                                            <span class="inline-flex items-center rounded-[var(--tm-r-full)] border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-sunken)] px-2.5 py-1 text-xs font-medium text-[color:var(--tm-text-secondary)]">{{ $member->name }}</span>
+                                            <span class="inline-flex items-center rounded-full border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-sunken)] px-2.5 py-0.5 text-xs font-medium text-[color:var(--tm-text-secondary)]">
+                                                {{ $member->name }}
+                                            </span>
                                         @endforeach
-                                        <span class="inline-flex items-center rounded-[var(--tm-r-full)] bg-[color:var(--tm-brand-50)] px-2 py-1 text-xs font-bold tabular-nums text-[color:var(--tm-brand-700)]">{{ $memberRows->count() }}</span>
                                     </div>
                                 @else
-                                    <span class="text-[color:var(--tm-text-faint)]">—</span>
+                                    <p class="text-xs text-[color:var(--tm-text-faint)] italic">Belum ada anggota</p>
                                 @endif
-                            </td>
-                            <td class="max-w-xs text-[color:var(--tm-text-secondary)]">{{ $team->description ?: '—' }}</td>
-                            <td>
-                                <div class="flex justify-center gap-2">
-                                    <button type="button" data-ui-modal-open="team-edit-modal-{{ $team->id }}" class="inline-flex h-9 w-9 items-center justify-center rounded-[var(--tm-r-sm)] border border-[color:var(--tm-border)] bg-[color:var(--tm-surface)] text-[color:var(--tm-text-secondary)] transition-colors duration-[var(--tm-dur-fast)] hover:border-[color:var(--tm-brand-300)] hover:bg-[color:var(--tm-brand-50)] hover:text-[color:var(--tm-brand-700)]" aria-label="Edit tim {{ $team->name }}" title="Edit tim">
-                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 2.651 2.651M4.5 19.5l4.04-.808a2 2 0 0 0 1.02-.55l8.95-8.95a2 2 0 0 0 0-2.828l-.884-.884a2 2 0 0 0-2.828 0l-8.95 8.95a2 2 0 0 0-.55 1.02L4.5 19.5Z" /></svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="p-0">
-                                <x-empty-state
-                                    title="Belum ada tim kerja"
-                                    description="Tambahkan tim kerja terlebih dahulu, lalu tetapkan ketua dan anggotanya dari Manajemen Pengguna."
-                                />
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                            </div>
+                        </div>
+                    </article>
+                @empty
+                    <div class="col-span-full">
+                        <x-empty-state
+                            title="Belum ada tim kerja"
+                            description="Tambahkan tim kerja terlebih dahulu, lalu tetapkan ketua dan anggotanya dari Manajemen Pengguna."
+                        />
+                    </div>
+                @endforelse
+            </div>
         </div>
     </section>
 
