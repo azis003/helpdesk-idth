@@ -102,6 +102,15 @@ We preserved all literal endpoints and HTML selectors to ensure zero functional 
   - Eliminated the inline `@php($isEditError = ...)` shorthand and duplicate calculations.
   - Regenerated and verified compiled template syntax successfully.
 
+### `W3.1-HQA-005` — mobile notification dropdown viewport containment
+- **Issue found during 375/390px W3.1 responsive smoke**:
+  - The notification dropdown in the authenticated topbar used `absolute right-0` positioning relative to the bell trigger. Because the avatar element renders to the right of the bell on mobile, the near-viewport-width panel extended outside the left edge of the viewport, clipping the "Notifikasi" title and content.
+- **Mobile geometry made viewport-contained**:
+  - Changed dropdown positioning on mobile (<640px) to `fixed left-3 right-3 top-16 w-auto` so the panel stays within ~12px gutters on both viewport edges regardless of trigger position.
+  - On tablet/desktop (>=640px), restored `sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-[22rem]` to preserve the compact anchored dropdown behavior under the bell icon.
+- **No notification contract changes**:
+  - All notification queries, routes, CSRF forms, outside-click/Escape behavior, and mutual exclusion logic remain completely untouched.
+
 ---
 
 ## Verification & Build Outcomes
