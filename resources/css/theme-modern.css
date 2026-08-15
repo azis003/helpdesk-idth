@@ -604,11 +604,11 @@ summary {
 }
 
 .ui-topbar {
-	background-color: var(--tm-n-0);
+	background-color: var(--tm-n-0) !important;
 	-webkit-backdrop-filter: none;
 	backdrop-filter: none;
 	border-bottom: 1px solid var(--tm-border-subtle);
-	box-shadow: none;
+	box-shadow: 0 1px 3px rgba(16, 28, 34, 0.05);
 	transition: box-shadow var(--tm-dur) var(--tm-ease), background-color var(--tm-dur) var(--tm-ease);
 }
 

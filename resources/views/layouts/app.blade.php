@@ -205,7 +205,7 @@
         </aside>
 
         <div class="ui-content-shell min-w-0 flex-1">
-            <header class="ui-topbar sticky top-0 z-30 flex min-h-[4.5rem] items-center justify-between gap-4 px-4 sm:px-7 lg:px-9">
+            <header class="ui-topbar sticky top-0 z-30 flex min-h-[4.5rem] items-center justify-between gap-4 border-b border-[#d7e0e8] bg-white px-4 sm:px-7 lg:px-9">
                 <div class="flex min-w-0 items-center gap-3">
                     <button type="button" class="ui-mobile-menu-button inline-flex lg:hidden" data-mobile-menu-trigger aria-controls="mobile-menu" aria-expanded="false" aria-label="Buka menu" title="Buka menu">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" /></svg>
@@ -217,55 +217,55 @@
                         @else
                             <span class="ui-brand-mark !h-11 !w-11 !rounded-xl text-sm">{{ $branding['monogram'] }}</span>
                         @endif
-                        <span class="max-w-[12rem] truncate text-lg font-extrabold tracking-[-0.05em] text-[#18252b]">{{ $branding['application_name'] }}</span>
-                        <span class="hidden max-w-[14rem] truncate text-sm text-[#718088] sm:inline">{{ $branding['organization_name'] }}</span>
+                        <span class="max-w-[12rem] truncate text-lg font-extrabold tracking-[-0.05em] text-[#17212b]">{{ $branding['application_name'] }}</span>
+                        <span class="hidden max-w-[14rem] truncate text-sm text-[#72808d] sm:inline">{{ $branding['organization_name'] }}</span>
                     </a>
                     <button type="button" class="ui-menu-button hidden lg:inline-flex" data-sidebar-toggle aria-controls="app-sidebar" aria-expanded="true" aria-label="Sembunyikan menu" title="Sembunyikan menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" /></svg><span class="sr-only" data-sidebar-toggle-label>Sembunyikan menu</span></button>
-                    <span class="hidden truncate text-sm text-[#6c7c83] lg:inline">@yield('header_title', 'Ruang kerja')</span>
+                    <span class="hidden truncate text-sm text-[#566574] lg:inline">@yield('header_title', 'Ruang kerja')</span>
                 </div>
 
                 <div class="flex items-center gap-3">
                     <details class="relative" data-notification-menu>
-                        <summary class="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-xl border border-[#dfe8ec] bg-white text-[#52747b] shadow-sm transition hover:border-[#8bd7ee] hover:text-[#147a79] focus:outline-none focus:ring-2 focus:ring-[#75d5f3] focus:ring-offset-2" aria-label="Notifikasi">
+                        <summary class="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-xl border border-[#d7e0e8] bg-white text-[#566574] shadow-xs transition hover:border-[#8fc5ef] hover:text-[#0869c7] focus:outline-none focus:ring-2 focus:ring-[#1686d9] focus:ring-offset-2" aria-label="Notifikasi">
                             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.8 9.5a5.2 5.2 0 0 1 10.4 0c0 5 2 5.8 2 7H4.8c0-1.2 2-2 2-7ZM9.7 19a2.5 2.5 0 0 0 4.6 0" /></svg>
                             @if ($unreadNotificationCount > 0)
-                                <span class="absolute right-1 top-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-[#e4a72c] px-1 text-[0.58rem] font-extrabold text-white ring-2 ring-[#f6fafb]" aria-label="{{ $unreadNotificationCount }} notifikasi belum dibaca">{{ $unreadNotificationCount > 9 ? '9+' : $unreadNotificationCount }}</span>
+                                <span class="absolute right-1 top-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-[#d97706] px-1 text-[0.58rem] font-extrabold text-white ring-2 ring-white" aria-label="{{ $unreadNotificationCount }} notifikasi belum dibaca">{{ $unreadNotificationCount > 9 ? '9+' : $unreadNotificationCount }}</span>
                             @endif
                         </summary>
-                        <div class="fixed left-3 right-3 top-16 z-40 flex max-h-[calc(100vh-5rem)] w-auto flex-col overflow-hidden rounded-2xl border border-[#dce7eb] bg-white shadow-[0_18px_45px_rgba(38,58,67,0.16)] sm:absolute sm:left-1/2 sm:-translate-x-1/2 sm:right-auto sm:top-12 sm:w-[20rem] sm:max-h-[22rem]">
-                            <div class="flex shrink-0 items-center justify-between gap-3 border-b border-[#edf2f4] px-4 py-3">
+                        <div class="fixed left-3 right-3 top-16 z-40 flex max-h-[calc(100vh-5rem)] w-auto flex-col overflow-hidden rounded-2xl border border-[#d7e0e8] bg-white shadow-[0_18px_45px_rgba(23,33,43,0.12)] sm:absolute sm:left-1/2 sm:-translate-x-1/2 sm:right-auto sm:top-12 sm:w-[20rem] sm:max-h-[22rem]">
+                            <div class="flex shrink-0 items-center justify-between gap-3 border-b border-[#eef2f6] px-4 py-3">
                                 <div>
-                                    <p class="text-sm font-extrabold text-[#263a43]">Notifikasi</p>
-                                    <p class="mt-0.5 text-[0.68rem] text-[#78909a]">{{ $unreadNotificationCount }} belum dibaca</p>
+                                    <p class="text-sm font-extrabold text-[#17212b]">Notifikasi</p>
+                                    <p class="mt-0.5 text-[0.68rem] text-[#72808d]">{{ $unreadNotificationCount }} belum dibaca</p>
                                 </div>
-                                <a href="{{ route('notifications.index') }}" class="text-xs font-extrabold text-[#147a79] hover:text-[#0f5f5e]">Lihat semua</a>
+                                <a href="{{ route('notifications.index') }}" class="text-xs font-extrabold text-[#0869c7] hover:text-[#075aae]">Lihat semua</a>
                             </div>
                             <div class="flex-1 overflow-y-auto">
                                 @forelse ($latestNotifications as $notification)
-                                    <form method="POST" action="{{ route('notifications.read', $notification->id) }}" class="border-b border-[#f1f4f5] last:border-b-0">
+                                    <form method="POST" action="{{ route('notifications.read', $notification->id) }}" class="border-b border-[#eef2f6] last:border-b-0">
                                         @csrf
-                                        <button type="submit" class="block w-full px-4 py-3 text-left transition hover:bg-[#f6fbfc] {{ $notification->read_at ? '' : 'bg-[#f1fbfe]' }}">
+                                        <button type="submit" class="block w-full px-4 py-3 text-left transition hover:bg-[#eff6fc] {{ $notification->read_at ? '' : 'bg-[#eff6fc]/60' }}">
                                             <span class="flex items-start gap-2.5">
-                                                <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full {{ $notification->read_at ? 'bg-[#dfe8ec]' : 'bg-[#2bb8aa]' }}" aria-hidden="true"></span>
+                                                <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full {{ $notification->read_at ? 'bg-[#d7e0e8]' : 'bg-[#1686d9]' }}" aria-hidden="true"></span>
                                                 <span class="min-w-0">
-                                                    <span class="block truncate text-xs font-extrabold text-[#35505b]">{{ $notification->data['title'] ?? 'Notifikasi tiket' }}</span>
-                                                    <span class="mt-1 block line-clamp-2 text-xs leading-5 text-[#78909a]">{{ $notification->data['message'] ?? 'Ada pembaruan pada tiket.' }}</span>
-                                                    <span class="mt-1 block text-[0.64rem] text-[#9aabb0]">{{ $notification->created_at?->timezone(config('app.timezone'))->format('d M Y, H:i') }}</span>
+                                                    <span class="block truncate text-xs font-extrabold text-[#17212b]">{{ $notification->data['title'] ?? 'Notifikasi tiket' }}</span>
+                                                    <span class="mt-1 block line-clamp-2 text-xs leading-5 text-[#566574]">{{ $notification->data['message'] ?? 'Ada pembaruan pada tiket.' }}</span>
+                                                    <span class="mt-1 block text-[0.64rem] text-[#72808d]">{{ $notification->created_at?->timezone(config('app.timezone'))->format('d M Y, H:i') }}</span>
                                                 </span>
                                             </span>
                                         </button>
                                     </form>
                                 @empty
-                                    <p class="px-4 py-5 text-center text-xs leading-5 text-[#78909a]">Belum ada notifikasi.</p>
+                                    <p class="px-4 py-5 text-center text-xs leading-5 text-[#72808d]">Belum ada notifikasi.</p>
                                 @endforelse
                             </div>
                         </div>
                     </details>
                     <div class="hidden text-right sm:block">
-                        <p class="text-xs font-bold text-[#344850]">{{ $currentUser->name }}</p>
-                        <p class="mt-0.5 text-[0.68rem] text-[#89989e]">{{ $currentUser->username }}</p>
+                        <p class="text-xs font-bold text-[#17212b]">{{ $currentUser->name }}</p>
+                        <p class="mt-0.5 text-[0.68rem] text-[#72808d]">{{ $currentUser->username }}</p>
                     </div>
-                    <a href="{{ route('password.change') }}" class="hidden text-xs font-extrabold text-[#147a79] transition hover:text-[#0f5f5e] sm:block">Ganti password</a>
+                    <a href="{{ route('password.change') }}" class="hidden text-xs font-extrabold text-[#0869c7] transition hover:text-[#075aae] sm:block">Ganti password</a>
                     <span class="ui-avatar !h-9 !w-9 !rounded-full">{{ strtoupper(substr($currentUser->name, 0, 1)) }}</span>
                     <span class="ui-header-divider hidden sm:block" aria-hidden="true"></span>
                     <form method="POST" action="{{ route('logout') }}" class="hidden sm:block">
@@ -275,7 +275,6 @@
                             <span class="sr-only">Keluar dari {{ $branding['application_name'] }}</span>
                         </button>
                     </form>
-
                 </div>
 
                 <!-- Mobile Menu Drawer (Inside header to satisfy XPath tests) -->

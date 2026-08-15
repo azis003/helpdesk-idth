@@ -51,11 +51,11 @@
     @if ($isRequesterOnly)
         <div class="space-y-5 sm:space-y-6">
             {{-- 1. Top Requester Panel (Service Action Area) --}}
-            <section class="rounded-xl border border-[#d8e0e6] bg-white p-5 shadow-xs sm:p-6 lg:p-7" aria-labelledby="dashboard-title">
+            <section class="rounded-xl border border-[#d7e0e8] bg-white p-5 shadow-xs sm:p-6 lg:p-7" aria-labelledby="dashboard-title">
                 <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                     <div class="max-w-xl">
-                        <h1 id="dashboard-title" class="text-xl font-bold tracking-tight text-[#17212b] sm:text-2xl">Butuh bantuan TI?</h1>
-                        <p class="mt-1 text-sm leading-relaxed text-[#5d6975] sm:mt-1.5">Laporkan kendala atau ajukan kebutuhan layanan TI.</p>
+                        <h1 id="dashboard-title" class="text-xl font-bold tracking-tight text-[#073b6f] sm:text-2xl">Butuh bantuan TI?</h1>
+                        <p class="mt-1 text-sm leading-relaxed text-[#566574] sm:mt-1.5">Laporkan kendala atau ajukan kebutuhan layanan TI.</p>
                     </div>
                     <div class="flex flex-col gap-2.5 sm:flex-row sm:items-center lg:justify-end">
                         @if ($canCreateTickets)
@@ -64,11 +64,11 @@
                                 <span>Buat tiket</span>
                             </a>
                         @endif
-                        <a href="{{ route('tickets.index') }}" class="ui-btn ui-btn-secondary inline-flex w-full items-center justify-center gap-2 !rounded-lg !border-[#d8e0e6] !bg-white !px-4 !py-2.5 text-sm font-semibold !text-[#17212b] shadow-xs hover:!bg-[#f8fafb] hover:!border-[#c5d0d8] sm:w-auto">
-                            <svg class="h-4 w-4 text-[#5d6975]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 9h8M8 12h5M8 15h7" /></svg>
+                        <a href="{{ route('tickets.index') }}" class="ui-btn ui-btn-secondary inline-flex w-full items-center justify-center gap-2 !rounded-lg !border-[#d7e0e8] !bg-white !px-4 !py-2.5 text-sm font-semibold !text-[#17212b] shadow-xs hover:!bg-[#f4f6f9] hover:!border-[#aab8c5] sm:w-auto">
+                            <svg class="h-4 w-4 text-[#566574]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 9h8M8 12h5M8 15h7" /></svg>
                             <span>Lihat tiket saya</span>
                         </a>
-                        <button type="button" class="inline-flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-[#0f7384] hover:text-[#0b5d6b] hover:underline sm:py-1 sm:pl-2" data-reporting-guide-trigger aria-haspopup="dialog">
+                        <button type="button" class="inline-flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-[#0869c7] hover:text-[#073b6f] hover:underline sm:py-1 sm:pl-2" data-reporting-guide-trigger aria-haspopup="dialog">
                             <span>Tata cara pelaporan</span>
                             <span aria-hidden="true">&rarr;</span>
                         </button>
@@ -80,20 +80,20 @@
             @if ($announcements->isNotEmpty())
                 <section aria-labelledby="announcements-heading">
                     <div class="mb-2.5">
-                        <h2 id="announcements-heading" class="text-xs font-bold uppercase tracking-wider text-[#5d6975]">Informasi Layanan</h2>
+                        <h2 id="announcements-heading" class="text-xs font-bold uppercase tracking-wider text-[#566574]">Informasi Layanan</h2>
                     </div>
                     <div class="space-y-2.5">
                         @foreach ($announcements as $announcement)
-                            <article class="rounded-xl border border-[#d8e0e6] border-l-4 border-l-[#d97706] bg-white p-4 shadow-xs transition sm:p-4.5">
+                            <article class="rounded-xl border border-[#d7e0e8] border-l-4 border-l-[#d97706] bg-white p-4 shadow-xs transition sm:p-4.5">
                                 <div class="flex items-start justify-between gap-3">
                                     <div class="flex items-start gap-2.5">
-                                        <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#fef3c7] text-xs font-bold text-[#d97706]" aria-hidden="true">!</span>
+                                        <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#fffbeb] text-xs font-bold text-[#d97706]" aria-hidden="true">!</span>
                                         <div>
                                             <h3 class="text-sm font-bold text-[#17212b]">{{ $announcement->title }}</h3>
-                                            <p class="mt-1 whitespace-pre-line text-xs leading-relaxed text-[#5d6975]">{{ $announcement->body }}</p>
+                                            <p class="mt-1 whitespace-pre-line text-xs leading-relaxed text-[#566574]">{{ $announcement->body }}</p>
                                         </div>
                                     </div>
-                                    <time class="shrink-0 text-xs font-medium text-[#5d6975]" datetime="{{ $announcement->starts_at?->toIso8601String() }}">{{ $formatDate($announcement->starts_at) }}</time>
+                                    <time class="shrink-0 text-xs font-medium text-[#72808d]" datetime="{{ $announcement->starts_at?->toIso8601String() }}">{{ $formatDate($announcement->starts_at) }}</time>
                                 </div>
                             </article>
                         @endforeach
@@ -104,100 +104,100 @@
             {{-- 3. Requester Ticket Summary (Ringkasan Tiket Saya) --}}
             <section aria-labelledby="requester-summary-heading">
                 <div class="mb-2.5 flex items-center justify-between gap-4">
-                    <h2 id="requester-summary-heading" class="text-xs font-bold uppercase tracking-wider text-[#5d6975]">Ringkasan Tiket Saya</h2>
-                    <a href="{{ route('tickets.index') }}" class="inline-flex items-center gap-1 text-xs font-semibold text-[#0f7384] hover:text-[#0b5d6b] hover:underline">
+                    <h2 id="requester-summary-heading" class="text-xs font-bold uppercase tracking-wider text-[#566574]">Ringkasan Tiket Saya</h2>
+                    <a href="{{ route('tickets.index') }}" class="inline-flex items-center gap-1 text-xs font-semibold text-[#0869c7] hover:text-[#073b6f] hover:underline">
                         Lihat semua <span aria-hidden="true">&rarr;</span>
                     </a>
                 </div>
 
                 <dl class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                     {{-- Tile 1: Total Tiket --}}
-                    <div class="flex flex-col justify-between rounded-xl border border-[#d8e0e6] bg-white p-4 shadow-xs transition sm:p-4.5">
+                    <div class="flex flex-col justify-between rounded-xl border border-[#d7e0e8] bg-white p-4 shadow-xs transition sm:p-4.5">
                         <div class="flex items-center justify-between gap-2">
-                            <dt class="text-xs font-semibold text-[#5d6975]">Total tiket</dt>
-                            <span class="flex h-6 w-6 items-center justify-center rounded bg-[#f1f5f9] text-[#334155]" aria-hidden="true">
+                            <dt class="text-xs font-semibold text-[#566574]">Total tiket</dt>
+                            <span class="flex h-6 w-6 items-center justify-center rounded bg-[#f4f6f9] text-[#17212b]" aria-hidden="true">
                                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 7.5h14v11H5zM8 7.5V5h8v2.5M8.5 11h7M8.5 14.5h4" /></svg>
                             </span>
                         </div>
                         <div class="mt-2.5">
                             <dd class="text-2xl font-extrabold tracking-tight tabular-nums text-[#17212b] sm:text-3xl">{{ $requesterDashboard['total_ticket_count'] }}</dd>
-                            <span class="mt-1 block text-xs text-[#66727e]">Semua permintaan</span>
+                            <span class="mt-1 block text-xs text-[#72808d]">Semua permintaan</span>
                         </div>
                     </div>
 
                     {{-- Tile 2: Tiket Aktif --}}
-                    <div class="flex flex-col justify-between rounded-xl border border-[#d8e0e6] bg-white p-4 shadow-xs transition sm:p-4.5">
+                    <div class="flex flex-col justify-between rounded-xl border border-[#d7e0e8] bg-white p-4 shadow-xs transition sm:p-4.5">
                         <div class="flex items-center justify-between gap-2">
-                            <dt class="text-xs font-semibold text-[#5d6975]">Tiket aktif</dt>
-                            <span class="flex h-6 w-6 items-center justify-center rounded bg-[#e6f4f6] text-[#0f7384]" aria-hidden="true">
+                            <dt class="text-xs font-semibold text-[#566574]">Tiket aktif</dt>
+                            <span class="flex h-6 w-6 items-center justify-center rounded bg-[#eff6fc] text-[#0869c7]" aria-hidden="true">
                                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" /></svg>
                             </span>
                         </div>
                         <div class="mt-2.5">
-                            <dd class="text-2xl font-extrabold tracking-tight tabular-nums text-[#0f7384] sm:text-3xl">{{ $requesterDashboard['total_active_ticket_count'] }}</dd>
-                            <span class="mt-1 block text-xs text-[#66727e]">Sedang ditangani</span>
+                            <dd class="text-2xl font-extrabold tracking-tight tabular-nums text-[#0869c7] sm:text-3xl">{{ $requesterDashboard['total_active_ticket_count'] }}</dd>
+                            <span class="mt-1 block text-xs text-[#72808d]">Sedang ditangani</span>
                         </div>
                     </div>
 
                     {{-- Tile 3: Selesai --}}
-                    <div class="flex flex-col justify-between rounded-xl border border-[#d8e0e6] bg-white p-4 shadow-xs transition sm:p-4.5">
+                    <div class="flex flex-col justify-between rounded-xl border border-[#d7e0e8] bg-white p-4 shadow-xs transition sm:p-4.5">
                         <div class="flex items-center justify-between gap-2">
-                            <dt class="text-xs font-semibold text-[#5d6975]">Selesai</dt>
-                            <span class="flex h-6 w-6 items-center justify-center rounded bg-[#fef3c7] text-[#b45309]" aria-hidden="true">
+                            <dt class="text-xs font-semibold text-[#566574]">Selesai</dt>
+                            <span class="flex h-6 w-6 items-center justify-center rounded bg-[#fffbeb] text-[#d97706]" aria-hidden="true">
                                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m5.5 12.5 4 4 9-9" /></svg>
                             </span>
                         </div>
                         <div class="mt-2.5">
-                            <dd class="text-2xl font-extrabold tracking-tight tabular-nums text-[#b45309] sm:text-3xl">{{ $requesterDashboard['total_completed_ticket_count'] }}</dd>
-                            <span class="mt-1 block text-xs text-[#66727e]">Menunggu konfirmasi</span>
+                            <dd class="text-2xl font-extrabold tracking-tight tabular-nums text-[#d97706] sm:text-3xl">{{ $requesterDashboard['total_completed_ticket_count'] }}</dd>
+                            <span class="mt-1 block text-xs text-[#72808d]">Menunggu konfirmasi</span>
                         </div>
                     </div>
 
                     {{-- Tile 4: Ditutup --}}
-                    <div class="flex flex-col justify-between rounded-xl border border-[#d8e0e6] bg-white p-4 shadow-xs transition sm:p-4.5">
+                    <div class="flex flex-col justify-between rounded-xl border border-[#d7e0e8] bg-white p-4 shadow-xs transition sm:p-4.5">
                         <div class="flex items-center justify-between gap-2">
-                            <dt class="text-xs font-semibold text-[#5d6975]">Ditutup</dt>
-                            <span class="flex h-6 w-6 items-center justify-center rounded bg-[#dcfce7] text-[#15803d]" aria-hidden="true">
+                            <dt class="text-xs font-semibold text-[#566574]">Ditutup</dt>
+                            <span class="flex h-6 w-6 items-center justify-center rounded bg-[#ecfdf5] text-[#059669]" aria-hidden="true">
                                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
                             </span>
                         </div>
                         <div class="mt-2.5">
-                            <dd class="text-2xl font-extrabold tracking-tight tabular-nums text-[#15803d] sm:text-3xl">{{ $requesterDashboard['total_closed_ticket_count'] }}</dd>
-                            <span class="mt-1 block text-xs text-[#66727e]">Proses selesai</span>
+                            <dd class="text-2xl font-extrabold tracking-tight tabular-nums text-[#059669] sm:text-3xl">{{ $requesterDashboard['total_closed_ticket_count'] }}</dd>
+                            <span class="mt-1 block text-xs text-[#72808d]">Proses selesai</span>
                         </div>
                     </div>
                 </dl>
             </section>
 
             {{-- 4. "Cara Mendapatkan Bantuan" Section --}}
-            <section class="rounded-xl border border-[#d8e0e6] bg-white p-5 shadow-xs sm:p-6" aria-labelledby="help-guide-heading">
-                <div class="mb-4 flex items-center justify-between gap-4 border-b border-[#eef2f5] pb-3 sm:pb-3.5">
+            <section class="rounded-xl border border-[#d7e0e8] bg-white p-5 shadow-xs sm:p-6" aria-labelledby="help-guide-heading">
+                <div class="mb-4 flex items-center justify-between gap-4 border-b border-[#eef2f6] pb-3 sm:pb-3.5">
                     <h2 id="help-guide-heading" class="text-sm font-bold text-[#17212b]">Cara mendapatkan bantuan</h2>
-                    <button type="button" class="inline-flex items-center gap-1 text-xs font-semibold text-[#0f7384] hover:text-[#0b5d6b] hover:underline" data-reporting-guide-trigger aria-haspopup="dialog">
+                    <button type="button" class="inline-flex items-center gap-1 text-xs font-semibold text-[#0869c7] hover:text-[#073b6f] hover:underline" data-reporting-guide-trigger aria-haspopup="dialog">
                         <span>Tata cara</span>
                         <span aria-hidden="true">&rarr;</span>
                     </button>
                 </div>
                 <div class="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
                     <div class="flex items-start gap-3">
-                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#e6f4f6] text-xs font-bold text-[#0f7384]">01</span>
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#eff6fc] text-xs font-bold text-[#0869c7]">01</span>
                         <div>
                             <h3 class="text-xs font-bold text-[#17212b] sm:text-sm">Pilih layanan</h3>
-                            <p class="mt-0.5 text-xs leading-relaxed text-[#5d6975]">Pilih kategori yang sesuai dengan kebutuhan Anda.</p>
+                            <p class="mt-0.5 text-xs leading-relaxed text-[#566574]">Pilih kategori yang sesuai dengan kebutuhan Anda.</p>
                         </div>
                     </div>
                     <div class="flex items-start gap-3">
-                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#e6f4f6] text-xs font-bold text-[#0f7384]">02</span>
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#eff6fc] text-xs font-bold text-[#0869c7]">02</span>
                         <div>
                             <h3 class="text-xs font-bold text-[#17212b] sm:text-sm">Jelaskan kebutuhan</h3>
-                            <p class="mt-0.5 text-xs leading-relaxed text-[#5d6975]">Ceritakan kendala dengan jelas.</p>
+                            <p class="mt-0.5 text-xs leading-relaxed text-[#566574]">Ceritakan kendala dengan jelas.</p>
                         </div>
                     </div>
                     <div class="flex items-start gap-3">
-                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#e6f4f6] text-xs font-bold text-[#0f7384]">03</span>
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#eff6fc] text-xs font-bold text-[#0869c7]">03</span>
                         <div>
                             <h3 class="text-xs font-bold text-[#17212b] sm:text-sm">Pantau &amp; konfirmasi</h3>
-                            <p class="mt-0.5 text-xs leading-relaxed text-[#5d6975]">Ikuti progres hingga selesai.</p>
+                            <p class="mt-0.5 text-xs leading-relaxed text-[#566574]">Ikuti progres hingga selesai.</p>
                         </div>
                     </div>
                 </div>
@@ -208,24 +208,24 @@
                 <div class="text-left">
                     <ol class="mt-4 space-y-4">
                         <li class="flex gap-3">
-                            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#d7f0f5] text-xs font-extrabold text-[#135d72]">1</span>
+                            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#dceefe] text-xs font-extrabold text-[#073b6f]">1</span>
                             <div>
-                                <p class="text-sm font-extrabold text-[#161c22]">Pilih layanan</p>
-                                <p class="mt-1 text-xs leading-5 text-[#667381]">Pilih kategori yang paling mendekati kebutuhan Anda.</p>
+                                <p class="text-sm font-extrabold text-[#17212b]">Pilih layanan</p>
+                                <p class="mt-1 text-xs leading-5 text-[#566574]">Pilih kategori yang paling mendekati kebutuhan Anda.</p>
                             </div>
                         </li>
                         <li class="flex gap-3">
-                            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#d7f0f5] text-xs font-extrabold text-[#135d72]">2</span>
+                            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#dceefe] text-xs font-extrabold text-[#073b6f]">2</span>
                             <div>
-                                <p class="text-sm font-extrabold text-[#161c22]">Jelaskan kebutuhan</p>
-                                <p class="mt-1 text-xs leading-5 text-[#667381]">Tuliskan kendala, dampak, lokasi, dan hasil yang diharapkan.</p>
+                                <p class="text-sm font-extrabold text-[#17212b]">Jelaskan kebutuhan</p>
+                                <p class="mt-1 text-xs leading-5 text-[#566574]">Tuliskan kendala, dampak, lokasi, dan hasil yang diharapkan.</p>
                             </div>
                         </li>
                         <li class="flex gap-3">
-                            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#d7f0f5] text-xs font-extrabold text-[#135d72]">3</span>
+                            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#dceefe] text-xs font-extrabold text-[#073b6f]">3</span>
                             <div>
-                                <p class="text-sm font-extrabold text-[#161c22]">Pantau dan konfirmasi</p>
-                                <p class="mt-1 text-xs leading-5 text-[#667381]">Balas jika ada pertanyaan dan konfirmasi setelah solusi tersedia.</p>
+                                <p class="text-sm font-extrabold text-[#17212b]">Pantau dan konfirmasi</p>
+                                <p class="mt-1 text-xs leading-5 text-[#566574]">Balas jika ada pertanyaan dan konfirmasi setelah solusi tersedia.</p>
                             </div>
                         </li>
                     </ol>
