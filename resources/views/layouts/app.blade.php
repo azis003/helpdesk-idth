@@ -232,31 +232,33 @@
                                 <span class="absolute right-1 top-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-[#e4a72c] px-1 text-[0.58rem] font-extrabold text-white ring-2 ring-[#f6fafb]" aria-label="{{ $unreadNotificationCount }} notifikasi belum dibaca">{{ $unreadNotificationCount > 9 ? '9+' : $unreadNotificationCount }}</span>
                             @endif
                         </summary>
-                        <div class="fixed left-3 right-3 top-16 z-40 w-auto overflow-hidden rounded-2xl border border-[#dce7eb] bg-white shadow-[0_18px_45px_rgba(38,58,67,0.16)] sm:absolute sm:left-1/2 sm:-translate-x-1/2 sm:right-auto sm:top-12 sm:w-[20rem]">
-                            <div class="flex items-center justify-between gap-3 border-b border-[#edf2f4] px-4 py-3">
+                        <div class="fixed left-3 right-3 top-16 z-40 flex max-h-[calc(100vh-5rem)] w-auto flex-col overflow-hidden rounded-2xl border border-[#dce7eb] bg-white shadow-[0_18px_45px_rgba(38,58,67,0.16)] sm:absolute sm:left-1/2 sm:-translate-x-1/2 sm:right-auto sm:top-12 sm:w-[20rem] sm:max-h-[22rem]">
+                            <div class="flex shrink-0 items-center justify-between gap-3 border-b border-[#edf2f4] px-4 py-3">
                                 <div>
                                     <p class="text-sm font-extrabold text-[#263a43]">Notifikasi</p>
                                     <p class="mt-0.5 text-[0.68rem] text-[#78909a]">{{ $unreadNotificationCount }} belum dibaca</p>
                                 </div>
                                 <a href="{{ route('notifications.index') }}" class="text-xs font-extrabold text-[#147a79] hover:text-[#0f5f5e]">Lihat semua</a>
                             </div>
-                            @forelse ($latestNotifications as $notification)
-                                <form method="POST" action="{{ route('notifications.read', $notification->id) }}" class="border-b border-[#f1f4f5] last:border-b-0">
-                                    @csrf
-                                    <button type="submit" class="block w-full px-4 py-3 text-left transition hover:bg-[#f6fbfc] {{ $notification->read_at ? '' : 'bg-[#f1fbfe]' }}">
-                                        <span class="flex items-start gap-2.5">
-                                            <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full {{ $notification->read_at ? 'bg-[#dfe8ec]' : 'bg-[#2bb8aa]' }}" aria-hidden="true"></span>
-                                            <span class="min-w-0">
-                                                <span class="block truncate text-xs font-extrabold text-[#35505b]">{{ $notification->data['title'] ?? 'Notifikasi tiket' }}</span>
-                                                <span class="mt-1 block line-clamp-2 text-xs leading-5 text-[#78909a]">{{ $notification->data['message'] ?? 'Ada pembaruan pada tiket.' }}</span>
-                                                <span class="mt-1 block text-[0.64rem] text-[#9aabb0]">{{ $notification->created_at?->timezone(config('app.timezone'))->format('d M Y, H:i') }}</span>
+                            <div class="flex-1 overflow-y-auto">
+                                @forelse ($latestNotifications as $notification)
+                                    <form method="POST" action="{{ route('notifications.read', $notification->id) }}" class="border-b border-[#f1f4f5] last:border-b-0">
+                                        @csrf
+                                        <button type="submit" class="block w-full px-4 py-3 text-left transition hover:bg-[#f6fbfc] {{ $notification->read_at ? '' : 'bg-[#f1fbfe]' }}">
+                                            <span class="flex items-start gap-2.5">
+                                                <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full {{ $notification->read_at ? 'bg-[#dfe8ec]' : 'bg-[#2bb8aa]' }}" aria-hidden="true"></span>
+                                                <span class="min-w-0">
+                                                    <span class="block truncate text-xs font-extrabold text-[#35505b]">{{ $notification->data['title'] ?? 'Notifikasi tiket' }}</span>
+                                                    <span class="mt-1 block line-clamp-2 text-xs leading-5 text-[#78909a]">{{ $notification->data['message'] ?? 'Ada pembaruan pada tiket.' }}</span>
+                                                    <span class="mt-1 block text-[0.64rem] text-[#9aabb0]">{{ $notification->created_at?->timezone(config('app.timezone'))->format('d M Y, H:i') }}</span>
+                                                </span>
                                             </span>
-                                        </span>
-                                    </button>
-                                </form>
-                            @empty
-                                <p class="px-4 py-5 text-center text-xs leading-5 text-[#78909a]">Belum ada notifikasi.</p>
-                            @endforelse
+                                        </button>
+                                    </form>
+                                @empty
+                                    <p class="px-4 py-5 text-center text-xs leading-5 text-[#78909a]">Belum ada notifikasi.</p>
+                                @endforelse
+                            </div>
                         </div>
                     </details>
                     <div class="hidden text-right sm:block">
