@@ -232,7 +232,7 @@
                                 <span class="absolute right-1 top-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-[#e4a72c] px-1 text-[0.58rem] font-extrabold text-white ring-2 ring-[#f6fafb]" aria-label="{{ $unreadNotificationCount }} notifikasi belum dibaca">{{ $unreadNotificationCount > 9 ? '9+' : $unreadNotificationCount }}</span>
                             @endif
                         </summary>
-                        <div class="fixed left-3 right-3 top-16 z-40 w-auto overflow-hidden rounded-2xl border border-[#dce7eb] bg-white shadow-[0_18px_45px_rgba(38,58,67,0.16)] sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-[20rem]">
+                        <div class="fixed left-3 right-3 top-16 z-40 w-auto overflow-hidden rounded-2xl border border-[#dce7eb] bg-white shadow-[0_18px_45px_rgba(38,58,67,0.16)] sm:absolute sm:left-1/2 sm:-translate-x-1/2 sm:right-auto sm:top-12 sm:w-[20rem]">
                             <div class="flex items-center justify-between gap-3 border-b border-[#edf2f4] px-4 py-3">
                                 <div>
                                     <p class="text-sm font-extrabold text-[#263a43]">Notifikasi</p>
