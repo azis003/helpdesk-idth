@@ -87,23 +87,21 @@
 
                             <!-- Members Section -->
                             <div class="border-t border-[color:var(--tm-border-subtle)] pt-4">
-                                <div class="flex items-center justify-between gap-2 mb-2">
+                                <div class="flex items-center justify-between gap-2">
                                     <h4 class="text-[0.68rem] font-bold uppercase tracking-wider text-[color:var(--tm-text-muted)]">Anggota</h4>
                                     <span class="inline-flex items-center rounded-full bg-[color:var(--tm-brand-50)] px-2 py-0.5 text-xs font-bold text-[color:var(--tm-brand-700)]">
                                         {{ $memberRows->count() }} orang
                                     </span>
                                 </div>
-                                @if ($memberRows->isNotEmpty())
-                                    <div class="flex flex-wrap gap-1.5 pr-1">
-                                        @foreach ($memberRows as $member)
-                                            <span class="inline-flex items-center rounded-full border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-sunken)] px-2.5 py-0.5 text-xs font-medium text-[color:var(--tm-text-secondary)]">
-                                                {{ $member->name }}
-                                            </span>
-                                        @endforeach
-                                    </div>
-                                @else
-                                    <p class="text-xs text-[color:var(--tm-text-faint)] italic">Belum ada anggota</p>
-                                @endif
+                                <div class="mt-2.5">
+                                    @if ($memberRows->isNotEmpty())
+                                        <button type="button" data-ui-modal-open="team-members-modal-{{ $team->id }}" class="text-xs font-bold text-[color:var(--tm-brand-600)] hover:text-[color:var(--tm-brand-800)] transition-colors duration-[var(--tm-dur-fast)] focus:outline-none focus:underline" aria-label="Lihat semua anggota tim {{ $team->name }}">
+                                            Lihat semua anggota
+                                        </button>
+                                    @else
+                                        <p class="text-xs text-[color:var(--tm-text-faint)] italic">Belum ada anggota</p>
+                                    @endif
+                                </div>
                             </div>
                         </div>
                     </article>
@@ -207,5 +205,65 @@
                 </section>
             </div>
         </div>
+
+        <!-- Read-Only Members Modal -->
+        @php
+            $chairUser = $team->currentChair?->user;
+            $memberRows = $team->currentMembers
+                ->reject(fn ($member): bool => $chairUser !== null && (int) $member->id === (int) $chairUser->id)
+                ->values();
+        @endphp
+        @if ($memberRows->isNotEmpty())
+            <div id="team-members-modal-{{ $team->id }}" data-ui-modal data-auto-open="false" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+                <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-[3px]" data-ui-modal-close></div>
+                <div class="relative flex min-h-full items-center justify-center p-4 sm:p-8">
+                    <section role="dialog" aria-modal="true" aria-labelledby="team-members-title-{{ $team->id }}" class="w-full max-w-lg rounded-[var(--tm-r-lg)] border border-[color:var(--tm-border)] bg-[color:var(--tm-surface)] shadow-[var(--tm-sh-xl)] flex flex-col max-h-[85vh]">
+                        <!-- Modal Header -->
+                        <div class="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface)] px-5 py-4 sm:px-6">
+                            <div class="flex min-w-0 flex-col">
+                                <h2 id="team-members-title-{{ $team->id }}" class="truncate text-base font-bold text-[color:var(--tm-text)]">Anggota Tim Kerja</h2>
+                                <p class="mt-0.5 text-xs text-[color:var(--tm-text-secondary)] truncate" title="{{ $team->name }}">{{ $team->name }}</p>
+                            </div>
+                            <button type="button" data-ui-modal-close class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--tm-r-sm)] text-[color:var(--tm-text-muted)] transition-colors duration-[var(--tm-dur-fast)] hover:bg-[color:var(--tm-n-100)] hover:text-[color:var(--tm-text)]" aria-label="Tutup dialog daftar anggota">
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" d="m7 7 10 10M17 7 7 17" /></svg>
+                            </button>
+                        </div>
+
+                        <!-- Modal Body (Scrollable list area) -->
+                        <div class="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
+                            <div class="flex items-center justify-between border-b border-[color:var(--tm-border-subtle)] pb-2">
+                                <span class="text-xs font-bold uppercase tracking-wider text-[color:var(--tm-text-muted)]">Daftar Anggota</span>
+                                <span class="inline-flex items-center rounded-full bg-[color:var(--tm-brand-50)] px-2 py-0.5 text-xs font-bold text-[color:var(--tm-brand-700)]">
+                                    {{ $memberRows->count() }} orang
+                                </span>
+                            </div>
+                            <ul class="divide-y divide-[color:var(--tm-border-subtle)] text-sm" aria-label="Daftar anggota {{ $team->name }}">
+                                @foreach ($memberRows as $member)
+                                    <li class="py-3 flex items-center justify-between gap-3 first:pt-0 last:pb-0">
+                                        <div class="min-w-0 flex items-center gap-2.5">
+                                            <!-- Avatar initials -->
+                                            <div class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[color:var(--tm-n-100)] text-[0.68rem] font-bold text-[color:var(--tm-text-secondary)] uppercase">
+                                                {{ substr($member->name, 0, 2) }}
+                                            </div>
+                                            <div class="min-w-0">
+                                                <p class="text-xs sm:text-sm font-semibold text-[color:var(--tm-text)] truncate">{{ $member->name }}</p>
+                                                @if (isset($member->username))
+                                                    <p class="text-[0.68rem] text-[color:var(--tm-text-faint)] truncate">{{ '@'.$member->username }}</p>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+
+                        <!-- Modal Footer -->
+                        <div class="border-t border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface-sunken)] px-5 py-4 sm:px-6 flex justify-end">
+                            <button type="button" data-ui-modal-close class="ui-btn ui-btn-ghost text-xs">Tutup</button>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        @endif
     @endforeach
 @endsection

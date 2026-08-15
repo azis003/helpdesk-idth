@@ -36,8 +36,8 @@ The following production files were modified to achieve the visual redesign:
   - **Header**: Displays the team name and status badge, alongside the edit modal trigger and screen-reader action labels.
   - **Description**: Displays the team description, with an italicized fallback if empty.
   - **Ketua Tim (Chair)**: Clear dedicated slot displaying the chair's name, `@username`, and a circular initials avatar block.
-  - **Anggota (Members)**: Compact chips wrapping naturally. Large counts scroll cleanly.
-- **Mobile Strategy**: Grid columns collapse to a single column list stack. All information (chair avatar, @username, description text, and member chips) wrap naturally with no horizontal scroll.
+  - **Anggota (Members)**: Compact summary slot indicating the count. Clicking opens a scrollable, read-only list modal.
+- **Mobile Strategy**: Grid columns collapse to a single column list stack. All information (chair avatar, @username, description text, and member count) wrap naturally with no horizontal scroll.
 
 ---
 
@@ -82,6 +82,17 @@ We preserved all literal endpoints and HTML selectors to ensure zero functional 
   - Completely removed nested scroll constraints (`max-h-[7.5rem]` and `overflow-y-auto`) from the members container to allow natural wrapping and document flow.
 - **Natural card heights retained**:
   - Configured the grid container with `items-start` to size cards naturally according to their content, preventing short cards from visually stretching to match the tallest card in the row.
+
+### `W3.1-HQA-003` — scalable team member access
+- **No inline member preview**:
+  - The team card now only shows the label **ANGGOTA**, the total count of members, and a **"Lihat semua anggota"** secondary button/link (if count > 0).
+  - Keeps cards extremely compact regardless of member count.
+- **Scrollable read-only member modal**:
+  - Clicking "Lihat semua anggota" opens a presentation-only modal `team-members-modal-{teamId}` showing all team members (excluding the chair).
+  - Modal content: Title "Anggota Tim Kerja", context (team name), count (X orang), and all members as a vertical list.
+  - Set modal dialog to have `max-h-[85vh]` and the body content to `overflow-y-auto` to handle large teams of 40+ members gracefully.
+- **No backend/mutation scope changes**:
+  - No new data queries or endpoint changes. Handled strictly as a read-only visual projection.
 
 ---
 
