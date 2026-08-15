@@ -134,10 +134,10 @@ $$\text{Canvas (\#F4F6F9)} \longrightarrow \text{Surface (\#FFFFFF)} \longrighta
 | **INFO** | Slate / Neutral Blue | `#2563EB` / `#EFF6FF` | New tickets (`Baru`), in-progress operational triage (`Diproses`), informational notices |
 
 #### Status Badge Semantic Examples:
-- **`Ditutup` (Closed):** Success Green chip (e.g., green text on soft green background, green border).
-- **`Menunggu Pemohon` / `Menunggu Persetujuan`:** Warning Amber chip.
-- **`Ditolak` / `Tidak Disetujui` / `Kritis`:** Danger Red chip.
-- **`Baru` / `Sedang Ditangani`:** Clear operational informative badge.
+- **`Ditutup`:** Success Green chip (e.g., green text on soft green background, green border).
+- **`Menunggu Pemohon` / `Menunggu Persetujuan` / `Menunggu Pihak Ketiga` / `Menunggu Konfirmasi`:** Warning Amber chip.
+- **`Ditolak` / `Tidak Disetujui` / `Dibatalkan`:** Danger Red chip (critical priority `Kritis` also uses Danger Red).
+- **`Baru` / `Diproses` / `Dikerjakan`:** Clear operational informative badge.
 - **Never render all statuses in uniform blue.**
 
 ---
@@ -216,7 +216,7 @@ SIHATI is an operational government workbench, **not** a consumer marketing land
 
 ### 4.5 Navigation & Application Shell (Sidebar & Topbar)
 
-- **Accepted Structure:** The two-tier sidebar navigation hierarchy accepted in Waves 2 and 3 remains completely structurally unchanged.
+- **Accepted Structure:** The two-tier sidebar navigation hierarchy accepted in Wave 2 remains completely structurally unchanged.
 - **Sidebar Surface:** Neutral clean surface (`#FFFFFF` or subtle neutral `#F8FAFC`) with right 1px border (`#D7E0E8`).
 - **Default Nav Item:** Secondary text (`#566574`), transparent background.
 - **Hover Nav Item:** Soft brand background (`--tm-brand-50` / `#EFF6FC`), text `#073B6F`.
@@ -247,7 +247,7 @@ SIHATI is an operational government workbench, **not** a consumer marketing land
 
 The pure Requester Dashboard information architecture remains strictly SIHATI-specific:
 1. **Header Action Panel:** Direct greeting (`Butuh bantuan TI?`), concise helper text, prominent `[Buat tiket]` Brand Blue primary CTA, crisp `[Lihat tiket saya]` secondary CTA, and accessible `[Tata cara pelaporan →]` link.
-2. **Announcements Panel:** Compact alert cards with warm amber indicator, clear timestamps, and full modal trigger.
+2. **Announcements Panel:** Compact service notices using the existing announcement content, visibility, and scheduling behavior.
 3. **4 Metric Tiles:** Crisp 4-card status row (`Total tiket`, `Tiket aktif`, `Selesai`, `Ditutup`) with restrained semantic color indicators.
 4. **Service Guidance:** 3-step structured cards (`Pilih layanan`, `Jelaskan kebutuhan`, `Pantau & konfirmasi`) with working reporting guide dialog template.
 
@@ -263,7 +263,7 @@ Frappe Helpdesk serves as an external **quality and density benchmark** for:
 
 **Strict Prohibition:**
 - Do **NOT** copy Frappe source code, Vue components, styles, icons, or AGPL-licensed assets.
-- SIHATI retains its native Laravel Blade architecture, Tailwind/custom CSS tokens, Livewire/Alpine interactions, and Indonesian government business logic.
+- SIHATI retains its native Laravel Blade architecture, Tailwind/custom CSS tokens, vanilla JavaScript ES modules, existing Livewire navigation/lifecycle hooks, and Indonesian government business logic.
 
 ---
 
@@ -303,10 +303,12 @@ This theme applies universally across all SIHATI views:
 
 ## 8. Wave Context & Transition Record
 
-- **W1 Visual Foundation:** Previously accepted.
-- **W2 Shell & Navigation:** Previously accepted.
-- **W3 Administrative & Master Views:** Previously accepted.
-- **W4.1 Requester Dashboard:** Currently under Human QA review.
+- **W1 Visual Foundation:** PASS / previously accepted structurally, brand identity now amended by this specification.
+- **W2 Shell & Navigation:** PASS / CLOSED. Existing accepted structure remains.
+- **W3.1 Locations & Teams:** PASS / Human QA accepted.
+- **W3.2 Skills & Announcements:** IMPLEMENTED — HUMAN QA INCOMPLETE — DEFERRED.
+- **Remaining W3:** DEFERRED.
+- **W4.1 Requester Dashboard:** IMPLEMENTED — HUMAN QA REQUIRED.
 - **Current Milestone:** Identity theme defined and approved as specification.
 - **Status:** **`IDENTITY SPECIFICATION APPROVED — IMPLEMENTATION PENDING`**
 - **Next Phase:** Implementation of CSS tokens and application across pending and future waves upon instruction.
