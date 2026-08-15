@@ -136,7 +136,8 @@ $$\text{Canvas (\#F4F6F9)} \longrightarrow \text{Surface (\#FFFFFF)} \longrighta
 #### Status Badge Semantic Examples:
 - **`Ditutup`:** Success Green chip (e.g., green text on soft green background, green border).
 - **`Menunggu Pemohon` / `Menunggu Persetujuan` / `Menunggu Pihak Ketiga` / `Menunggu Konfirmasi`:** Warning Amber chip.
-- **`Ditolak` / `Tidak Disetujui` / `Dibatalkan`:** Danger Red chip (critical priority `Kritis` also uses Danger Red).
+- **`Ditolak` / `Tidak Disetujui`:** Danger Red chip (critical priority `Kritis` also uses Danger Red).
+- **`Dibatalkan`:** Neutral / muted cancelled chip (`--sihati-color-text-muted` on `--sihati-color-surface-muted`).
 - **`Baru` / `Diproses` / `Dikerjakan`:** Clear operational informative badge.
 - **Never render all statuses in uniform blue.**
 
