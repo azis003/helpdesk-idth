@@ -57,6 +57,6 @@ These remain intentionally preserved in their baseline state for separate future
 ## W3 Readiness
 - **W3 Readiness**: YES
 - **Next Wave**: W3 — MEDIUM RISK: Straightforward administration collections
-- **Authoritative Scope Ref**: [05-IMPLEMENTATION-WAVES.md](file:///c:/Users/Personal/Herd/helpdesk-idth/docs/redesign/05-IMPLEMENTATION-WAVES.md)
+- **Authoritative Scope Ref**: [05-IMPLEMENTATION-WAVES.md](05-IMPLEMENTATION-WAVES.md)
 
 *Note: W3 implementation is not started during this closure pass.*

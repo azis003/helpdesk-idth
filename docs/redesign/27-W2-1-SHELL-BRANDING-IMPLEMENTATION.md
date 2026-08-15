@@ -17,9 +17,9 @@ In accordance with the principle of **"Ubah wajahnya, jangan bongkar mesinnya" (
 * **W1 baseline SHA**: `b1e8045878c386c758821d978a5e52aa52bfc5fb`
 * **Initial W2.1 commit**: `0c68ebd0c05f35897fc0cc866f80e09cc51be72c`
 * **Files in W2.1 production scope**:
-  - [layouts/app.blade.php](file:///c:/Users/Personal/Herd/helpdesk-idth/resources/views/layouts/app.blade.php)
-  - [app.css](file:///c:/Users/Personal/Herd/helpdesk-idth/resources/css/app.css)
-  - [theme-modern.css](file:///c:/Users/Personal/Herd/helpdesk-idth/resources/css/theme-modern.css)
+  - [layouts/app.blade.php](../../resources/views/layouts/app.blade.php)
+  - [app.css](../../resources/css/app.css)
+  - [theme-modern.css](../../resources/css/theme-modern.css)
 * **JS Behavior Confirmation**:
   - `resources/js/app.js` is confirmed **unchanged** to preserve the frozen baseline JS interface contract.
 
@@ -100,7 +100,7 @@ The shell layout has been updated to remove legacy conflicting geometry (`paddin
 ### 6.1 W2.1-HQA-003: Expanded Sidebar Width Over-allocation
 * **Issue**: Real browser QA determined that the `16rem` / `256px` expanded sidebar was wider than necessary, causing the main workspace to feel squeezed on medium displays.
 * **Corrective Action**:
-  - Reduced the expanded sidebar width from `16rem` (`256px`) to `14rem` (`224px`) in [app.css](file:///c:/Users/Personal/Herd/helpdesk-idth/resources/css/app.css).
+  - Reduced the expanded sidebar width from `16rem` (`256px`) to `14rem` (`224px`) in [app.css](../../resources/css/app.css).
   - Maintained the collapsed rail width at `4.5rem` (`72px`) and the workspace behavior as `flex: 1` and `min-width: 0` to preserve the fluid content column scaling.
 
 ### 6.2 W2.1-HQA-004: Brand Header Internal Composition Density
@@ -108,7 +108,7 @@ The shell layout has been updated to remove legacy conflicting geometry (`paddin
 * **Corrective Action**:
   - Reduced the `.ui-sidebar-header` padding from `1rem` to `0.75rem` (`12px`) to shift the logo closer to the left edge.
   - Tightened the gap in `.ui-sidebar-brand` from `0.65rem` to `0.4rem` (`~6px`) and ensured the text block gets `flex: 1` for proper alignment and truncation.
-  - Adjusted the expanded logo visual dimensions in [theme-modern.css](file:///c:/Users/Personal/Herd/helpdesk-idth/resources/css/theme-modern.css) to `height: 2.5rem` and `max-width: 5rem`.
+  - Adjusted the expanded logo visual dimensions in [theme-modern.css](../../resources/css/theme-modern.css) to `height: 2.5rem` and `max-width: 5rem`.
 
 ---
 
