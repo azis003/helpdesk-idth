@@ -2,7 +2,7 @@
 
 ## Metadata
 - **Wave**: W3.1 (Locations and Teams)
-- **Status**: W3.1 IMPLEMENTED — HUMAN QA REQUIRED
+- **Status**: W3.1 PASS — HUMAN QA ACCEPTED
 - **Starting HEAD SHA**: `66cf2965029a7b4ca743e1144623d83b4a8a4926`
 
 ## Changed Files
@@ -128,3 +128,27 @@ We preserved all literal endpoints and HTML selectors to ensure zero functional 
 - **Git Compliance**:
   - Command: `git diff --check`
   - Output: Exited with code 0 (all trailing whitespaces cleaned up).
+
+---
+
+## Final Human QA Acceptance
+
+### Locations
+- Desktop: **PASS**
+- Mobile 390px: **PASS**
+- Building → floor → action hierarchy: **accepted**
+- Search / per-page responsive behavior: **accepted**
+- Building / floor modal presentation: **accepted**
+
+### Teams
+- Desktop: **PASS**
+- Mobile 375/390px: **PASS**
+- 2-column large desktop / 1-column narrower layout: **accepted**
+- Long team-name wrapping: **accepted**
+- Chair presentation: **accepted**
+- Member-count presentation: **accepted**
+- Read-only "Lihat semua anggota" modal: **accepted**
+- Modal supports scalable long member lists: **accepted**
+
+### Global Responsive Smoke
+- Mobile notification dropdown viewport containment: **PASS**
