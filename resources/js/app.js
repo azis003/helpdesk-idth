@@ -152,10 +152,16 @@ const requestFormSubmit = (form) => {
     HTMLFormElement.prototype.submit.call(form);
 };
 
+let pageLifecycleController = null;
+
 const initializeSihatiPage = () => {
     if (document.body.dataset.sihatiPageInitialized === 'true') {
         return;
     }
+
+    pageLifecycleController?.abort();
+    pageLifecycleController = new AbortController();
+    const pageSignal = pageLifecycleController.signal;
 
     document.body.dataset.sihatiPageInitialized = 'true';
 
@@ -418,7 +424,7 @@ if (mobileMenu && mobileMenuTrigger) {
             closeMobileMenu({ immediate: true, restoreFocus: false });
         }
     };
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize, { signal: pageSignal });
 }
 
 // Notifications Dropdown Refinements
@@ -443,7 +449,7 @@ if (notificationMenu) {
         if (notificationMenu.open && !notificationMenu.contains(event.target)) {
             notificationMenu.open = false;
         }
-    });
+    }, { signal: pageSignal });
 }
 
 const navigationDisclosures = [...document.querySelectorAll('[data-nav-disclosure]')];
@@ -914,7 +920,7 @@ document.addEventListener('click', (event) => {
             menu.open = false;
         }
     });
-});
+}, { signal: pageSignal });
 
 const submitFeedbackForms = [...document.querySelectorAll('[data-submit-feedback]')];
 
@@ -1601,6 +1607,8 @@ if (brandingForm) {
 };
 
 document.addEventListener('livewire:navigate', () => {
+    pageLifecycleController?.abort();
+    pageLifecycleController = null;
     closeMobileMenu({ immediate: true, restoreFocus: false });
     document.body.removeAttribute('data-sihati-page-initialized');
     setGlobalLoadingState(true, 'Memuat halaman...');

@@ -65,9 +65,9 @@
 
 ## 7. Human QA Corrections
 *   **W2.3-HQA-001 (Login Brand Logo Proportion)**:
-    *   **Root Cause**: The uploaded logo uses a landscape 1400x600 px layout (aspect ratio 7:3 / 2.33). Because the previous CSS constraint `max-w-[4rem]` (64px) capped the horizontal size, it forced the rendered height down to ~27px, causing it to appear too small next to the identity text. No excessive padding was found in the source image itself.
-    *   **Correction**: Replaced inline utility classes with a dedicated `.ui-guest-brand-logo` class in `resources/css/theme-modern.css`.
-    *   **Final Geometry**: `height: 2.5rem; max-width: 5rem; width: auto; object-fit: contain; flex-shrink: 0;`
+    *   **Diagnosis**: The original uploaded logo canvas was 1400 x 600 px with visible artwork of 600 x 600 px and transparent padding of 400 px left, 400 px right, 0 px top, and 0 px bottom. The primary root cause of the small size was source asset whitespace.
+    *   **Resolution**: A tightly-cropped square branding asset was uploaded through the existing Branding UI. We styled the brand logo element using the `.ui-guest-brand-logo` class in `resources/css/theme-modern.css`.
+    *   **Geometry**: `height: 2.5rem; max-width: 5rem; width: auto; object-fit: contain; flex-shrink: 0;`
     *   **Spacing**: Utilized a compact gap of `0.5rem` (`gap-2`) in the container. No distorting hacks, negative margins, or absolute positioning scaling overrides were used.
 *   **W2.3-HQA-002 (Guest Shell Centering and Brand Proportion Refinements)**:
     *   **Defect**: Login guest page is still visually off (brand/logo visually too small, content not balanced within card, unnecessary desktop scroll).
