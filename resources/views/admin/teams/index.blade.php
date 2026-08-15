@@ -159,7 +159,15 @@
     </div>
 
     @foreach ($teams as $team)
-        @php($isEditError = (string) old('_team_edit') === (string) $team->id && $errors->any())
+        @php
+            $isEditError = (string) old('_team_edit') === (string) $team->id && $errors->any();
+
+            $chairUser = $team->currentChair?->user;
+
+            $memberRows = $team->currentMembers
+                ->reject(fn ($member): bool => $chairUser !== null && (int) $member->id === (int) $chairUser->id)
+                ->values();
+        @endphp
         <div id="team-edit-modal-{{ $team->id }}" data-ui-modal data-auto-open="{{ $isEditError ? 'true' : 'false' }}" class="fixed inset-0 z-50 hidden" aria-hidden="true">
             <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-[3px]" data-ui-modal-close></div>
             <div class="relative flex min-h-full items-center justify-center p-4 sm:p-8">
@@ -207,12 +215,6 @@
         </div>
 
         <!-- Read-Only Members Modal -->
-        @php
-            $chairUser = $team->currentChair?->user;
-            $memberRows = $team->currentMembers
-                ->reject(fn ($member): bool => $chairUser !== null && (int) $member->id === (int) $chairUser->id)
-                ->values();
-        @endphp
         @if ($memberRows->isNotEmpty())
             <div id="team-members-modal-{{ $team->id }}" data-ui-modal data-auto-open="false" class="fixed inset-0 z-50 hidden" aria-hidden="true">
                 <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-[3px]" data-ui-modal-close></div>

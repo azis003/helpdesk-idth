@@ -94,6 +94,14 @@ We preserved all literal endpoints and HTML selectors to ensure zero functional 
 - **No backend/mutation scope changes**:
   - No new data queries or endpoint changes. Handled strictly as a read-only visual projection.
 
+### `W3.1-HQA-004` — raw Blade/PHP source leak
+- **Exposed template source fragments**:
+  - Fixed a Blade compiling parse error where inline and block php directives within the second modal loop on the Teams page caused raw code fragments (like `$errors->any()`, `@php`, etc.) to leak visually at the bottom of the page.
+- **Consolidated loop calculations**:
+  - Consolidated all per-team computations (errors state, chair user object, and filtered members collection) into a single, clean `@php ... @endphp` block right at the start of the `@foreach ($teams as $team)` loop.
+  - Eliminated the inline `@php($isEditError = ...)` shorthand and duplicate calculations.
+  - Regenerated and verified compiled template syntax successfully.
+
 ---
 
 ## Verification & Build Outcomes
