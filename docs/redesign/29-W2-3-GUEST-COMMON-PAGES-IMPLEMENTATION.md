@@ -69,6 +69,12 @@
     *   **Correction**: Replaced inline utility classes with a dedicated `.ui-guest-brand-logo` class in `resources/css/theme-modern.css`.
     *   **Final Geometry**: `height: 2.5rem; max-width: 5rem; width: auto; object-fit: contain; flex-shrink: 0;`
     *   **Spacing**: Utilized a compact gap of `0.5rem` (`gap-2`) in the container. No distorting hacks, negative margins, or absolute positioning scaling overrides were used.
+*   **W2.3-HQA-002 (Guest Shell Centering and Brand Proportion Refinements)**:
+    *   **Defect**: Login guest page is still visually off (brand/logo visually too small, content not balanced within card, unnecessary desktop scroll).
+    *   **Root Cause of Scroll**: Duplicate viewport height declarations (`min-height: 100vh`) on both the page wrapper (`.ui-login-shell`) and the content wrapper (`.ui-login-main`), combined with vertical padding, pushed content bounds beyond the desktop viewport and triggered unnecessary scroll.
+    *   **Centering Approach**: Reset `.ui-login-main` to `min-height: auto !important` so it adapts to the page container height. Used a moderate padding of `2rem !important` on desktop to center the card vertically and horizontally within the viewport comfortably.
+    *   **Card/Content Width Strategy (Option A)**: Reduced the outer card max-width to `26rem` (416px). Introduced a centered inner column `.ui-login-inner` inside `.ui-login-content` constrained to `max-w-[20rem]` (320px) which centers the form elements vertically and horizontally, eliminating the right-hand empty space.
+    *   **Brand Sizing/Alignment**: Centered the brand row link container using `justify-center` inside the inner stack. Increased the brand logo height to `3rem` (48px) and max-width to `6.5rem` (104px) to make the branding block more substantial and prominent without any layout distortion or transform hacks. Monogram fallback is scaled to `h-11 w-11` for parity.
 
 ---
 

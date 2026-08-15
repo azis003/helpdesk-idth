@@ -2287,35 +2287,61 @@ a:not([class]):hover {
 	scroll-margin-top: 5rem;
 }
 
+.ui-login-shell {
+	min-height: 100vh !important;
+	min-height: 100dvh !important;
+}
+
+.ui-login-main {
+	min-height: auto !important;
+	padding: 1.5rem !important;
+}
+
+.ui-login-content {
+	max-width: 26rem !important;
+}
+
+.ui-login-inner {
+	width: 100%;
+	max-width: 20rem;
+	margin-left: auto;
+	margin-right: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+}
+
 .ui-login-form {
 	max-width: 100% !important;
+	margin-top: 0.5rem !important;
 }
 
 .ui-guest-brand-logo {
-	height: 2.5rem;
+	height: 3rem;
 	width: auto;
-	max-width: 5rem;
+	max-width: 6.5rem;
 	object-fit: contain;
 	flex-shrink: 0;
+}
+
+.ui-login-footer {
+	margin-top: 0 !important;
+	padding-top: 1.25rem !important;
 }
 
 /* Guest layout & card overrides */
 @media (min-width: 1024px) {
 	.ui-login-main {
-		justify-content: center;
-		align-items: center;
-		padding: 3rem;
+		justify-content: center !important;
+		align-items: center !important;
+		padding: 2rem !important;
 	}
 	.ui-login-content {
-		max-width: 28rem !important;
+		max-width: 26rem !important;
 		background-color: var(--tm-surface) !important;
 		border: 1px solid var(--tm-border-subtle) !important;
 		box-shadow: var(--tm-sh-xl) !important;
-		padding: 2.5rem !important;
+		padding: 2.25rem !important;
 		border-radius: var(--tm-r-xl) !important;
-	}
-	.ui-login-footer {
-		margin-top: 1rem !important;
-		padding-top: 1rem !important;
 	}
 }
