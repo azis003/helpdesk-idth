@@ -15,15 +15,15 @@
         <main id="main-content" tabindex="-1" class="ui-login-main flex flex-1 min-w-0 justify-center items-center p-4 sm:p-8 focus:outline-none">
             <div class="ui-login-content w-full max-w-[26rem] rounded-2xl border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface)] p-6 sm:p-8 shadow-xl flex flex-col justify-center items-center">
                 <div class="ui-login-inner w-full max-w-[20rem] mx-auto flex flex-col gap-6">
-                    <a href="{{ url('/') }}" class="flex items-center justify-center gap-2.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--tm-brand-500)] rounded-xl" aria-label="Beranda {{ $branding['application_name'] }}">
+                    <a href="{{ url('/') }}" class="flex items-center justify-center gap-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--tm-brand-500)] rounded-xl" aria-label="Beranda {{ $branding['application_name'] }}">
                         @if ($branding['logo_url'])
                             <img src="{{ $branding['logo_url'] }}" alt="Logo {{ $branding['organization_name'] }}" class="ui-guest-brand-logo">
                         @else
-                            <span class="ui-brand-mark flex h-11 w-11 items-center justify-center rounded-xl bg-[color:var(--tm-brand-600)] text-sm font-bold text-white shrink-0" aria-hidden="true">{{ $branding['monogram'] }}</span>
+                            <span class="ui-brand-mark flex h-14 w-14 items-center justify-center rounded-xl bg-[color:var(--tm-brand-600)] text-base font-bold text-white shrink-0" aria-hidden="true">{{ $branding['monogram'] }}</span>
                         @endif
                         <div class="flex flex-col min-w-0">
-                            <span class="text-base font-extrabold tracking-tight text-[color:var(--tm-text)] leading-tight">{{ $branding['application_name'] }}</span>
-                            <span class="text-xs font-semibold text-[color:var(--tm-text-muted)] truncate leading-tight">{{ $branding['organization_name'] }}</span>
+                            <span class="ui-guest-brand-title text-base font-extrabold tracking-tight text-[color:var(--tm-text)] leading-tight">{{ $branding['application_name'] }}</span>
+                            <span class="ui-guest-brand-subtitle text-xs font-semibold text-[color:var(--tm-text-muted)] truncate leading-tight">{{ $branding['organization_name'] }}</span>
                         </div>
                     </a>
 

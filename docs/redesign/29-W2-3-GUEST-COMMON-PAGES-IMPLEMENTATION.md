@@ -75,6 +75,14 @@
     *   **Centering Approach**: Reset `.ui-login-main` to `min-height: auto !important` so it adapts to the page container height. Used a moderate padding of `2rem !important` on desktop to center the card vertically and horizontally within the viewport comfortably.
     *   **Card/Content Width Strategy (Option A)**: Reduced the outer card max-width to `26rem` (416px). Introduced a centered inner column `.ui-login-inner` inside `.ui-login-content` constrained to `max-w-[20rem]` (320px) which centers the form elements vertically and horizontally, eliminating the right-hand empty space.
     *   **Brand Sizing/Alignment**: Centered the brand row link container using `justify-center` inside the inner stack. Increased the brand logo height to `3rem` (48px) and max-width to `6.5rem` (104px) to make the branding block more substantial and prominent without any layout distortion or transform hacks. Monogram fallback is scaled to `h-11 w-11` for parity.
+*   **W2.3-HQA-004 (Login Brand Hierarchy & Accent Positioning Corrections)**:
+    *   **Defect**: Guest brand identity remained visually weaker than the login H1, and the teal accent on the left consumed layout width affecting horizontal centering.
+    *   **Final Logo Size**: Configured `.ui-guest-brand-logo` height to `3.5rem` (56px) and max-width to `7.5rem` (120px) to form a substantial visual anchor. Scaled monogram fallback to `h-14 w-14` (56px) for sizing parity.
+    *   **Final Application Name Size**: Custom styled `.ui-guest-brand-title` to `1.3125rem` (~21px) with `font-extrabold` (800) and compact line-height.
+    *   **Final Organization Name Size**: Custom styled `.ui-guest-brand-subtitle` to `0.8125rem` (~13px) with `font-semibold` (600) and muted text tone.
+    *   **Final Spacing**: Set vertical spacing gaps inside the inner stack container `.ui-login-inner` to `1.75rem` (28px).
+    *   **Final Accent Width**: Configured `.ui-login-accent` with `width: 0.375rem; min-width: 0; flex: none;`.
+    *   **Centering Method**: Set `.ui-login-shell` to `position: relative` and positioned `.ui-login-accent` absolutely (`position: absolute; left: 0;`) so that it acts purely as a decorative accent strip. This centers the card layout wrapper `.ui-login-main` relative to the full viewport width without any alignment bias or offset.
 
 ---
 

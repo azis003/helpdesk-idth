@@ -2288,8 +2288,20 @@ a:not([class]):hover {
 }
 
 .ui-login-shell {
+	position: relative;
 	min-height: 100vh !important;
 	min-height: 100dvh !important;
+}
+
+.ui-login-accent {
+	position: absolute;
+	inset-block: 0;
+	left: 0;
+	width: 0.375rem;
+	min-width: 0;
+	flex: none;
+	background-image: none;
+	background-color: var(--sihati-color-action-primary);
 }
 
 .ui-login-main {
@@ -2308,7 +2320,7 @@ a:not([class]):hover {
 	margin-right: auto;
 	display: flex;
 	flex-direction: column;
-	gap: 1.5rem;
+	gap: 1.75rem;
 }
 
 .ui-login-form {
@@ -2317,11 +2329,25 @@ a:not([class]):hover {
 }
 
 .ui-guest-brand-logo {
-	height: 3rem;
-	width: auto;
-	max-width: 6.5rem;
-	object-fit: contain;
-	flex-shrink: 0;
+	height: 3.5rem !important;
+	width: auto !important;
+	max-width: 7.5rem !important;
+	object-fit: contain !important;
+	flex-shrink: 0 !important;
+}
+
+.ui-guest-brand-title {
+	font-size: 1.3125rem !important;
+	font-weight: 800 !important;
+	line-height: 1.2 !important;
+	letter-spacing: -0.025em !important;
+}
+
+.ui-guest-brand-subtitle {
+	font-size: 0.8125rem !important;
+	font-weight: 600 !important;
+	color: var(--tm-text-muted) !important;
+	line-height: 1.2 !important;
 }
 
 .ui-login-footer {

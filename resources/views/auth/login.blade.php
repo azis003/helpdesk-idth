@@ -8,7 +8,7 @@
         @if ($branding['tagline'])
             <p class="text-sm text-[color:var(--tm-text-secondary)]">{{ $branding['tagline'] }}</p>
         @else
-            <p class="text-sm text-[color:var(--tm-text-secondary)]">Masuk untuk mengakses dasbor dan tiket Anda.</p>
+            <p class="text-sm text-[color:var(--tm-text-secondary)]">Portal Layanan TI</p>
         @endif
     </div>
 
