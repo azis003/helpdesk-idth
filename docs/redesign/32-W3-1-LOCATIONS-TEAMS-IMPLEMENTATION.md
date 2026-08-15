@@ -30,7 +30,7 @@ The following production files were modified to achieve the visual redesign:
   - All actions wrap elegantly and buttons are padded for easy touch-targets (390px safe).
 
 ### 2. Teams Redesign
-- **Transition**: Restructured the team index layout from a database spreadsheet-like table into a clean, modern card grid: `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6`.
+- **Transition**: Restructured the team index layout from a database spreadsheet-like table into a clean, modern card grid.
 - **Desktop/Tablet Strategy**:
   - Each card represents an operational team record showcasing the structural overview.
   - **Header**: Displays the team name and status badge, alongside the edit modal trigger and screen-reader action labels.
@@ -74,6 +74,14 @@ We preserved all literal endpoints and HTML selectors to ensure zero functional 
   - Reorganized building cards into a clean vertical stack: **Header** (Building name, count, status badge), **Body** (Daftar Lantai header & floors grid list), and **Action Footer** (Building actions block).
   - Completely removed redundant duplicate "Status Gedung" text.
   - Completely removed unnecessary "Diperbarui" timestamp metadata to optimize screen real estate.
+
+### `W3.1-HQA-002` — Teams desktop card density
+- **3-column grid caused excessive title wrapping in real data**:
+  - Restructured responsive grid density on desktop/large screens from 3 columns to 2 columns on `xl` viewports (`grid-cols-1 xl:grid-cols-2 gap-6`). This ensures long, real-world team names have breathing room.
+- **Nested member scroll removed**:
+  - Completely removed nested scroll constraints (`max-h-[7.5rem]` and `overflow-y-auto`) from the members container to allow natural wrapping and document flow.
+- **Natural card heights retained**:
+  - Configured the grid container with `items-start` to size cards naturally according to their content, preventing short cards from visually stretching to match the tallest card in the row.
 
 ---
 

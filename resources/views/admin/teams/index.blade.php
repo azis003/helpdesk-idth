@@ -28,7 +28,7 @@
         </div>
 
         <div class="px-5 py-5 sm:px-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
                 @forelse ($teams as $team)
                     @php
                         $chairUser = $team->currentChair?->user;
@@ -40,7 +40,7 @@
                         <!-- Card Header -->
                         <div class="flex items-start justify-between gap-4 border-b border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-surface-sunken)] p-4 sm:p-5">
                             <div class="min-w-0">
-                                <h3 class="font-bold text-sm sm:text-base text-[color:var(--tm-text)] truncate" title="{{ $team->name }}">{{ $team->name }}</h3>
+                                <h3 class="font-bold text-sm sm:text-base text-[color:var(--tm-text)] whitespace-normal break-words" title="{{ $team->name }}">{{ $team->name }}</h3>
                                 <span class="ui-status {{ $team->is_active ? 'ui-status-active' : 'ui-status-inactive' }} mt-1.5 inline-block text-[0.68rem] px-1.5 py-0.5">
                                     {{ $team->is_active ? 'Aktif' : 'Nonaktif' }}
                                 </span>
@@ -94,7 +94,7 @@
                                     </span>
                                 </div>
                                 @if ($memberRows->isNotEmpty())
-                                    <div class="flex flex-wrap gap-1.5 max-h-[7.5rem] overflow-y-auto pr-1">
+                                    <div class="flex flex-wrap gap-1.5 pr-1">
                                         @foreach ($memberRows as $member)
                                             <span class="inline-flex items-center rounded-full border border-[color:var(--tm-border-subtle)] bg-[color:var(--tm-sunken)] px-2.5 py-0.5 text-xs font-medium text-[color:var(--tm-text-secondary)]">
                                                 {{ $member->name }}
