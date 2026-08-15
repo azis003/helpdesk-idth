@@ -101,6 +101,21 @@ No notification query, action, or security contract was changed.
 | HQA-003 | Scalable team-member access | Inline chips replaced with read-only modal |
 | HQA-004 | Raw Blade/PHP source leak | Loop calculations consolidated into single @php block |
 | HQA-005 | Mobile notification dropdown clipping | Dropdown made viewport-contained on mobile |
+| HQA-006 | Desktop notification dropdown density | Reduced width to 20rem; trimmed empty-state padding |
+| HQA-007 | Sticky desktop sidebar brand header | Pinned .ui-sidebar-header with sticky positioning & opaque bg |
+
+---
+
+## Post-Closure Shared Shell Polish
+
+### `W3.1-HQA-006` — Desktop notification dropdown density
+- Reduced desktop/tablet notification dropdown width from `22rem` to `20rem` (`sm:w-[20rem]`) for a more balanced, compact presentation under the topbar bell icon.
+- Reduced excessive vertical padding on empty notification state from `py-7` to `py-5`.
+
+### `W3.1-HQA-007` — Sticky desktop sidebar brand header
+- The entire `.ui-sidebar` functions as the vertical scroll container. Previously, the brand header scrolled upward along with the navigation links when scrolling long menus.
+- Made `.ui-sidebar-header` sticky (`position: sticky; top: 0; z-index: 10; background-color: var(--tm-n-0);`) so the logo and application branding remain fixed at the top while navigation links scroll underneath.
+- Preserved 4.5rem height, flex alignment, borders, collapsed state width transitions, and all navigation/auth contracts.
 
 ---
 
