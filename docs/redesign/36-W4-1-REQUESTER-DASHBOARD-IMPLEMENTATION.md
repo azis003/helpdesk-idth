@@ -124,3 +124,6 @@ To be tested using a pure **Pemohon** account (`act01` / Pemohon):
 
 **Status:** `W4.1 IMPLEMENTED — HUMAN QA REQUIRED`
 *(Awaiting Human QA review before proceeding to W5.1)*
+
+> [!NOTE]
+> W4.1 final visual corrective must follow [`37-KOMDIGI-IDENTITY-THEME.md`](file:///c:/Users/Personal/Herd/helpdesk-idth/docs/redesign/37-KOMDIGI-IDENTITY-THEME.md).
