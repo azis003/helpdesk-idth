@@ -39,31 +39,31 @@
    ========================================================================== */
 
 :root {
-	/* Brand — teal profesional, turunan dari aksen lama #147a79 / #0a87c9 */
-	--tm-brand-50: #eff9fb;
-	--tm-brand-100: #d7f0f5;
-	--tm-brand-200: #b0e1eb;
-	--tm-brand-300: #7cccdc;
-	--tm-brand-400: #43adc4;
-	--tm-brand-500: #1e8fa8;
-	--tm-brand-600: #14738b;
-	--tm-brand-700: #135d72;
-	--tm-brand-800: #154d5e;
-	--tm-brand-900: #16404f;
+	/* Brand — Komdigi-inspired institutional blue */
+	--tm-brand-50: #eff6fc;
+	--tm-brand-100: #dceefe;
+	--tm-brand-200: #bcddf7;
+	--tm-brand-300: #8fc5ef;
+	--tm-brand-400: #4ea4e4;
+	--tm-brand-500: #1686d9;
+	--tm-brand-600: #0869c7;
+	--tm-brand-700: #075aae;
+	--tm-brand-800: #074a87;
+	--tm-brand-900: #073b6f;
 
-	/* Netral — slate sejuk */
+	/* Netral — Komdigi cool slate */
 	--tm-n-0: #ffffff;
-	--tm-n-25: #fbfcfd;
-	--tm-n-50: #f6f8fa;
-	--tm-n-100: #eef1f4;
-	--tm-n-200: #e2e7ec;
-	--tm-n-300: #cbd3db;
-	--tm-n-400: #9aa6b2;
-	--tm-n-500: #6b7885;
-	--tm-n-600: #4e5a66;
-	--tm-n-700: #3a444e;
-	--tm-n-800: #262e36;
-	--tm-n-900: #161c22;
+	--tm-n-25: #fafbfc;
+	--tm-n-50: #f4f6f9;
+	--tm-n-100: #eef2f6;
+	--tm-n-200: #d7e0e8;
+	--tm-n-300: #aab8c5;
+	--tm-n-400: #8c9aa7;
+	--tm-n-500: #72808d;
+	--tm-n-600: #566574;
+	--tm-n-700: #3b4855;
+	--tm-n-800: #27333e;
+	--tm-n-900: #17212b;
 
 	/* Semantik */
 	--tm-success-50: #e9f8f2;
@@ -146,33 +146,33 @@
 	--sihati-font-ui: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 	--sihati-font-mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 
-	--sihati-color-canvas: #f6f8fa;
-	--sihati-color-surface-primary: #ffffff;
-	--sihati-color-surface-muted: #eef1f4;
-	--sihati-color-surface-hover: #e7edf2;
-	--sihati-color-surface-selected: #d7f0f5;
-	--sihati-color-border-default: #d6dee5;
-	--sihati-color-border-strong: #7a8793;
-	--sihati-color-text-default: #161c22;
-	--sihati-color-text-muted: #4e5a66;
-	--sihati-color-text-subtle: #667381;
-	--sihati-color-text-inverse: #ffffff;
-	--sihati-color-action-primary: #135d72;
-	--sihati-color-action-primary-hover: #154d5e;
-	--sihati-color-action-primary-soft: #d7f0f5;
-	--sihati-color-action-destructive: #a21f37;
+	--sihati-color-canvas: var(--tm-n-50);
+	--sihati-color-surface-primary: var(--tm-n-0);
+	--sihati-color-surface-muted: var(--tm-n-100);
+	--sihati-color-surface-hover: var(--tm-n-100);
+	--sihati-color-surface-selected: var(--tm-brand-100);
+	--sihati-color-border-default: var(--tm-n-200);
+	--sihati-color-border-strong: var(--tm-n-300);
+	--sihati-color-text-default: var(--tm-n-900);
+	--sihati-color-text-muted: var(--tm-n-600);
+	--sihati-color-text-subtle: var(--tm-n-500);
+	--sihati-color-text-inverse: var(--tm-n-0);
+	--sihati-color-action-primary: var(--tm-brand-600);
+	--sihati-color-action-primary-hover: var(--tm-brand-700);
+	--sihati-color-action-primary-soft: var(--tm-brand-100);
+	--sihati-color-action-destructive: var(--tm-danger-700);
 	--sihati-color-action-destructive-hover: #86182e;
-	--sihati-color-action-disabled-surface: #eef1f4;
-	--sihati-color-action-disabled-text: #667381;
-	--sihati-color-success-text: #0c6249;
-	--sihati-color-success-surface: #e9f8f2;
-	--sihati-color-warning-text: #8a5700;
-	--sihati-color-warning-surface: #fff7e8;
-	--sihati-color-danger-text: #a21f37;
-	--sihati-color-danger-surface: #fdeef1;
-	--sihati-color-info-text: #175a86;
-	--sihati-color-info-surface: #eaf4fb;
-	--sihati-color-focus-ring: #005fcc;
+	--sihati-color-action-disabled-surface: var(--tm-n-100);
+	--sihati-color-action-disabled-text: var(--tm-n-500);
+	--sihati-color-success-text: var(--tm-success-700);
+	--sihati-color-success-surface: var(--tm-success-50);
+	--sihati-color-warning-text: var(--tm-warning-700);
+	--sihati-color-warning-surface: var(--tm-warning-50);
+	--sihati-color-danger-text: var(--tm-danger-700);
+	--sihati-color-danger-surface: var(--tm-danger-50);
+	--sihati-color-info-text: var(--tm-info-700);
+	--sihati-color-info-surface: var(--tm-info-50);
+	--sihati-color-focus-ring: var(--tm-brand-500);
 
 	--sihati-communication-public-surface: var(--sihati-color-surface-primary);
 	--sihati-communication-public-border: var(--sihati-color-border-default);
@@ -183,10 +183,10 @@
 	--sihati-communication-internal-marker: var(--sihati-color-text-muted);
 	--sihati-status-baru-text: var(--sihati-color-info-text);
 	--sihati-status-baru-surface: var(--sihati-color-info-surface);
-	--sihati-status-diproses-text: var(--sihati-color-action-primary);
-	--sihati-status-diproses-surface: var(--sihati-color-action-primary-soft);
-	--sihati-status-dikerjakan-text: var(--sihati-color-action-primary);
-	--sihati-status-dikerjakan-surface: var(--sihati-color-action-primary-soft);
+	--sihati-status-diproses-text: var(--sihati-color-info-text);
+	--sihati-status-diproses-surface: var(--sihati-color-info-surface);
+	--sihati-status-dikerjakan-text: var(--sihati-color-info-text);
+	--sihati-status-dikerjakan-surface: var(--sihati-color-info-surface);
 	--sihati-status-menunggu-persetujuan-text: var(--sihati-color-warning-text);
 	--sihati-status-menunggu-persetujuan-surface: var(--sihati-color-warning-surface);
 	--sihati-status-menunggu-pemohon-text: var(--sihati-color-warning-text);
