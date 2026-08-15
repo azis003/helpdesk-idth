@@ -48,21 +48,155 @@
     @if ($isHelpdeskDashboard)
         @include('dashboard.helpdesk')
     @else
-    <section class="ui-portal-hero" aria-labelledby="dashboard-title">
-        @if ($isRequesterOnly)
-            <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                    <h1 id="dashboard-title" class="ui-hero-title">Butuh bantuan TI?</h1>
-                    <p class="mt-2 max-w-2xl text-sm leading-6 text-[#d7e8ed]">Buat tiket untuk melaporkan kendala atau mengajukan layanan TI</p>
+    @if ($isRequesterOnly)
+        {{-- Section A: Service Action Area (Calm Service Portal Header) --}}
+        <section class="ui-panel p-5 sm:p-7" aria-labelledby="dashboard-title">
+            <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                <div class="max-w-2xl">
+                    <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Portal Layanan TI</p>
+                    <h1 id="dashboard-title" class="ui-page-title mt-1.5 text-2xl font-extrabold tracking-tight text-[#161c22]">Butuh bantuan TI?</h1>
+                    <p class="mt-2 text-sm leading-relaxed text-[#4e5a66]">Laporkan kendala atau ajukan kebutuhan layanan TI Anda di sini.</p>
                 </div>
-                <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                    <button type="button" class="ui-btn ui-btn-secondary w-full sm:w-auto" data-reporting-guide-trigger aria-haspopup="dialog">
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path stroke-linecap="round" d="M9.8 9.2a2.3 2.3 0 1 1 3.8 1.7c-.9.7-1.6 1.2-1.6 2.4M12 16.5h.01" /></svg>
-                        Tata cara pelaporan
+                <div class="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+                    @if ($canCreateTickets)
+                        <a href="{{ route('tickets.create') }}" class="ui-btn ui-btn-primary inline-flex w-full items-center justify-center gap-2 sm:w-auto">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" d="M12 5v14M5 12h14" /></svg>
+                            <span>Buat tiket</span>
+                        </a>
+                    @endif
+                    <a href="{{ route('tickets.index') }}" class="ui-btn ui-btn-secondary inline-flex w-full items-center justify-center gap-2 sm:w-auto">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14v13H5zM8 9h8M8 12h5M8 15h7" /></svg>
+                        <span>Lihat tiket saya</span>
+                    </a>
+                    <button type="button" class="ui-btn ui-btn-ghost inline-flex w-full items-center justify-center gap-1.5 text-[#4e5a66] hover:text-[#161c22] sm:w-auto" data-reporting-guide-trigger aria-haspopup="dialog">
+                        <svg class="h-4 w-4 text-[#667381]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path stroke-linecap="round" d="M9.8 9.2a2.3 2.3 0 1 1 3.8 1.7c-.9.7-1.6 1.2-1.6 2.4M12 16.5h.01" /></svg>
+                        <span>Tata cara pelaporan</span>
                     </button>
                 </div>
             </div>
-        @else
+        </section>
+
+        {{-- Section B: Announcements (if active) --}}
+        @if ($announcements->isNotEmpty())
+            <section class="mt-6" aria-labelledby="announcements-heading">
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <p class="ui-eyebrow"><span class="ui-eyebrow-dot !bg-[#e4a72c] !shadow-[0_0_0_4px_#fff4d7]" aria-hidden="true"></span>Informasi Layanan</p>
+                        <h2 id="announcements-heading" class="mt-1 text-base font-bold text-[#161c22]">Pengumuman Layanan</h2>
+                    </div>
+                    <span class="text-xs font-semibold text-[#667381]">{{ $announcements->count() }} informasi aktif</span>
+                </div>
+                <div class="mt-3.5 grid gap-3 lg:grid-cols-2">
+                    @foreach ($announcements as $announcement)
+                        <article class="ui-panel border-l-4 border-l-[#e4a72c] p-4 sm:p-5">
+                            <div class="flex items-start justify-between gap-3">
+                                <h3 class="text-sm font-bold text-[#161c22]">{{ $announcement->title }}</h3>
+                                <time class="shrink-0 text-[0.68rem] font-semibold text-[#667381]" datetime="{{ $announcement->starts_at?->toIso8601String() }}">{{ $formatDate($announcement->starts_at) }}</time>
+                            </div>
+                            <p class="mt-2 whitespace-pre-line text-xs leading-relaxed text-[#4e5a66]">{{ $announcement->body }}</p>
+                        </article>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
+        {{-- Section C: Ticket Status Summary --}}
+        <section class="mt-6" aria-labelledby="requester-summary-heading">
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <h2 id="requester-summary-heading" class="text-base font-bold text-[#161c22]">Status Permintaan Saya</h2>
+                    <p class="mt-0.5 text-xs text-[#667381]">Ringkasan keseluruhan status tiket yang Anda ajukan.</p>
+                </div>
+                <a href="{{ route('tickets.index') }}" class="ui-action-link text-xs font-semibold text-[#14738b] hover:text-[#135d72]">
+                    Lihat semua tiket <span aria-hidden="true">&rarr;</span>
+                </a>
+            </div>
+
+            <dl class="mt-3.5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div class="ui-stat-card flex flex-col justify-between p-4 sm:p-5">
+                    <div class="flex items-center justify-between gap-2">
+                        <dt class="ui-stat-label">Total tiket</dt>
+                        <span class="ui-stat-icon flex h-8 w-8 items-center justify-center rounded-lg bg-[#eef1f4] text-[#3a444e]" aria-hidden="true">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 7.5h14v11H5zM8 7.5V5h8v2.5M8.5 11h7M8.5 14.5h4" /></svg>
+                        </span>
+                    </div>
+                    <div class="mt-3">
+                        <dd class="ui-stat-value text-2xl font-extrabold tabular-nums text-[#161c22]">{{ $requesterDashboard['total_ticket_count'] }}</dd>
+                        <span class="mt-1 block text-xs leading-normal text-[#667381]">Semua tiket yang Anda buat.</span>
+                    </div>
+                </div>
+
+                <div class="ui-stat-card flex flex-col justify-between p-4 sm:p-5">
+                    <div class="flex items-center justify-between gap-2">
+                        <dt class="ui-stat-label">Tiket aktif</dt>
+                        <span class="ui-stat-icon flex h-8 w-8 items-center justify-center rounded-lg bg-[#eff9fb] text-[#135d72]" aria-hidden="true">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" /></svg>
+                        </span>
+                    </div>
+                    <div class="mt-3">
+                        <dd class="ui-stat-value text-2xl font-extrabold tabular-nums !text-[#135d72]">{{ $requesterDashboard['total_active_ticket_count'] }}</dd>
+                        <span class="mt-1 block text-xs leading-normal text-[#667381]">Sedang diproses atau menunggu tindak lanjut.</span>
+                    </div>
+                </div>
+
+                <div class="ui-stat-card flex flex-col justify-between p-4 sm:p-5">
+                    <div class="flex items-center justify-between gap-2">
+                        <dt class="ui-stat-label">Tiket selesai</dt>
+                        <span class="ui-stat-icon flex h-8 w-8 items-center justify-center rounded-lg bg-[#fff7e8] text-[#8a5700]" aria-hidden="true">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m5.5 12.5 4 4 9-9" /></svg>
+                        </span>
+                    </div>
+                    <div class="mt-3">
+                        <dd class="ui-stat-value text-2xl font-extrabold tabular-nums !text-[#8a5700]">{{ $requesterDashboard['total_completed_ticket_count'] }}</dd>
+                        <span class="mt-1 block text-xs leading-normal text-[#667381]">Solusi tersedia, menunggu konfirmasi Anda.</span>
+                    </div>
+                </div>
+
+                <div class="ui-stat-card flex flex-col justify-between p-4 sm:p-5">
+                    <div class="flex items-center justify-between gap-2">
+                        <dt class="ui-stat-label">Tiket ditutup</dt>
+                        <span class="ui-stat-icon flex h-8 w-8 items-center justify-center rounded-lg bg-[#e9f8f2] text-[#0c6249]" aria-hidden="true">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                        </span>
+                    </div>
+                    <div class="mt-3">
+                        <dd class="ui-stat-value text-2xl font-extrabold tabular-nums !text-[#0c6249]">{{ $requesterDashboard['total_closed_ticket_count'] }}</dd>
+                        <span class="mt-1 block text-xs leading-normal text-[#667381]">Tiket sudah berstatus Ditutup.</span>
+                    </div>
+                </div>
+            </dl>
+        </section>
+
+        {{-- Section D: Reporting Guide Template --}}
+        <template data-reporting-guide-template>
+            <div class="text-left">
+                <ol class="mt-4 space-y-4">
+                    <li class="flex gap-3">
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#d7f0f5] text-xs font-extrabold text-[#135d72]">1</span>
+                        <div>
+                            <p class="text-sm font-extrabold text-[#161c22]">Pilih layanan</p>
+                            <p class="mt-1 text-xs leading-5 text-[#667381]">Pilih kategori yang paling mendekati kebutuhan Anda.</p>
+                        </div>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#d7f0f5] text-xs font-extrabold text-[#135d72]">2</span>
+                        <div>
+                            <p class="text-sm font-extrabold text-[#161c22]">Jelaskan kebutuhan</p>
+                            <p class="mt-1 text-xs leading-5 text-[#667381]">Tuliskan kendala, dampak, lokasi, dan hasil yang diharapkan.</p>
+                        </div>
+                    </li>
+                    <li class="flex gap-3">
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#d7f0f5] text-xs font-extrabold text-[#135d72]">3</span>
+                        <div>
+                            <p class="text-sm font-extrabold text-[#161c22]">Pantau dan konfirmasi</p>
+                            <p class="mt-1 text-xs leading-5 text-[#667381]">Balas jika ada pertanyaan dan konfirmasi setelah solusi tersedia.</p>
+                        </div>
+                    </li>
+                </ol>
+            </div>
+        </template>
+    @else
+        <section class="ui-portal-hero" aria-labelledby="dashboard-title">
             <div class="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
                 <div>
                     <p class="ui-eyebrow ui-eyebrow--inverse"><span class="ui-eyebrow-dot" aria-hidden="true"></span>{{ $branding['tagline'] ?: 'Portal layanan' }} · {{ $branding['application_name'] }}</p>
@@ -75,73 +209,37 @@
                     @endforeach
                 </div>
             </div>
-        @endif
-    </section>
-
-    @if (! $isSuperAdmin && ! $isRequesterOnly)
-        <section class="ui-panel mt-6 p-4 sm:p-5" aria-labelledby="period-filter-heading">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-                <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Periode dasbor</p>
-                <h2 id="period-filter-heading" class="mt-2 text-lg font-extrabold tracking-tight text-[#263a43]">{{ $periodLabel }}</h2>
-                <p class="mt-1 text-xs leading-5 text-[#6a8089]">Default bulan berjalan. Semua tanggal mengikuti zona waktu Asia/Jakarta.</p>
-            </div>
-            <form method="GET" action="{{ route('dashboard') }}" class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] sm:items-end" aria-describedby="period-filter-help">
-                <div>
-                    <label for="dashboard-start-date" class="ui-field-label">Mulai</label>
-                    <input id="dashboard-start-date" name="start_date" type="date" value="{{ $periodStart->format('Y-m-d') }}" class="ui-input mt-1" />
-                </div>
-                <div>
-                    <label for="dashboard-end-date" class="ui-field-label">Sampai</label>
-                    <input id="dashboard-end-date" name="end_date" type="date" value="{{ $periodEnd->format('Y-m-d') }}" class="ui-input mt-1" />
-                </div>
-                <button type="submit" class="ui-btn ui-btn-primary">Terapkan filter</button>
-                <a href="{{ route('dashboard') }}" class="ui-btn ui-btn-ghost">Bulan berjalan</a>
-            </form>
-        </div>
-        <p id="period-filter-help" class="mt-3 text-xs leading-5 text-[#78909a]">Filter hanya menghitung data dalam cakupan role Anda. Data yang tidak berwenang tidak ikut digunakan dalam agregasi.</p>
-        @if ($errors->has('start_date') || $errors->has('end_date'))
-            <div class="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800" role="alert">
-                {{ $errors->first('start_date') ?: $errors->first('end_date') }}
-            </div>
-        @endif
-        </section>
-    @endif
-
-    @if ($isRequesterOnly)
-
-        <section class="mt-6" aria-label="Ringkasan tiket Pemohon">
-            <dl class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <div class="ui-stat-card items-start">
-                    <span class="ui-stat-icon" aria-hidden="true"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 7.5h14v11H5zM8 7.5V5h8v2.5M8.5 11h7M8.5 14.5h4" /></svg></span>
-                    <span><dt class="ui-stat-label">Total tiket</dt><dd class="ui-stat-value">{{ $requesterDashboard['total_ticket_count'] }}</dd><span class="mt-1 block text-xs leading-5 text-[#78909a]">Semua tiket yang Anda buat.</span></span>
-                </div>
-                <div class="ui-stat-card items-start">
-                    <span class="ui-stat-icon !bg-[#e8faf4] !text-[#087f5b]" aria-hidden="true"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" d="M12 5v14M5 12h14" /></svg></span>
-                    <span><dt class="ui-stat-label">Tiket aktif</dt><dd class="ui-stat-value !text-[#087f5b]">{{ $requesterDashboard['total_active_ticket_count'] }}</dd><span class="mt-1 block text-xs leading-5 text-[#78909a]">Sedang diproses atau menunggu tindak lanjut.</span></span>
-                </div>
-                <div class="ui-stat-card items-start">
-                    <span class="ui-stat-icon !bg-[#fff4d7] !text-[#9a6700]" aria-hidden="true"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m5.5 12.5 4 4 9-9" /></svg></span>
-                    <span><dt class="ui-stat-label">Tiket selesai</dt><dd class="ui-stat-value !text-[#9a6700]">{{ $requesterDashboard['total_completed_ticket_count'] }}</dd><span class="mt-1 block text-xs leading-5 text-[#78909a]">Solusi tersedia, menunggu konfirmasi anda.</span></span>
-                </div>
-                <div class="ui-stat-card items-start">
-                    <span class="ui-stat-icon !bg-[#eef2f4] !text-[#657984]" aria-hidden="true"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m5.5 12.5 4 4 9-9" /><path stroke-linecap="round" d="M7 19h10" /></svg></span>
-                    <span><dt class="ui-stat-label">Tiket ditutup</dt><dd class="ui-stat-value !text-[#657984]">{{ $requesterDashboard['total_closed_ticket_count'] }}</dd><span class="mt-1 block text-xs leading-5 text-[#78909a]">Tiket sudah berstatus Ditutup.</span></span>
-                </div>
-            </dl>
         </section>
 
-        <template data-reporting-guide-template>
-            <div class="text-left">
-                <ol class="mt-4 space-y-4">
-                    <li class="flex gap-3"><span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#d8f5ef] text-xs font-extrabold text-[#147a79]">1</span><div><p class="text-sm font-extrabold text-[#35505b]">Pilih layanan</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Pilih kategori yang paling mendekati kebutuhan Anda.</p></div></li>
-                    <li class="flex gap-3"><span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#d8f5ef] text-xs font-extrabold text-[#147a79]">2</span><div><p class="text-sm font-extrabold text-[#35505b]">Jelaskan kebutuhan</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Tuliskan kendala, dampak, lokasi, dan hasil yang diharapkan.</p></div></li>
-                    <li class="flex gap-3"><span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#d8f5ef] text-xs font-extrabold text-[#147a79]">3</span><div><p class="text-sm font-extrabold text-[#35505b]">Pantau dan konfirmasi</p><p class="mt-1 text-xs leading-5 text-[#78909a]">Balas jika ada pertanyaan dan konfirmasi setelah solusi tersedia.</p></div></li>
-                </ol>
+        @if (! $isSuperAdmin)
+            <section class="ui-panel mt-6 p-4 sm:p-5" aria-labelledby="period-filter-heading">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                    <p class="ui-eyebrow"><span class="ui-eyebrow-dot" aria-hidden="true"></span>Periode dasbor</p>
+                    <h2 id="period-filter-heading" class="mt-2 text-lg font-extrabold tracking-tight text-[#263a43]">{{ $periodLabel }}</h2>
+                    <p class="mt-1 text-xs leading-5 text-[#6a8089]">Default bulan berjalan. Semua tanggal mengikuti zona waktu Asia/Jakarta.</p>
+                </div>
+                <form method="GET" action="{{ route('dashboard') }}" class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] sm:items-end" aria-describedby="period-filter-help">
+                    <div>
+                        <label for="dashboard-start-date" class="ui-field-label">Mulai</label>
+                        <input id="dashboard-start-date" name="start_date" type="date" value="{{ $periodStart->format('Y-m-d') }}" class="ui-input mt-1" />
+                    </div>
+                    <div>
+                        <label for="dashboard-end-date" class="ui-field-label">Sampai</label>
+                        <input id="dashboard-end-date" name="end_date" type="date" value="{{ $periodEnd->format('Y-m-d') }}" class="ui-input mt-1" />
+                    </div>
+                    <button type="submit" class="ui-btn ui-btn-primary">Terapkan filter</button>
+                    <a href="{{ route('dashboard') }}" class="ui-btn ui-btn-ghost">Bulan berjalan</a>
+                </form>
             </div>
-        </template>
-
-    @endif
+            <p id="period-filter-help" class="mt-3 text-xs leading-5 text-[#78909a]">Filter hanya menghitung data dalam cakupan role Anda. Data yang tidak berwenang tidak ikut digunakan dalam agregasi.</p>
+            @if ($errors->has('start_date') || $errors->has('end_date'))
+                <div class="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800" role="alert">
+                    {{ $errors->first('start_date') ?: $errors->first('end_date') }}
+                </div>
+            @endif
+            </section>
+        @endif
 
     {{-- Approvals intentionally come first for the active Approver persona. --}}
     @if ($approverDashboard['visible'])
@@ -363,6 +461,8 @@
                 <article class="ui-panel overflow-hidden" aria-labelledby="overall-sla-heading"><div class="ui-panel-header"><h3 id="overall-sla-heading" class="ui-section-title">Ringkasan kepatuhan SLA</h3><p class="ui-section-description">Tiket tanpa SLA tetap dipisahkan dari tiket yang terukur.</p></div><dl class="grid gap-3 p-5 sm:grid-cols-2"><div class="rounded-lg bg-[#e8faf4] p-4"><dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#087f5b]">Sesuai target</dt><dd class="mt-1 text-2xl font-extrabold text-[#087f5b]">{{ $overallDashboard['sla']['compliant'] }}</dd></div><div class="rounded-lg bg-[#fff1f2] p-4"><dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#be123c]">Tidak sesuai</dt><dd class="mt-1 text-2xl font-extrabold text-[#be123c]">{{ $overallDashboard['sla']['breached'] }}</dd></div><div class="rounded-lg bg-[#f8fbfc] p-4"><dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#78909a]">Belum terukur</dt><dd class="mt-1 text-2xl font-extrabold text-[#526f79]">{{ $overallDashboard['sla']['not_available'] }}</dd></div><div class="rounded-lg bg-[#fff4d7] p-4"><dt class="text-xs font-extrabold uppercase tracking-[0.1em] text-[#9a6700]">Terukur</dt><dd class="mt-1 text-2xl font-extrabold text-[#9a6700]">{{ $overallDashboard['sla']['tracked'] }}</dd></div></dl></article>
             </div>
         </section>
+    @endif
+
     @endif
 
     @endif
