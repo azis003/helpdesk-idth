@@ -7,10 +7,10 @@
 
 ## Changed Files
 The following production files were modified to achieve the visual redesign:
-1. [`resources/views/admin/locations/index.blade.php`](file:///c:/Users/Personal/Herd/helpdesk-idth/resources/views/admin/locations/index.blade.php)
-2. [`resources/views/admin/locations/_building-form.blade.php`](file:///c:/Users/Personal/Herd/helpdesk-idth/resources/views/admin/locations/_building-form.blade.php)
-3. [`resources/views/admin/locations/_floor-form.blade.php`](file:///c:/Users/Personal/Herd/helpdesk-idth/resources/views/admin/locations/_floor-form.blade.php)
-4. [`resources/views/admin/teams/index.blade.php`](file:///c:/Users/Personal/Herd/helpdesk-idth/resources/views/admin/teams/index.blade.php)
+1. [`resources/views/admin/locations/index.blade.php`](../../resources/views/admin/locations/index.blade.php)
+2. [`resources/views/admin/locations/_building-form.blade.php`](../../resources/views/admin/locations/_building-form.blade.php)
+3. [`resources/views/admin/locations/_floor-form.blade.php`](../../resources/views/admin/locations/_floor-form.blade.php)
+4. [`resources/views/admin/teams/index.blade.php`](../../resources/views/admin/teams/index.blade.php)
 
 ---
 
@@ -18,21 +18,22 @@ The following production files were modified to achieve the visual redesign:
 
 ### 1. Locations Redesign
 - **Transition**: Replaced the wide traditional 62rem-wide table and the redundant duplicate mobile listing with a single unified card-based operational workbench.
-- **Desktop Strategy**: Grouped each building inside a structured panel (`.ui-panel` styled border/shadow card):
-  - **Left column (1/3 width)** contains core building metadata, status badge (`Aktif`/`Nonaktif`), and primary actions: Add Floor (`Tambah lantai`), Edit Building (`Edit`), and Status toggle (`Aktifkan`/`Nonaktifkan`).
-  - **Right column (2/3 width)** lists all registered floors as compact cards.
+- **Desktop Strategy**: Grouped each building inside a simplified vertical card structure:
+  - **Header**: Building name, floor count, and building status badge.
+  - **Body**: Daftar Lantai title and floors collection (arranged as a 2-column grid on desktop).
+  - **Footer**: Building-level action footer containing Tambah lantai, Edit, and Status toggle buttons.
 - **Mobile/Responsive Strategy**:
-  - Leveraged Tailwind's order utilities (`order-last lg:order-first` and `order-first lg:order-last`) to guarantee the correct visual priority flow on narrow viewports:
+  - Leveraged Tailwind flex/grid styling to ensure a clean visual priority flow on mobile screens:
     1. **Building name/status** first (in the card header).
     2. **Floor lists** second (body).
-    3. **Building actions** last (bottom).
+    3. **Building actions** last (footer).
   - All actions wrap elegantly and buttons are padded for easy touch-targets (390px safe).
 
 ### 2. Teams Redesign
 - **Transition**: Restructured the team index layout from a database spreadsheet-like table into a clean, modern card grid: `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6`.
 - **Desktop/Tablet Strategy**:
   - Each card represents an operational team record showcasing the structural overview.
-  - **Header**: Displays the team name and status badge, alongside the edit modal trigger.
+  - **Header**: Displays the team name and status badge, alongside the edit modal trigger and screen-reader action labels.
   - **Description**: Displays the team description, with an italicized fallback if empty.
   - **Ketua Tim (Chair)**: Clear dedicated slot displaying the chair's name, `@username`, and a circular initials avatar block.
   - **Anggota (Members)**: Compact chips wrapping naturally. Large counts scroll cleanly.
@@ -58,6 +59,21 @@ We preserved all literal endpoints and HTML selectors to ensure zero functional 
 ### Dormant & Denied Capabilities Intentionally Excluded
 - **No Room UI** was added (remains dormant).
 - **No Team delete or activate/deactivate toggles** were exposed on the index UI.
+
+---
+
+## Human QA Corrections
+
+### `W3.1-HQA-001` — Locations desktop content hierarchy correction
+- **Ambiguous floor action labels corrected**:
+  - Restored clear, explicit text labels: **"Nonaktifkan"** for deactivating active floors, and **"Aktifkan"** for activating inactive floors (replacing ambiguous "Nonaktif"/"Aktif" labels).
+- **Destructive floor actions visually subdued**:
+  - Converted floor status toggle buttons to compact, subtle outline buttons (`bg-transparent hover:bg-50`) to reduce destructive visual dominance across floor rows.
+  - Kept edit buttons adjacent and compact.
+- **Simplified building card layout**:
+  - Reorganized building cards into a clean vertical stack: **Header** (Building name, count, status badge), **Body** (Daftar Lantai header & floors grid list), and **Action Footer** (Building actions block).
+  - Completely removed redundant duplicate "Status Gedung" text.
+  - Completely removed unnecessary "Diperbarui" timestamp metadata to optimize screen real estate.
 
 ---
 
